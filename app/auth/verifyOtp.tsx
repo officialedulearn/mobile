@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#61728C",
     marginTop: 10,
+    alignContent: "center",
   },
   timerText: {
     fontWeight: "700",

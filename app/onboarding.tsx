@@ -146,11 +146,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    marginTop: 100,
+    marginTop: 30,
   },
   logo: {
-    width: 120,
-    height: 40,
+    width: 130,
+    height: 160,
   },
   skipButton: {
     flexDirection: "row",

@@ -70,8 +70,21 @@ const Auth = () => {
             referredBy: formData.referralCode,
             username: formData.username
           });
-        } catch (userCreateError) {
+        } catch (userCreateError: any) {
           console.error("Error creating user:", userCreateError);
+          
+          // Don't block the authentication flow if the user creation API fails
+          // This allows users to still verify their email and login
+          // The user can be created or updated later when the API is available
+          if (userCreateError?.message?.includes('timeout') || 
+              userCreateError?.message?.includes('Network Error') ||
+              userCreateError?.code === 'ECONNABORTED') {
+            Alert.alert(
+              "Warning",
+              "Your account is being created, but some features may be limited until you reconnect to the network.",
+              [{ text: "OK" }]
+            );
+          }
         }
 
         router.push({
@@ -235,17 +248,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FBFC",
     paddingHorizontal: 24,
-    paddingTop: 100,
+    paddingTop: 40,
   },
   topNavigation: {
-    marginBottom: 40,
+    marginBottom: 10,
   },
   logo: {
-    width: 140,
-    height: 50,
+    width: 130,
+    height: 160,
   },
   textContainer: {
-    marginBottom: 30,
+    marginBottom: 40,
   },
   welcome: {
     fontSize: 28,

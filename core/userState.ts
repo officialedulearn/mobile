@@ -94,6 +94,7 @@ const useUserStore = create<UserState>((set, get) => ({
           referralCount: userFromDB.referralCount || 0,
           username: userFromDB.username || "User",
           referredBy: userFromDB.referredBy || null,
+          quizCompleted:  userFromDB.quizCompleted
         },
       });
     } catch (error) {

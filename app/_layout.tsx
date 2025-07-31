@@ -30,8 +30,9 @@ export default function RootLayout() {
       <Stack.Screen name="auth/index" options={{ headerShown: false }} />
       <Stack.Screen name="auth/verifyOtp" options={{ headerShown: false }} />
       <Stack.Screen name="auth/welcome" options={{ headerShown: false }} />
-      <Stack.Screen name="home/index" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)/index" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="leaderboard" options={{ headerShown: false }} />
+      <Stack.Screen name="quiz" options={{ headerShown: false }} />
     </Stack>
   );
 }
