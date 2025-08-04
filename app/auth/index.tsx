@@ -66,16 +66,13 @@ const Auth = () => {
           await userService.createUser({
             id: generateUUID(),
             email: formData.email,
-            name: formData.name || "User", // Provide a default if name is empty
+            name: formData.name || "User", 
             referredBy: formData.referralCode,
             username: formData.username
           });
         } catch (userCreateError: any) {
           console.error("Error creating user:", userCreateError);
           
-          // Don't block the authentication flow if the user creation API fails
-          // This allows users to still verify their email and login
-          // The user can be created or updated later when the API is available
           if (userCreateError?.message?.includes('timeout') || 
               userCreateError?.message?.includes('Network Error') ||
               userCreateError?.code === 'ECONNABORTED') {

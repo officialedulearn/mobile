@@ -6,7 +6,6 @@ import { router } from "expo-router";
 import * as React from "react";
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-// Helper function to group chats by recency
 const groupChatsByRecency = (chats: Chat[]) => {
   const now = new Date();
   const oneDayAgo = new Date(now);
@@ -163,7 +162,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 450,
+    width: 300,
     backgroundColor: "#fff",
     zIndex: 10,
     elevation: 10,

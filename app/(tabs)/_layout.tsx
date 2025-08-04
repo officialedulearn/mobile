@@ -9,7 +9,7 @@ const TabLayout = (props: Props) => {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#00FF80",
-        tabBarInactiveTintColor: "#777777", // Adding inactive color
+        tabBarInactiveTintColor: "#777777",
         tabBarStyle: {
           borderTopWidth: 0,
           elevation: 0,
@@ -57,6 +57,7 @@ const TabLayout = (props: Props) => {
 
       <Tabs.Screen
         name="chat"
+        
         options={{
           title: "", 
           tabBarIcon: ({ focused }) => (

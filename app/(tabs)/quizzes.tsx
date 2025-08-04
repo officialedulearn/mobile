@@ -1,9 +1,10 @@
+import useActivityStore from "@/core/activityState";
 import useUserStore from "@/core/userState";
 import { Chat } from "@/interface/Chat";
-import { ActivityService } from "@/services/activity.service";
 import { ChatService } from "@/services/chat.service";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -20,21 +21,20 @@ type Props = {};
 
 const quizzes = (props: Props) => {
   const [chats, setChats] = React.useState<Array<Chat>>([]);
-  const [activities, setActivities] = React.useState<Array<any>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const chatService = new ChatService();
-  const activityService = new ActivityService();
   const user = useUserStore((s) => s.user);
+  const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth * 0.75;
 
-  React.useEffect(() => {
-    const fetchChats = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const chatList = await chatService.getHistory(
-          user?.id as unknown as string
-        );
+        if (!user?.id) return;
+        
+        const chatList = await chatService.getHistory(user.id);
         setChats(
           chatList.sort(
             (a, b) =>
@@ -42,26 +42,14 @@ const quizzes = (props: Props) => {
           )
         );
 
-        const activityList = await activityService.getQuizActivitiesByUser(
-          user?.id as unknown as string
-        );
-
-        setActivities(
-          activityList.sort(
-            (
-              a: { createdAt: string | number | Date },
-              b: { createdAt: string | number | Date }
-            ) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-        );
+        fetchQuizActivities(user.id);
       } catch (error) {
-        console.error("Error fetching chats:", error);
+        console.error("Error fetching data:", error);
       }
     };
 
-    fetchChats();
-  }, []);
+    fetchData();
+  }, [user?.id, fetchQuizActivities]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -134,7 +122,12 @@ const quizzes = (props: Props) => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.startButton}>
+                <TouchableOpacity style={styles.startButton} onPress={() => {
+                  router.push({
+                    pathname: "/quiz",
+                    params: {chatId: chat.id}
+                  })
+                }}>
                   <Text style={styles.startButtonText}>Start Quiz</Text>
                 </TouchableOpacity>
               </View>
@@ -178,14 +171,16 @@ const quizzes = (props: Props) => {
       </View>
 
       <View style={styles.historyList}>
-        {activities.length > 0 ? (
-          activities.map((activity, index) => (
+        {quizActivities.length > 0 ? (
+          quizActivities.map((activity, index) => (
             <View key={index} style={styles.activityCard}>
-              <View style={styles.activityMain}>
-                <Text style={styles.activityTitle} numberOfLines={1}>
-                  {activity.title || "Untitled Quiz"}
-                </Text>
-                <View style={styles.activityMetadata}>
+              <View style={styles.activityContainer}>
+
+                <View style={styles.activityLeftColumn}>
+                  <Text style={styles.chatText} numberOfLines={1}>
+                    {activity.title || "Untitled Quiz"}
+                  </Text>
+                  
                   <View style={styles.metadataItem}>
                     <Image 
                       source={require("@/assets/images/icons/clock.png")} 
@@ -193,6 +188,7 @@ const quizzes = (props: Props) => {
                     />
                     <Text style={styles.xpText}>1 min</Text>
                   </View>
+                  
                   <View style={styles.metadataItem}>
                     <Image
                       source={require("@/assets/images/icons/medal-05.png")}
@@ -201,32 +197,35 @@ const quizzes = (props: Props) => {
                     <Text style={styles.xpText}>+{activity.xpEarned} XP</Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={styles.activityDetails}>
-                <View style={styles.metadataItem}>
-                  <Image 
-                    source={require("@/assets/images/icons/calendar.png")} 
-                    style={styles.metadataIcon}
-                  />
-                  <Text style={styles.dateText}>
-                    {new Date(activity.createdAt).toLocaleDateString()}
-                  </Text>
-                </View>
-                <View style={styles.metadataItem}>
-                  <Image 
-                    source={require("@/assets/images/icons/notebook.png")}
-                    style={styles.metadataIcon}
-                  />
-                  <Text style={styles.scoreText}>
-                    {activity.xpEarned}/10 ({activity.xpEarned * 10}%)
-                  </Text>
-                </View>
-                {activity.xpEarned >= 7 && (
-                  <View style={styles.passed}>
-                    <Text style={styles.passedText}>Passed</Text>
+                {/* Right Column */}
+                <View style={styles.activityRightColumn}>
+                  <View style={styles.metadataItem}>
+                    <Image 
+                      source={require("@/assets/images/icons/calendar.png")} 
+                      style={styles.metadataIcon}
+                    />
+                    <Text style={styles.dateText}>
+                      {new Date(activity.createdAt).toLocaleDateString()}
+                    </Text>
                   </View>
-                )}
+                  
+                  <View style={styles.metadataItem}>
+                    <Image 
+                      source={require("@/assets/images/icons/notebook.png")}
+                      style={styles.metadataIcon}
+                    />
+                    <Text style={styles.scoreText}>
+                      {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
+                    </Text>
+                  </View>
+                  
+                  {activity.xpEarned >= 3 && (
+                    <View style={styles.passed}>
+                      <Text style={styles.passedText}>Passed</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           ))
@@ -237,7 +236,6 @@ const quizzes = (props: Props) => {
         )}
       </View>
       
-      {/* Add some bottom padding for scrolling */}
       <View style={{height: 30}} />
     </ScrollView>
   );
@@ -248,7 +246,7 @@ export default quizzes;
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#F9FBFC",
-    marginTop: 40,
+    paddingTop: 40,
     padding: 20,
     paddingLeft: 30,
     height: "100%",
@@ -321,17 +319,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: "#E0E7F0",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
   },
   horizontalScrollView: {
-    height: 200, // Fixed height to make cards more compact
+    height: 200, 
     marginBottom: 5,
   },
   chatItemHeader: {
@@ -352,7 +342,7 @@ const styles = StyleSheet.create({
   metadataItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 20,
+    marginBottom: 3,
   },
   metadataIcon: {
     width: 20,
@@ -400,10 +390,11 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   passed: {
-    backgroundColor: "#40B869",
-    padding: 5, 
+    backgroundColor: "#F2FFF7",
+    padding: 10, 
     textAlign: "center",
     borderRadius: 33,
+    
   },
   passedText: {
     color: "#0E7B33",
@@ -433,10 +424,21 @@ const styles = StyleSheet.create({
   historyList: {
     marginTop: 10,
   },
-  activityMain: {
+  activityContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+  },
+  activityLeftColumn: {
+    flex: 1,
+    paddingRight: 10,
+    justifyContent: "center",
+    gap: 5,
+  },
+  activityRightColumn: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 5,
   },
   activityMetadata: {
     flexDirection: "row",

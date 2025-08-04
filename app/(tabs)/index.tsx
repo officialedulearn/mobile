@@ -49,7 +49,7 @@ const index = (props: Props) => {
       </View>
 
       <View style={styles.cardContainer}>
-        <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={() => router.push("/quizzes")}>
           <Image
             source={require("@/assets/images/icons/brain.png")}
             style={{ width: 50, height: 50 }}

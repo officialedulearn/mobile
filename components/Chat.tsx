@@ -22,7 +22,7 @@ import { MessageItem, ThinkingMessage } from "./MessageItem";
 
 type Props = {
   title: string;
-  initialMessages?: Array<Message>; // Make initialMessages optional
+  initialMessages?: Array<Message>; 
   chatId: string;
 };
 
@@ -38,13 +38,15 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  const chatIdRef = useRef(chatId);
 
   useEffect(() => {
     if (Array.isArray(initialMessages)) {
       setMessages(initialMessages);
-      console.log(initialMessages)
-    } else {
-      setMessages([]);
+    }
+    if (chatId && chatId !== chatIdRef.current) {
+      chatIdRef.current = chatId;
     }
   }, [initialMessages, chatId]);
 
@@ -74,6 +76,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
     }
   }, [messages]);
 
+
   const scrollToBottom = () => {
     setTimeout(() => {
       if (scrollViewRef.current) {
@@ -93,25 +96,30 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
+    
+    const currentChatId = chatIdRef.current;
+    
     const newMessage: Message = {
       id: generateUUID(),
       role: "user",
       content: inputText, 
       createdAt: new Date(),
-      chatId: chatId,
+      chatId: currentChatId,
     };
 
-    setMessages([...messages, newMessage]);
+    const updatedMessages = [...messages, newMessage];
+    
+    setMessages(updatedMessages);
     setInputText("");
-
     setIsGenerating(true);
 
     try {
       const response = await aiService.generateMessages({
-        messages: [...messages, newMessage],
-        chatId: chatId,
+        messages: updatedMessages,
+        chatId: currentChatId,
         userId: user?.id as unknown as string,
       });
+      
       const assistantMessage: Message = {
         id: response.id,
         role: "assistant",
@@ -119,10 +127,10 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           ? response.content 
           : response.content,
         createdAt: response.createdAt,
-        chatId: response.chatId,
+        chatId: response.chatId || currentChatId, 
       };
 
-      setMessages([...messages, newMessage, assistantMessage]);
+      setMessages(currentMessages => [...currentMessages, assistantMessage]);
     } catch (error) {
       console.error("Error generating message:", error);
     } finally {
@@ -397,7 +405,7 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     width: "100%",
-    position: "relative", // Add this for absolute positioning of scroll button
+    position: "relative",
   },
   messagesScroll: {
     flex: 1,

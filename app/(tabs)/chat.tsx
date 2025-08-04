@@ -2,9 +2,9 @@ import Chat from "@/components/Chat";
 import { Chat as chatInterface, Message } from "@/interface/Chat";
 import { ChatService } from "@/services/chat.service";
 import { generateUUID } from "@/utils/constants";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -21,35 +21,38 @@ const ChatScreen = (props: Props) => {
     chatIdFromNav: string;
     refresh: string;
   }>();
+  const router = useRouter();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
-  const chatId = generateUUID();
+
+  const chatIdRef = useRef<string>(chatIdFromNav || generateUUID());
+  const chatId = chatIdRef.current;
 
   useEffect(() => {
-    setChat(undefined);
-    setInitialMessages([]);
+    if (chatIdFromNav && chatIdFromNav !== chatIdRef.current) {
+      chatIdRef.current = chatIdFromNav;
+    }
 
-    const fetchChatAndMessages = async () => {
-      try {
-        if (!chatIdFromNav) return;
+    if (chatId) {
+      setChat(undefined);
+      setInitialMessages([]);
 
-        console.log("Fetching chat data for ID:", chatIdFromNav);
-        const chatService = new ChatService();
-        const chatData = await chatService.getChatById(chatIdFromNav);
-        const messages = await chatService.getMessagesInChat(chatIdFromNav);
+      const fetchChatAndMessages = async () => {
+        try {
+          const chatService = new ChatService();
+          const chatData = await chatService.getChatById(chatId);
+          const messages = await chatService.getMessagesInChat(chatId);
 
-        console.log("Fetched chat data:", chatData);
-        console.log("Fetched messages:", messages);
+          setChat(chatData);
+          setInitialMessages(messages);
+        } catch (error) {
+          console.error("Error fetching chat data:", error);
+        }
+      };
 
-        setChat(chatData);
-        setInitialMessages(messages);
-      } catch (error) {
-        console.error("Error fetching chat data:", error);
-      }
-    };
-
-    fetchChatAndMessages();
+      fetchChatAndMessages();
+    }
   }, [chatIdFromNav, refresh]);
 
   useEffect(() => {
@@ -71,12 +74,6 @@ const ChatScreen = (props: Props) => {
       keyboardDidShowListener.remove();
     };
   }, []);
-  const navigateToChat = (id: string) => {
-    router.push({
-      pathname: "/(tabs)/chat",
-      params: { chatIdFromNav: id, refresh: Date.now().toString() },
-    });
-  };
 
   return (
     <KeyboardAvoidingView
@@ -91,10 +88,10 @@ const ChatScreen = (props: Props) => {
             <Chat
               title={chat.title || "Chat"}
               initialMessages={initialMessages}
-              chatId={chatIdFromNav}
+              chatId={chatId}
             />
           ) : (
-            <Chat title="AI Tutor Chat" initialMessages={[]} chatId={chatId} />
+            <Chat title="AI Tutor Chat" initialMessages={initialMessages} chatId={chatId} />
           )}
         </View>
       </SafeAreaView>

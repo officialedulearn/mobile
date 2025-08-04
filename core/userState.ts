@@ -1,4 +1,5 @@
 import { User } from "@/interface/User";
+import { ActivityService } from "@/services/activity.service";
 import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
 import { create } from "zustand";
@@ -8,13 +9,14 @@ interface UserState {
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => Promise<void>;
-  updateUserPoints: (xp: number) => void;
+  updateUserPoints: ({userId, title, type, xpEarned}: {userId: string, title: string, type: "quiz" | "chat" | "streak", xpEarned: number}) => void;
   updateLevel: (
     level: "novice" | "beginner" | "intermediate" | "advanced" | "expert"
   ) => void;
 }
 
 const userService = new UserService();
+const activityService = new ActivityService();
 
 const calculateStreak = async (email: string, lastLoggedIn: string | undefined): Promise<number> => {
 
@@ -102,17 +104,17 @@ const useUserStore = create<UserState>((set, get) => ({
     }
   },
   
-  updateUserPoints: (xp: number) => {
+  updateUserPoints: ({type, title, xpEarned}: {type: "quiz" | "streak" | "chat"; title: string; xpEarned: number}) => {
     const currentUser = get().user;
     if (!currentUser || !currentUser.email) return;
     
     set((state) => ({
       user: state.user
-        ? { ...state.user, xp: (state.user.xp || 0) + xp }
+        ? { ...state.user, xp: (state.user.xp || 0) + xpEarned }
         : null,
     }));
     
-    userService.updateUserXP(currentUser.email, xp).catch(error => 
+    activityService.createActivity({userId: currentUser?.id as unknown as string, title, type, xpEarned}).catch(error => 
       console.error("Failed to update XP in database:", error)
     );
   },

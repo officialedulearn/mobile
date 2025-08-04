@@ -86,11 +86,9 @@ const Leaderboard = () => {
     },
   ]);
 
-  // Pagination calculations
   const from = page * itemsPerPage;
   const to = Math.min((page + 1) * itemsPerPage, users.length);
 
-  // Reset to first page when items per page changes
   useEffect(() => {
     setPage(0);
   }, [itemsPerPage]);

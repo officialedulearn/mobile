@@ -5,3 +5,5 @@ export function generateUUID(): string {
       return v.toString(16);
     });
   }
+
+export const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
