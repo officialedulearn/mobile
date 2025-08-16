@@ -71,6 +71,31 @@ const index = (props: Props) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <View style={styles.homeCard}>
+        <View style={styles.homeCardContent}>
+         <View style={styles.homeCardHeader}>
+         <Image
+            source={require("@/assets/images/icons/search.png")}
+            style={{ width: 28, height: 28 }}
+          />
+
+          <Text style={styles.homeCardTitle}>
+            Search for users
+          </Text>
+         </View>
+
+          <Text style={styles.cardSubText}>Find learners to connect with on X</Text>
+          <View style={styles.spacer} />
+          <TouchableOpacity
+            onPress={() => router.push("/search")}
+            style={styles.searchButton}
+          >
+            <Text style={styles.searchButtonText}>Search</Text>
+          </TouchableOpacity>
+
+        </View>
+      </View>
     </View>
   );
 };
@@ -152,9 +177,59 @@ const styles = StyleSheet.create({
   },
   cardSubText: {
     fontFamily: "Satoshi",
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     color: "#61728C",
-  }
-
+    marginTop: 4
+  },
+  searchButton: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#000",
+    marginTop: 12,
+    width: "100%",
+  },
+  searchButtonText: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    color: "#00FF80",
+    fontWeight: "500",
+    lineHeight: 24
+  },
+  homeCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    height: 150,
+    display: "flex"
+  },
+  homeCardContent: {
+    gap: 14,
+    flexDirection: "column",
+    alignItems: "stretch",
+    width: "100%",
+    flex: 1,
+    justifyContent: "space-between"
+  },
+  homeCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  homeCardTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 18,
+    color: "#2D3C52",
+    fontWeight: "600",
+    lineHeight: 24
+  },
+  spacer: {
+    flex: 1,
+  },
 });

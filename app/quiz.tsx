@@ -158,8 +158,7 @@ const Quiz = (props: Props) => {
     });
 
     setUserAnswers(userAnswersList);
-    const newScore = Math.round((correctCount / questions.length) * 10);
-    setScore(newScore);
+    setScore(correctCount);
     setQuizCompleted(true);
 
     try {
@@ -170,7 +169,7 @@ const Quiz = (props: Props) => {
         type: "quiz" as const,
       };
 
-      updateUserPoints(activityData);
+      // updateUserPoints(activityData);
 
       await addActivity(activityData);
     } catch (error) {
@@ -767,7 +766,7 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     backgroundColor: "#FFFFFF",
   },
-  
+
   navButtonText: {
     fontFamily: "Satoshi",
     fontSize: 16,

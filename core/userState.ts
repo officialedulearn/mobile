@@ -6,6 +6,7 @@ import { create } from "zustand";
 
 interface UserState {
   user: User | null;
+  walletBalance: {sol: number, tokenAccount: number} | null
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => Promise<void>;
@@ -13,6 +14,7 @@ interface UserState {
   updateLevel: (
     level: "novice" | "beginner" | "intermediate" | "advanced" | "expert"
   ) => void;
+  fetchWalletBalance: () => Promise<void>;
 }
 
 const userService = new UserService();
@@ -47,6 +49,11 @@ const calculateStreak = async (email: string, lastLoggedIn: string | undefined):
     }
     
     const userData = await userService.getUser(email);
+
+    if(userData.streak && userData.streak > 3) {
+      await activityService.createActivity({userId: userData.id, type: "streak", title: `${userData.streak}-day XP Streak Bonus`, xpEarned: 5})
+    }
+
     return userData.streak || 1;
   } catch (error) {
     console.error("Error calculating streak:", error);
@@ -56,7 +63,7 @@ const calculateStreak = async (email: string, lastLoggedIn: string | undefined):
 
 const useUserStore = create<UserState>((set, get) => ({
   user: null,
-
+  walletBalance: {sol: 0, tokenAccount: 0},
   setUserAsync: async () => {
     if (typeof window === "undefined") return;
 
@@ -96,9 +103,12 @@ const useUserStore = create<UserState>((set, get) => ({
           referralCount: userFromDB.referralCount || 0,
           username: userFromDB.username || "User",
           referredBy: userFromDB.referredBy || null,
-          quizCompleted:  userFromDB.quizCompleted
+          quizCompleted:  userFromDB.quizCompleted,
+          isPremium: userFromDB.isPremium || false,
         },
       });
+      
+      await get().fetchWalletBalance();
     } catch (error) {
       console.error("Failed to fetch user data:", error);
     }
@@ -129,7 +139,6 @@ const useUserStore = create<UserState>((set, get) => ({
       user: state.user ? { ...state.user, level } : null,
     }));
     
-    // Update level in database
     userService.updateUserLevel(currentUser.email, level).catch(error => 
       console.error("Failed to update level in database:", error)
     );
@@ -139,10 +148,22 @@ const useUserStore = create<UserState>((set, get) => ({
     set({ user });
   },
   
+  fetchWalletBalance: async () => {
+    const currentUser = get().user;
+    if (!currentUser || !currentUser.id) return;
+    
+    try {
+      const { balance } = await userService.getUserWalletBalance(currentUser.address as unknown as string);
+      set({ walletBalance: {sol: balance.sol, tokenAccount: balance.tokenAccount} });
+    } catch (error) {
+      console.error("Failed to fetch wallet balance:", error);
+    }
+  },
+  
   logout: async () => {
     try {
       await supabase.auth.signOut();
-      set({ user: null });
+      set({ user: null, walletBalance: null });
     } catch (error) {
       console.error("Logout failed:", error);
     }

@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   },
   chatListContainer: {
     flex: 1,
-    paddingBottom: 80, // Space for the new chat button
+    paddingBottom: 80, 
   },
   chatSection: {
     marginBottom: 24,

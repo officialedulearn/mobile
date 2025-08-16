@@ -7,18 +7,28 @@ interface Reward {
   description: string;
   imageUrl?: string;
   createdAt?: string;
-  updatedAt?: string;
+  ipfs?: string;
 }
-
-interface UserReward {
+interface UserRewardWithDetails {
   id: string;
-  userId: string;
-  rewardId: string;
-  reward: Reward;
-  awardedAt: string;
+  type: 'certificate' | 'points';
+  title: string;
+  description: string;
+  earnedAt: string;
+  signature?: string;
 }
 
 export class RewardsService {
+  async claimReward(userId: string, rewardId: string): Promise<any> {
+    try {
+      const response = await httpClient.post('/rewards/claim', { userId, rewardId });
+      return response.data;
+    } catch (error) {
+      console.error(`Error claiming reward ${rewardId} for user ${userId}:`, error);
+      throw error;
+    }
+  }
+
   async getAllRewards(): Promise<Reward[]> {
     try {
       const response = await httpClient.get('/rewards');
@@ -82,7 +92,7 @@ export class RewardsService {
     }
   }
 
-  async getUserRewards(userId: string): Promise<UserReward[]> {
+  async getUserRewards(userId: string): Promise<UserRewardWithDetails[]> {
     try {
       const response = await httpClient.get(`/rewards/user/${userId}`);
       return response.data;
@@ -92,7 +102,7 @@ export class RewardsService {
     }
   }
 
-  async awardRewardToUser(userId: string, rewardId: string): Promise<UserReward> {
+  async awardRewardToUser(userId: string, rewardId: string): Promise<UserRewardWithDetails> {
     try {
       const response = await httpClient.post('/rewards/award', { userId, rewardId });
       return response.data;

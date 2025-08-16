@@ -11,5 +11,6 @@ export interface User {
     address: string | null;
     streak: number;
     username: string;
-    quizCompleted: number
+    quizCompleted: number;
+    isPremium: boolean;
 }

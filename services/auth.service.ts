@@ -82,12 +82,38 @@ export class UserService {
         }
     }
 
+    async incrementCredits(userId: string, amount: number): Promise<{ credits: number }> {
+        try {
+            const response = await httpClient.put(`/auth/credits/${userId}`, { 
+                credits: amount 
+            }, {
+                headers: {
+                    'x-api-key': API_KEY
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error incrementing credits:", error);
+            throw error;
+        }
+    }
+    
     async getLeaderboard(): Promise<{ users: User[] }> {
         try {
             const response = await httpClient.get('/auth/leaderboard');
             return response.data;
         } catch (error) {
             console.error("Error fetching leaderboard:", error);
+            throw error;
+        }
+    }
+
+    async searchUsers(username: string, limit: number = 10): Promise<User[]> {
+        try {
+            const response = await httpClient.get(`/auth/search?username=${encodeURIComponent(username)}&limit=${limit}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error searching users:", error);
             throw error;
         }
     }
@@ -108,7 +134,6 @@ export class UserService {
 
     async updateUserLevel(userId: string, level: string): Promise<User> {
         try {
-            // Note: This endpoint needs to be added to the controller
             const response = await httpClient.put(`/auth/level/${userId}`, {
                 level
             }, {
@@ -125,7 +150,6 @@ export class UserService {
 
     async updateUserStreak(userId: string, streak: number): Promise<User> {
         try {
-            // Note: This endpoint needs to be added to the controller
             const response = await httpClient.put(`/auth/streak/${userId}`, {
                 streak
             }, {
@@ -136,6 +160,26 @@ export class UserService {
             return response.data;
         } catch (error) {
             console.error("Error updating user streak:", error);
+            throw error;
+        }
+    }
+
+    async getUserWalletBalance(pubKey: string): Promise<{ balance: {sol: number, tokenAccount: number} }> {
+        try {
+            const response = await httpClient.get(`/wallet/balance/${pubKey}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching user wallet balance:", error);
+            throw error;
+        }
+    }
+
+    async upgradeToPremium(userId: string): Promise<{ message: string, result: any }> {
+        try {
+            const response = await httpClient.post(`/wallet/upgrade/${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error upgrading to premium:", error);
             throw error;
         }
     }

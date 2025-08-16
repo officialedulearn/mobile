@@ -17,15 +17,12 @@ interface ActivityState {
   isLoading: boolean;
   error: string | null;
   
-  // Fetch activities actions
   fetchActivities: (userId: string) => Promise<void>;
   fetchQuizActivities: (userId: string) => Promise<void>;
   fetchQuizXpTotal: (userId: string) => Promise<void>;
   
-  // Add new activity
   addActivity: (activity: Omit<Activity, 'id' | 'createdAt'>) => Promise<void>;
   
-  // Reset state
   resetState: () => void;
 }
 
@@ -85,7 +82,6 @@ const useActivityStore = create<ActivityState>((set, get) => ({
       set({ isLoading: true, error: null });
       const newActivity = await activityService.createActivity(activityData);
       
-      // Update state based on activity type
       if (activityData.type === 'quiz') {
         set(state => ({
           quizActivities: [newActivity, ...state.quizActivities],

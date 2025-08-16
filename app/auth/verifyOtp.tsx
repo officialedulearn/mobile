@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +20,7 @@ const verifyOtp = (props: Props) => {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const [loading, setLoading] = useState(false);
   const { setUser } = useUserStore();
 
   useEffect(() => {
@@ -44,6 +46,7 @@ const verifyOtp = (props: Props) => {
   };
 
   const handleSubmit = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email: email,
@@ -68,6 +71,8 @@ const verifyOtp = (props: Props) => {
     } catch (error) {
       console.error("Error during OTP verification:", error);
       alert("An error occurred during verification. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,10 +109,15 @@ const verifyOtp = (props: Props) => {
         </Text>
 
         <TouchableOpacity
-          style={styles.signInButton}
+          style={[styles.signInButton, loading && styles.disabledButton]}
           onPress={() => handleSubmit()}
+          disabled={loading}
         >
-          <Text style={styles.buttonText}>Submit</Text>
+          {loading ? (
+            <ActivityIndicator color="#00FF80" />
+          ) : (
+            <Text style={styles.buttonText}>Submit</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -193,6 +203,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 

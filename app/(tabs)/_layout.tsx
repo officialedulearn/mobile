@@ -27,6 +27,7 @@ const TabLayout = (props: Props) => {
         tabBarItemStyle: {
           backgroundColor: "transparent",
         }
+        
       }}
     >
       <Tabs.Screen
