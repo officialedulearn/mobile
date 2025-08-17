@@ -365,7 +365,7 @@ const NFT = (props: Props) => {
                     }
                   }}
                 >
-                  <Text style={styles.claimModalButtonText}>Claim</Text>
+                  <Text style={styles.claimModalButtonText}>Claim Now</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -544,6 +544,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     marginTop: 16,
+    width: "100%",
   },
   cancelButton: {
     backgroundColor: "#FFFFFF",
@@ -554,6 +555,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
   },
   claimModalButton: {
     backgroundColor: "#000000",
@@ -562,6 +564,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
   },
   claimModalButtonText: {
     color: "#00FF80",

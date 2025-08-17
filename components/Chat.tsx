@@ -146,7 +146,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <View style={styles.container}>
           <View style={styles.topNav}>
             <View

@@ -1,12 +1,12 @@
-import { StyleSheet, Text, View, Image } from "react-native";
+import { StyleSheet, Text, View, Image, ScrollView, Dimensions, FlatList, TouchableOpacity, ImageBackground } from "react-native";
 import React, { useEffect } from "react";
 import BackButton from "@/components/backButton";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { UserService } from "@/services/auth.service";
-import { supabase } from "@/utils/supabase";
 import DailyCheckInStreak from "@/components/streak";
 import { getUserMetrics } from "@/utils/utils";
 import { ActivityService } from "@/services/activity.service";
+import { RewardsService } from "@/services/rewards.service";
 
 type Props = {};
 
@@ -41,7 +41,6 @@ const User = (props: Props) => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [user, setUser] = React.useState<any>();
   const [joinedAt, setJoinedAt] = React.useState<string | undefined>();
-  const [lastSignIn, setLastSignIn] = React.useState<string | undefined>();
   const [userMetrics, setUserMetrics] = React.useState({
     quizCompleted: 0,
     nfts: 0,
@@ -51,35 +50,48 @@ const User = (props: Props) => {
     totalQuestionsAnswered: 0,
     accuracyRate: 0,
   });
-
-  useEffect(() => {
-    const fetchJoinedAt = async () => {
-      try {
-        const { data } = await supabase.auth.admin.getUserById(id);
-        setJoinedAt(data.user?.created_at);
-        setLastSignIn(data.user?.last_sign_in_at);
-      } catch (error) {
-        console.error("Failed to fetch joined date:", error);
-      }
-    };
-
-    fetchJoinedAt();
-  }, [id]);
+  const [userRewards, setUserRewards] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const screenWidth = Dimensions.get("window").width;
+  const itemWidth = (screenWidth - 48) / 2;
 
   const userService = new UserService();
   const activityService = new ActivityService();
+  const rewardsService = new RewardsService();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const userData = await userService.getUserById(id);
         setUser(userData);
+      
+        const joinDate = new Date();
+        joinDate.setDate(joinDate.getDate() - 30);
+        setJoinedAt(joinDate.toISOString());
       } catch (error) {
         console.error("Failed to fetch user:", error);
       }
     };
 
     fetchUser();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchUserRewards = async () => {
+      if (id) {
+        setIsLoading(true);
+        try {
+          const rewards = await rewardsService.getUserRewards(id);
+          setUserRewards(rewards);
+        } catch (error) {
+          console.error("Failed to fetch user rewards:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchUserRewards();
   }, [id]);
 
   useEffect(() => {
@@ -118,10 +130,14 @@ const User = (props: Props) => {
   }, [id]);
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={{ paddingBottom: 30 }}
+      showsVerticalScrollIndicator={false}
+    >
       <BackButton />
 
-      <View style={styles.profileCard}>
+      <View style={[styles.profileCard, { marginTop: 40 }]}>
         <Image
           source={require("@/assets/images/memoji.png")}
           style={styles.userImage}
@@ -129,7 +145,7 @@ const User = (props: Props) => {
         <Text style={styles.userName}>{user?.name}</Text>
         <Text style={styles.joinedText}>
           Joined on{" "}
-          {joinedAt ? new Date(joinedAt).toLocaleDateString() : "Loading..."}
+          {joinedAt ? new Date(joinedAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "Loading..."}
         </Text>
       </View>
 
@@ -153,7 +169,9 @@ const User = (props: Props) => {
         />
       </View>
       
-      {lastSignIn && <DailyCheckInStreak lastSignIn={lastSignIn} />}
+      <View style={styles.streakContainer}>
+        <DailyCheckInStreak lastSignIn={joinedAt || ""} />
+      </View>
 
       <View style={styles.learningStats}>
         <Text style={styles.learningStatsText}>Learning Stats</Text>
@@ -175,7 +193,49 @@ const User = (props: Props) => {
           </View>
         </View>
       </View>
-    </View>
+
+      <View style={styles.rewardsSection}>
+        <View style={styles.rewardsHeader}>
+          <Text style={styles.rewardsSectionText}>Earned Rewards</Text>
+        </View>
+
+        {userRewards.length > 0 ? (
+          <View style={styles.rewardsGrid}>
+            {userRewards.slice(0, 4).map((reward, index) => (
+              <TouchableOpacity
+                key={reward.id || index}
+                style={[styles.gridItem, { width: itemWidth }]}
+                onPress={() => router.push({
+                  pathname: "/nft/[id]",
+                  params: { id: reward.id }
+                })}
+              >
+                <ImageBackground
+                  source={{ uri: reward.imageUrl }}
+                  style={styles.rewardImageBg}
+                  imageStyle={{ borderRadius: 8 }}
+                >
+                  {reward.signature && (
+                    <View style={styles.claimedBadge}>
+                      <Text style={styles.claimedText}>Claimed</Text>
+                    </View>
+                  )}
+                </ImageBackground>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>
+              No rewards earned yet.
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              Complete quizzes and lessons to collect NFTs!
+            </Text>
+          </View>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -192,7 +252,7 @@ const styles = StyleSheet.create({
   profileCard: {
     borderRadius: 16,
     backgroundColor: "#000",
-    gap: 8,
+    gap: 16,
     padding: 12,
     flexDirection: "column",
     alignItems: "center",
@@ -215,7 +275,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 24,
     textAlign: "center",
-    color: "#FFF",
+    color: "#00FF80",
   },
   achievements: {
     borderWidth: 0.5,
@@ -250,6 +310,9 @@ const styles = StyleSheet.create({
     fontWeight: 400,
     color: "#61728C",
     lineHeight: 16,
+  },
+  streakContainer: {
+    marginTop: 20,
   },
   learningStats: {
     marginTop: 20,
@@ -294,5 +357,94 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontFamily: "Satoshi",
+  },
+  rewardsSection: {
+    marginTop: 20,
+    borderRadius: 16,
+    gap: 12,
+    borderWidth: 0.5,
+    borderColor: "#EDF3FC",
+    backgroundColor: "#fff",
+    padding: 16,
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+  rewardsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  rewardsSectionText: {
+    color: "#2D3C52",
+    fontFamily: "Urbanist",
+    fontWeight: "600",
+    lineHeight: 20,
+    fontSize: 16,
+  },
+  seeAllText: {
+    color: "#00FF80",
+    fontFamily: "Urbanist",
+    fontWeight: "600",
+    lineHeight: 20,
+    fontSize: 14,
+  },
+  rewardsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  gridItem: {
+    aspectRatio: 1,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  rewardImageBg: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  claimedBadge: {
+    backgroundColor: "#00FF80",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    margin: 8,
+    position: "absolute",
+    top: 8,
+    right: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  claimedText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  emptyStateContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    paddingVertical: 20,
+  },
+  emptyStateText: {
+    color: "#61728C",
+    fontFamily: "Urbanist",
+    fontWeight: "600",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  emptyStateSubtext: {
+    color: "#61728C",
+    fontFamily: "Urbanist",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 4,
   },
 });

@@ -5,8 +5,10 @@ import { UserService } from '@/services/auth.service'
 import { User } from '@/interface/User'
 import { debounce } from '@/utils/utils'
 import { StatusBar } from 'expo-status-bar'
+import { router } from 'expo-router'
 
 type SearchResultProps = {
+    id: string;
     name: string;
     username: string;
     xp: number;
@@ -14,9 +16,9 @@ type SearchResultProps = {
     imageSource?: any;
 }
 
-const SearchResult = ({ name, username, xp, streak, imageSource }: SearchResultProps) => {
+const SearchResult = ({ id, name, username, xp, streak, imageSource }: SearchResultProps) => {
     return (
-        <TouchableOpacity style={styles.result}>
+        <TouchableOpacity style={styles.result} onPress={() => {router.push(`/user/${id}`)}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Image source={imageSource || require("@/assets/images/memoji.png")} style={{ width: 32, height: 32, borderRadius: 9.1, borderWidth: 0.66, borderColor: "#EDF3FC" }} />
@@ -81,6 +83,7 @@ const Search = (props: Props) => {
 
     const renderItem = ({ item }: { item: User }) => (
         <SearchResult
+            id={item.id}
             name={item.name}
             username={item.username || ''}
             xp={item.xp || 0}
@@ -129,6 +132,7 @@ const Search = (props: Props) => {
                     <Text style={styles.noResultsText}>No users found</Text>
                 ) : (
                     <SearchResult 
+                        id="default-user"
                         name="Ahmed Abiola" 
                         username="ahmed"
                         xp={700}

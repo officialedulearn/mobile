@@ -40,6 +40,7 @@ export default function RootLayout() {
       <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="nft/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="search" options={{ headerShown: false }} />
+      <Stack.Screen name="editProfile" options={{ headerShown: false }} />
     </Stack>
   );
 }

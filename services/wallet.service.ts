@@ -16,6 +16,29 @@ interface SwapResponse {
   response: string; 
 }
 
+interface ClaimEarningsResponse {
+  success: boolean;
+  message: string;
+  transactions?: Array<{
+    type: 'sol' | 'edln';
+    amount: number;
+    tx: string;
+  }>;
+}
+
+interface UserEarningsResponse {
+  sol: number;
+  edln: number;
+  hasEarnings: boolean;
+}
+
+interface DecryptPrivateKeyResponse {
+  success: boolean;
+  publicKey?: string;
+  error?: string;
+  privateKey?: string;
+}
+
 export class WalletService {
   async getBalance(publicKey: string): Promise<BalanceResponse> {
     try {
@@ -36,6 +59,17 @@ export class WalletService {
       throw error;
     }
   }
+
+  async getUserEarnings(userId: string): Promise<UserEarningsResponse> {
+    try {
+      const response = await httpClient.get(`/wallet/earnings/${userId}`);
+      return response.data.earnings;
+    } catch (error) {
+      console.error('Error fetching user earnings:', error);
+      throw error;
+    }
+  }
+
   async swapSolToEDLN(userId: string, amount: number): Promise<SwapResponse> {
     try {
       const response = await httpClient.post('/wallet/swap', { userId, amount });
@@ -53,6 +87,32 @@ export class WalletService {
     } catch (error) {
       console.error('Error burning EDLN tokens:', error);
       throw error;
+    }
+  }
+
+  async claimEarnings(userId: string, type: 'sol' | 'edln' | 'all'): Promise<ClaimEarningsResponse> {
+    try {
+      const response = await httpClient.post('/wallet/earnings/claim', { userId, type });
+      return response.data;
+    } catch (error) {
+      console.error('Error claiming earnings:', error);
+      throw error;
+    }
+  }
+  async decryptPrivateKey(userId: string): Promise<DecryptPrivateKeyResponse> {
+    try {
+      const response = await httpClient.post('/wallet/decrypt-private-key', { userId });
+      return {
+        success: response.data.success,
+        publicKey: response.data.publicKey,
+        privateKey: response.data.privateKey
+      };
+    } catch (error) {
+      console.error('Error decrypting private key:', error);
+      return {
+        success: false,
+        error: 'Failed to decrypt private key'
+      };
     }
   }
 

@@ -63,47 +63,54 @@ const nftPage = (props: Props) => {
     <View style={styles.container}>
       <BackButton />
 
-      <View style={styles.rewardContainer}>
-        <Image 
-          source={{ uri: reward?.imageUrl }} 
-          style={styles.image}
-        />
-        <Text style={styles.rewardTitle}>
-          {reward?.title}
-        </Text>
-        <Text style={styles.rewardSubtitle}>
-          {reward?.description}
-        </Text>
-        {userReward?.earnedAt && (
-          <View style={styles.claimedAt}>
-            <Image
-              source={require("@/assets/images/icons/calendar.png")}
-              style={{ width: 16, height: 16, marginRight: 8 }}
-            />
-            <Text style={styles.claimedAtText}>
-              Claimed at: {formatDate(userReward.earnedAt)}
-            </Text>
-          </View>
-        )}
+      <View style={styles.contentContainer}>
+        <View style={styles.rewardContainer}>
+          <Image 
+            source={{ uri: reward?.imageUrl }} 
+            style={styles.image}
+            resizeMode="contain"
+          />
+          <Text style={styles.rewardTitle}>
+            {reward?.title}
+          </Text>
+          <Text style={styles.rewardSubtitle}>
+            {reward?.description}
+          </Text>
+          {userReward?.earnedAt && (
+            <View style={styles.claimedAt}>
+              <Image
+                source={require("@/assets/images/icons/calendar.png")}
+                style={{ width: 16, height: 16, marginRight: 8 }}
+              />
+              <Text style={styles.claimedAtText}>
+                Claimed at: {formatDate(userReward.earnedAt)}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity 
-          onPress={() => {
-            if (userReward?.signature) {
+        {userReward?.signature ? (
+          <TouchableOpacity 
+            onPress={() => {
               const explorerUrl = `https://solscan.io/tx/${userReward.signature}`;
-              
               console.log("Opening explorer URL:", explorerUrl);
-              Linking.openURL(explorerUrl)
-            }
-          }} 
-          style={styles.viewOnExplorerButton}
-          disabled={!userReward?.signature}
-        >
-          <Text style={styles.viewOnExplorerText}>
-            View on Explorer
-          </Text>
-        </TouchableOpacity>
+              Linking.openURL(explorerUrl);
+            }} 
+            style={styles.viewOnExplorerButton}
+          >
+            <Text style={styles.viewOnExplorerText}>
+              View on Explorer
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.notClaimedContainer}>
+            <Text style={styles.notClaimedText}>
+              You haven't claimed this NFT yet
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -118,10 +125,16 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#F9FBFC",
   },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   image: {
     borderRadius: 8,
-    width: 150,
-    height: 160
+    width: 250,
+    height: 250,
+    marginBottom: 10
   },
   rewardTitle: {
     color: "#2D3C52",
@@ -137,19 +150,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     fontWeight: "500",
-    
     fontFamily: "Satoshi",
+    paddingHorizontal: 20
   },
   rewardContainer: {
     flexDirection: "column",
     alignItems: "center",
-    marginTop: 30,
+    justifyContent: "center",
     gap: 16
   },
   claimedAt: {
     flexDirection: "row",
     alignItems: "center",
-
   },
   claimedAtText: {
     color: "#61728C",
@@ -188,8 +200,20 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
   },
   bottomButtonContainer: {
-    marginTop: "auto",
+    marginTop: 20,
     marginBottom: 20,
     alignItems: "center",
-  }
+    width: "100%"
+  },
+  notClaimedContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 10,
+  },
+  notClaimedText: {
+    color: "#61728C",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "Satoshi",
+  },
 });

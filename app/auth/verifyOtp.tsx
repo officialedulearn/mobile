@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
 } from "react-native";
 
 type Props = {};
@@ -113,13 +114,23 @@ const verifyOtp = (props: Props) => {
           onPress={() => handleSubmit()}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#00FF80" />
-          ) : (
-            <Text style={styles.buttonText}>Submit</Text>
-          )}
+          <Text style={styles.buttonText}>Submit</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Loading Overlay */}
+      <Modal
+        transparent={true}
+        visible={loading}
+        animationType="fade"
+      >
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#00FF80" />
+            <Text style={styles.loadingText}>Verifying...</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -186,6 +197,7 @@ const styles = StyleSheet.create({
     color: "#61728C",
     marginTop: 10,
     alignContent: "center",
+    alignItems: "center",
   },
   timerText: {
     fontWeight: "700",
@@ -206,6 +218,24 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  loaderContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#2D3C52",
+    fontFamily: "Satoshi",
   },
 });
 

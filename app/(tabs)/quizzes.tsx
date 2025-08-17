@@ -198,7 +198,6 @@ const quizzes = (props: Props) => {
                   </View>
                 </View>
 
-                {/* Right Column */}
                 <View style={styles.activityRightColumn}>
                   <View style={styles.metadataItem}>
                     <Image 
@@ -246,7 +245,7 @@ export default quizzes;
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#F9FBFC",
-    paddingTop: 40,
+    paddingTop: 50,
     padding: 20,
     paddingLeft: 30,
     height: "100%",

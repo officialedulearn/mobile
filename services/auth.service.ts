@@ -34,7 +34,7 @@ export class UserService {
         }
     }
 
-    async editUser(userData: { name: string; email: string }): Promise<User> {
+    async editUser(userData: { name: string; email: string; username: string }): Promise<User> {
         try {
             const response = await httpClient.put('/auth/edit', userData, {
                 headers: {

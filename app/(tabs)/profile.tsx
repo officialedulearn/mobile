@@ -281,7 +281,7 @@ const Profile = (props: Props) => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tokenUtilitiesContainer}
-          snapToInterval={Dimensions.get('window').width - 40} // Full width minus padding
+          snapToInterval={Dimensions.get('window').width - 40} 
           decelerationRate="fast"
           onScroll={(event) => {
             const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -293,7 +293,7 @@ const Profile = (props: Props) => {
         >
           <View style={styles.tokenUtility}>
             <Text style={styles.tokenUtilityText}>
-              Burn 1000 $EDLN and get 10 credits
+              Burn 1000 $EDLN and get 3 credits
             </Text>
             <TouchableOpacity
               style={[styles.tokenUtilityButton, isBurning && styles.disabledButton]}
