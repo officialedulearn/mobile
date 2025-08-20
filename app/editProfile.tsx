@@ -43,7 +43,6 @@ const editProfile = (props: Props) => {
         username: formData.username
       });
       
-      // Update the user in the store
       if (user) {
         setUser({
           ...user,
@@ -87,56 +86,64 @@ const editProfile = (props: Props) => {
 
       <View style={styles.contentContainer}>
         <View style={styles.content}>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#61728C"
-              value={formData.name}
-              onChangeText={(text) => handleChange("name", text)}
-            />
+          <View>
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your full name"
+                placeholderTextColor="#61728C"
+                value={formData.name}
+                onChangeText={(text) => handleChange("name", text)}
+              />
+            </View>
           </View>
 
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              placeholderTextColor="#61728C"
-              value={formData.username}
-              onChangeText={(text) => handleChange("username", text)}
-            />
+          <View>
+            <Text style={styles.inputLabel}>Username</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your username"
+                placeholderTextColor="#61728C"
+                value={formData.username}
+                onChangeText={(text) => handleChange("username", text)}
+              />
+            </View>
           </View>
         </View>
         
-        <View style={styles.buttons}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancel}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-            <Image
-              source={require('@/assets/images/icons/cancel.png')}
-              style={{ width: 20, height: 20 }}
-            />
-          </TouchableOpacity>
+        <View style={styles.buttonsContainer}>
+          <View style={styles.buttons}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Image
+                source={require('@/assets/images/icons/cancel.png')}
+                style={{ width: 20, height: 20 }}
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleUpdateProfile}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#00FF80" />
-            ) : (
-              <>
-                <Text style={styles.saveButtonText}>Save Changes</Text>
-                <Image
-                  source={require('@/assets/images/icons/checkmark.png')}
-                  style={{ width: 20, height: 20 }}
-                />
-              </>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleUpdateProfile}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#00FF80" />
+              ) : (
+                <>
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                  <Image
+                    source={require('@/assets/images/icons/checkmark.png')}
+                    style={{ width: 20, height: 20 }}
+                  />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -174,9 +181,9 @@ export default editProfile
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
     flex: 1,
     paddingHorizontal: 24,
+    paddingTop: 60, // Increased top padding for better spacing
   },
   headerText: {
     fontSize: 20,
@@ -197,6 +204,15 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 16,
+  },
+  inputLabel: {
+    color: "#61728C", 
+    fontFamily: "Satoshi",
+    fontSize: 14, 
+    fontStyle: "normal",
+    fontWeight: "500",
+    lineHeight: 24, 
+    marginBottom: 8,
   },
   inputContainer: {
     flexDirection: "row",
@@ -267,9 +283,11 @@ const styles = StyleSheet.create({
   },
   buttons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 16, 
     marginTop: 20,
     paddingBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center', // Center buttons horizontally
   },
   modalContainer: {
     flex: 1,
@@ -301,7 +319,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 10,
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: '#FF0000',
     borderRadius: 8,
@@ -310,5 +328,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: "Satoshi",
     fontWeight: '500',
+  },
+  buttonsContainer: {
+    justifyContent: 'center', // Center vertically in the available space
+    alignItems: 'center', // Center horizontally
   }
 })

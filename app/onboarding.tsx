@@ -63,7 +63,12 @@ const OnBoarding = () => {
           resizeMode="contain"
         />
         {stepIndex < onBoardingSteps.length - 1 && (
-          <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
+          <TouchableOpacity 
+            style={styles.skipButton} 
+            onPress={handleSkip}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Text style={styles.skipText}>Skip</Text>
             <Image
               source={require("@/assets/images/icons/CaretRight.png")}
@@ -104,6 +109,8 @@ const OnBoarding = () => {
                   params: { signUp: '0' },
                 });
               }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.signInText}>Sign In</Text>
             </TouchableOpacity>
@@ -115,6 +122,8 @@ const OnBoarding = () => {
                   params: { signUp: '1' },
                 });
               }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.signUpText}>Sign Up</Text>
             </TouchableOpacity>

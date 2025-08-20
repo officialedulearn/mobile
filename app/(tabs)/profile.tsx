@@ -4,7 +4,7 @@ import { levels } from "@/utils/constants";
 import { supabase } from "@/utils/supabase";
 import { getUserMetrics } from "@/utils/utils";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
@@ -61,6 +61,7 @@ const Profile = (props: Props) => {
   const [isBurning, setIsBurning] = React.useState(false);
   const [isBuying, setIsBuying] = React.useState(false);
   const [isStaking, setIsStaking] = React.useState(false);
+  const { width } = useWindowDimensions();
 
   const walletService = new WalletService()
   const authService = new UserService()
@@ -133,206 +134,228 @@ const Profile = (props: Props) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Profile</Text>
-        <TouchableOpacity onPress={() => router.push("/settings")} style={styles.settingsButton}>
-          <Image
-            source={require("@/assets/images/icons/settings.png")}
-            style={{ width: 40, height: 40 }}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.profileCard}>
-        <View style={styles.cardHeader}>
-          <View style={styles.identity}>
-            <Image
-              source={require("@/assets/images/memoji.png")}
-              style={{ width: 50, height: 50, borderRadius: 25 }}
-            />
-            <Text style={styles.cardText}>{user?.name}</Text>
-            <TouchableOpacity 
-              style={styles.verifyButton} 
-              onPress={() => router.push("/connectX")}
-            >
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={[styles.container, { marginTop: width > 350 ? 30 : 20 }]}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Profile</Text>
+            <TouchableOpacity onPress={() => router.push("/settings")} style={styles.settingsButton}>
               <Image
-                source={require("@/assets/images/icons/verified.png")}
-                style={styles.verifyIcon} 
-              />
-              <Text style={styles.verifyText}>Get Verified</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.levelContainer}>
-            <View style={styles.levelIconContainer}>
-              <Image
-                source={require("@/assets/images/icons/level.png")}
-                style={[styles.levelIcon, { width: 28, height: 28 }]}
-              />
-              <Text style={styles.levelNumber}>
-                {levels.indexOf(user?.level?.toLowerCase() || "") + 1}
-              </Text>
-            </View>
-            <Text style={styles.levelText}>{user?.level}</Text>
-          </View>
-        </View>
-        <View style={{ alignItems: "center", alignSelf: "center" }}>
-          <View style={styles.xpDisplay}>
-            <Image source={require("@/assets/images/icons/medal-05.png")} width={24} height={24}/>
-            <Text style={styles.xpText}>{user?.xp} XP</Text>
-          </View>
-        </View>
-        <View style={styles.walletCard}>
-          <View style={styles.walletInfoContainer}>
-            <Image source={require("@/assets/images/icons/wallet.png")} />
-            <Text style={styles.walletText}>{user?.address}</Text>
-            <TouchableOpacity
-              onPress={async () => {
-                await Clipboard.setStringAsync(user?.address || "");
-              }}
-            >
-              <Image
-                source={require("@/assets/images/icons/copy.png")}
-                style={{ width: 16, height: 16 }}
+                source={require("@/assets/images/icons/settings.png")}
+                style={{ width: 40, height: 40 }}
               />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.balanceContainer}>
-            <Text style={styles.balanceHeader}>Balance</Text>
-            <View style={styles.balancesWrapper}>
-              <View style={styles.balanceItem}>
-                <Text style={styles.balanceValue}>
-                  {walletBalance?.sol.toFixed(4)}
+          <View style={[styles.profileCard, { marginTop: 12, gap: 10 }]}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.identity, { marginRight: 10 }]}>
+                <Image
+                  source={require("@/assets/images/memoji.png")}
+                  style={styles.profileAvatar}
+                />
+                <Text style={[styles.cardText, { flex: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+                  {user?.name}
                 </Text>
-                <Text style={styles.balanceTicker}>SOL</Text>
+                <TouchableOpacity 
+                  style={[styles.verifyButton, width < 360 && styles.verifyButtonSmall]} 
+                  onPress={() => router.push("/connectX")}
+                >
+                  <Image
+                    source={require("@/assets/images/icons/verified.png")}
+                    style={styles.verifyIcon} 
+                  />
+                  <Text style={[styles.verifyText, width < 360 && styles.verifyTextSmall]}>
+                    {width < 320 ? "Verify" : "Get Verified"}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              
-              <TouchableOpacity 
-                style={styles.buyButton}
-                onPress={toggleBuyModal}
+
+              <View style={styles.levelContainer}>
+                <View style={styles.levelIconContainer}>
+                  <Image
+                    source={require("@/assets/images/icons/level.png")}
+                    style={styles.levelIcon}
+                  />
+                  <Text style={styles.levelNumber}>
+                    {levels.indexOf(user?.level?.toLowerCase() || "") + 1}
+                  </Text>
+                </View>
+                <Text style={styles.levelText}>{user?.level}</Text>
+              </View>
+            </View>
+            <View style={styles.xpContainer}>
+              <View style={styles.xpDisplay}>
+                <Image 
+                  source={require("@/assets/images/icons/medal-05.png")} 
+                  style={styles.xpIcon}
+                />
+                <Text style={styles.xpText}>{user?.xp} XP</Text>
+              </View>
+            </View>
+            <View style={[styles.walletCard, { padding: 12, gap: 12 }]}>
+              <View style={styles.walletInfoContainer}>
+                <Image 
+                  source={require("@/assets/images/icons/wallet.png")} 
+                  style={styles.walletIcon}
+                />
+                <Text 
+                  style={styles.walletText} 
+                  numberOfLines={1} 
+                  ellipsizeMode="middle"
+                >
+                  {user?.address}
+                </Text>
+                <TouchableOpacity
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(user?.address || "");
+                  }}
+                  style={styles.copyButton}
+                >
+                  <Image
+                    source={require("@/assets/images/icons/copy.png")}
+                    style={styles.copyIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.balanceContainer}>
+                <Text style={styles.balanceHeader}>Balance</Text>
+                <View style={styles.balancesWrapper}>
+                  <View style={[styles.balanceItem, width < 360 && styles.balanceItemSmall]}>
+                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}]}>
+                      {walletBalance?.sol.toFixed(4)}
+                    </Text>
+                    <Text style={styles.balanceTicker}>SOL</Text>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={styles.buyButton}
+                    onPress={toggleBuyModal}
+                  >
+                    <Text style={styles.buyButtonIcon}>+</Text>
+                  </TouchableOpacity>
+                  
+                  <View style={[styles.balanceItem, width < 360 && styles.balanceItemSmall]}>
+                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}]}>
+                      {walletBalance?.tokenAccount.toFixed(2)}
+                    </Text>
+                    <Text style={styles.balanceTicker}>EDLN</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={[styles.achievements, { marginTop: 12 }]}>
+            <AchievementCard
+              title="XP Earned"
+              imageKey="xp"
+              metric={userMetrics.xp + " XP"}
+            />
+
+            <AchievementCard
+              title="NFT collected"
+              imageKey="nft"
+              metric={userMetrics.nfts.toString()}
+            />
+            <AchievementCard
+              title="Quiz Completed"
+              imageKey="quiz"
+              metric={userMetrics.quizCompleted.toString()}
+            />
+          </View>
+          <DailyCheckInStreak lastSignIn={lastSignIn} />
+          <View style={styles.refCard}>
+            <View style={styles.invitePush}>
+              <Image
+                source={require("@/assets/images/icons/congrats.png")}
+                style={{ width: 62, height: 62 }}
+              />
+              <View style={{flexDirection: "column", gap: 4}}>
+                <Text style={{fontFamily: "Satoshi", fontSize: 16,fontWeight: 500,color: "#2D3C52", lineHeight: 30}}>Invite friends, earn rewards!</Text>
+                <Text style={styles.cardSubText}>Share your referral link and earn XP when they join. </Text>
+              </View>
+            </View>
+
+            <View style={styles.referralCodeContainer}>
+              <Text style={styles.referralCode}>{user?.referralCode}</Text>
+              <TouchableOpacity
+                onPress={async () => {
+                  await Clipboard.setStringAsync(user?.referralCode || "");
+                }}
+                style={{flexDirection: "row", alignItems: "center", gap: 8}}
               >
-                <Text style={styles.buyButtonIcon}>+</Text>
+                <Text style={[styles.cardSubText, {fontSize: 16, lineHeight: 26}]}>Copy Code</Text>
+                <Image
+                  source={require("@/assets/images/icons/copy.png")}
+                  style={{ width: 16, height: 16 }}
+                />
               </TouchableOpacity>
-              
-              <View style={styles.balanceDivider} />
-              <View style={styles.balanceItem}>
-                <Text style={styles.balanceValue}>
-                  {walletBalance?.tokenAccount.toFixed(2)}
-                </Text>
-                <Text style={styles.balanceTicker}>EDLN</Text>
-              </View>
             </View>
           </View>
-        </View>
-      </View>
 
-      <View style={styles.achievements}>
-        <AchievementCard
-          title="XP Earned"
-          imageKey="xp"
-          metric={userMetrics.xp + " XP"}
-        />
-
-        <AchievementCard
-          title="NFT collected"
-          imageKey="nft"
-          metric={userMetrics.nfts.toString()}
-        />
-        <AchievementCard
-          title="Quiz Completed"
-          imageKey="quiz"
-          metric={userMetrics.quizCompleted.toString()}
-        />
-      </View>
-      <DailyCheckInStreak lastSignIn={lastSignIn} />
-      <View style={styles.refCard}>
-        <View style={styles.invitePush}>
-          <Image
-            source={require("@/assets/images/icons/congrats.png")}
-            style={{ width: 62, height: 62 }}
-          />
-          <View style={{flexDirection: "column", gap: 4}}>
-            <Text style={{fontFamily: "Satoshi", fontSize: 16,fontWeight: 500,color: "#2D3C52", lineHeight: 30}}>Invite friends, earn rewards!</Text>
-            <Text style={styles.cardSubText}>Share your referral link and earn XP when they join. </Text>
-          </View>
-        </View>
-
-        <View style={styles.referralCodeContainer}>
-          <Text style={styles.referralCode}>{user?.referralCode}</Text>
-          <TouchableOpacity
-            onPress={async () => {
-              await Clipboard.setStringAsync(user?.referralCode || "");
-            }}
-            style={{flexDirection: "row", alignItems: "center", gap: 8}}
-          >
-            <Text style={[styles.cardSubText, {fontSize: 16, lineHeight: 26}]}>Copy Code</Text>
-            <Image
-              source={require("@/assets/images/icons/copy.png")}
-              style={{ width: 16, height: 16 }}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.tokenUtilities}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tokenUtilitiesContainer}
-          snapToInterval={Dimensions.get('window').width - 40} 
-          decelerationRate="fast"
-          onScroll={(event) => {
-            const contentOffsetX = event.nativeEvent.contentOffset.x;
-            const screenWidth = Dimensions.get('window').width - 40;
-            const index = Math.round(contentOffsetX / screenWidth);
-            setActiveTokenUtilIndex(index);
-          }}
-          scrollEventThrottle={16}
-        >
-          <View style={styles.tokenUtility}>
-            <Text style={styles.tokenUtilityText}>
-              Burn 1000 $EDLN and get 3 credits
-            </Text>
-            <TouchableOpacity
-              style={[styles.tokenUtilityButton, isBurning && styles.disabledButton]}
-              onPress={handleBurnTokens}
-              disabled={isBurning}
+          <View style={styles.tokenUtilities}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tokenUtilitiesContainer}
+              snapToInterval={width - 40} 
+              decelerationRate="fast"
+              onScroll={(event) => {
+                const contentOffsetX = event.nativeEvent.contentOffset.x;
+                const index = Math.round(contentOffsetX / (width - 40));
+                setActiveTokenUtilIndex(index);
+              }}
+              scrollEventThrottle={16}
             >
-              {isBurning ? (
-                <ActivityIndicator size="small" color="#00FF80" />
-              ) : (
-                <Text style={styles.tokenUtilityButtonText}>Burn</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              <View style={[styles.tokenUtility, { width: width - 40 }]}>
+                <Text style={styles.tokenUtilityText}>
+                  Burn 1000 $EDLN and get 3 credits
+                </Text>
+                <TouchableOpacity
+                  style={[styles.tokenUtilityButton, isBurning && styles.disabledButton]}
+                  onPress={handleBurnTokens}
+                  disabled={isBurning}
+                >
+                  {isBurning ? (
+                    <ActivityIndicator size="small" color="#00FF80" />
+                  ) : (
+                    <Text style={styles.tokenUtilityButtonText}>Burn</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.tokenUtility}>
-            <Text style={styles.tokenUtilityText}>
-              Stake 5000 $EDLN for 30 days and earn 500 XP
-            </Text>
-            <TouchableOpacity
-              style={[styles.tokenUtilityButton, styles.disabledButton]}
-              disabled={true}
-            >
-              <Text style={[styles.tokenUtilityButtonText, {color: '#61728C'}]}>Coming Soon</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+              <View style={[styles.tokenUtility, { width: width - 40 }]}>
+                <Text style={styles.tokenUtilityText}>
+                  Stake 5000 $EDLN for 30 days and earn 500 XP
+                </Text>
+                <TouchableOpacity
+                  style={[styles.tokenUtilityButton, styles.disabledButton]}
+                  disabled={true}
+                >
+                  <Text style={[styles.tokenUtilityButtonText, {color: '#61728C'}]}>Coming Soon</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
 
-        <View style={styles.paginationContainer}>
-          {[0, 1].map((index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.paginationDot,
-                activeTokenUtilIndex === index ? styles.paginationDotActive : {},
-              ]}
-            />
-          ))}
+            <View style={styles.paginationContainer}>
+              {[0, 1].map((index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    activeTokenUtilIndex === index ? styles.paginationDotActive : {},
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+          
+          {/* Add bottom padding to ensure content is visible */}
+          <View style={styles.bottomPadding} />
         </View>
-      </View>
+      </ScrollView>
 
       <Modal isVisible={isBuyModalVisible} style={styles.buyModal}>
         <View style={styles.modalContent}>
@@ -401,16 +424,22 @@ const Profile = (props: Props) => {
           </TouchableOpacity>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default Profile;
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F9FBFC",
+  },
+  scrollView: {
+    flex: 1,
+  },
   container: {
-    marginTop: 50,
-    padding: 20,
+    padding: 16,
   },
   header: {
     alignContent: "center",
@@ -433,81 +462,109 @@ const styles = StyleSheet.create({
     borderColor: "#EDF3FC",
   },
   profileCard: {
-    marginTop: 20,
-    padding: 20,
+    padding: 12,
     backgroundColor: "#000",
     borderRadius: 16,
     flexDirection: "column",
-    gap: 15,
   },
   cardHeader: {
     justifyContent: "space-between",
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "nowrap",
   },
   identity: {
-    gap: 10,
+    gap: 6,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    flexShrink: 1,
+    flex: 1,
+    flexWrap: "nowrap",
+  },
+  profileAvatar: {
+    width: 42, 
+    height: 42, 
+    borderRadius: 21,
+    flexShrink: 0,
   },
   cardText: {
     color: "#00FF80",
-    textAlign: "center",
     fontFamily: "Satoshi",
-    fontSize: 17.436,
+    fontSize: 16,
     fontWeight: 500,
-    lineHeight: 26.1,
+    lineHeight: 22,
+    flexShrink: 1,
+    marginHorizontal: 6,
   },
   verifyButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 4,
     backgroundColor: "#00FF80",
-    padding: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 7,
     borderRadius: 8,
+    flexShrink: 0,
+  },
+  verifyButtonSmall: {
+    padding: 4,
+    gap: 2,
   },
   verifyIcon: {
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
   },
   verifyText: {
     color: "#000",
     fontFamily: "Satoshi",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
+  },
+  verifyTextSmall: {
+    fontSize: 11,
   },
   levelContainer: {
     alignItems: "center",
+    marginLeft: 4,
+    flexShrink: 0,
   },
   levelIconContainer: {
     position: "relative",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 5,
+    marginBottom: 2,
   },
   levelIcon: {
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
   },
   levelNumber: {
     position: "absolute",
     color: "#00FF80",
     fontFamily: "Satoshi",
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "700",
     textAlign: "center",
   },
   levelText: {
     color: "#00FF80",
     fontFamily: "Satoshi",
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "500",
+  },
+  xpContainer: {
+    alignItems: "center", 
+    alignSelf: "center",
+    marginVertical: 2,
   },
   xpDisplay: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
+  },
+  xpIcon: {
+    width: 24, 
+    height: 24
   },
   xpText: {
     color: "#00FF80",
@@ -518,15 +575,27 @@ const styles = StyleSheet.create({
   },
   walletCard: {
     backgroundColor: "rgba(255, 255, 255, 0.10)",
-    padding: 20,
     borderRadius: 16,
-    gap: 20,
   },
   walletInfoContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
+    justifyContent: "space-between",
+    gap: 8,
+    flexWrap: "nowrap",
+  },
+  walletIcon: {
+    width: 24, 
+    height: 24,
+    flexShrink: 0,
+  },
+  copyButton: {
+    padding: 4,
+    flexShrink: 0,
+  },
+  copyIcon: {
+    width: 16, 
+    height: 16
   },
   balanceContainer: {
     width: "100%",
@@ -551,6 +620,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 15,
   },
+  balanceItemSmall: {
+    paddingHorizontal: 8,
+  },
   balanceValue: {
     color: "#00FF80",
     fontFamily: "Satoshi",
@@ -565,23 +637,28 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 16,
   },
-  balanceDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: "rgba(237, 243, 252, 0.5)",
-  },
-  connectButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.10)",
-    textAlign: "center",
-    borderRadius: 16,
-    padding: 10,
-  },
   walletText: {
     color: "#00FF80",
     fontFamily: "Satoshi",
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
+    flex: 1,
+  },
+  buyButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#00FF80",
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  buyButtonIcon: {
+    color: "#000",
+    fontSize: 18,
+    fontWeight: "700",
+    lineHeight: 20,
   },
   achievements: {
     borderWidth: 0.5,
@@ -593,7 +670,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
   },
   achievementCard: {
     display: "flex",
@@ -651,20 +727,6 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     fontSize: 16,
     fontWeight: 500,
-  },
-  buyButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#00FF80",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buyButtonIcon: {
-    color: "#000",
-    fontSize: 18,
-    fontWeight: "700",
-    lineHeight: 20,
   },
   buyModal: {
     justifyContent: "center",
@@ -841,5 +903,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: "#00FF80",
+  },
+  bottomPadding: {
+    height: 20,
   }
 });

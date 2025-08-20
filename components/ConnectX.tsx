@@ -4,15 +4,16 @@ import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, useAuthRequest, CodeChallengeMethod } from "expo-auth-session";
 import httpClient from "../utils/httpClient";
 import useUserStore from "../core/userState";
+import Constants from "expo-constants";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_URI = makeRedirectUri({
-  scheme: "edulearnv2"
+  useProxy: true,
 });
 console.log("Twitter OAuth Redirect URI:", REDIRECT_URI);
 
-const CLIENT_ID = process.env.EXPO_PUBLIC_TWITTER_CLIENT_ID || "";
+const CLIENT_ID = Constants.expoConfig?.extra?.twitterClientId || "";
 console.log("Twitter Client ID available:", CLIENT_ID ? "Yes" : "No (empty)");
 
 const discovery = {
@@ -30,7 +31,7 @@ export default function ConnectX() {
     {
       clientId: CLIENT_ID,
       redirectUri: REDIRECT_URI,
-      scopes: ["users.read", "tweet.read"],
+      scopes: ["tweet.read", "users.read", "offline.access", "tweet.write"],
       usePKCE: true,
       codeChallengeMethod: CodeChallengeMethod.S256,
     },
@@ -66,7 +67,8 @@ export default function ConnectX() {
             data: {
               code: response.params.code,
               userEmail: currentUser.email,
-              redirectUri: REDIRECT_URI 
+              redirectUri: REDIRECT_URI,
+              codeVerifier: request?.codeVerifier,
             }
           });
 

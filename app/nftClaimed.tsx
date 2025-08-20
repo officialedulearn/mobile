@@ -54,41 +54,36 @@ const nftClaimed = (props: Props) => {
       console.error('No NFT image to share');
       return;
     }
-
+  
     try {
-      const message = `I just minted "${reward.title}" NFT on EduLearn! Check it out! 🎉`;
-      
       const fileUri = FileSystem.cacheDirectory + 'nft-image.png';
       const downloadResult = await FileSystem.downloadAsync(
         reward.imageUrl,
         fileUri
       );
-      
+  
       if (downloadResult.status !== 200) {
         alert('Failed to download the image');
         return;
       }
-
-      
-      if (Platform.OS === 'android') {
-        const contentUri = await FileSystem.getContentUriAsync(fileUri);
-        await Share.share({
-          title: 'Share Your NFT Achievement',
-          message: message,
-          url: contentUri 
-        });
-      } 
-      else {
-        await Share.share({
-          url: fileUri,
-          message: message
-        });
+  
+      if (!(await Sharing.isAvailableAsync())) {
+        alert("Sharing isn't available on this device");
+        return;
       }
+  
+      await Sharing.shareAsync(fileUri, {
+        mimeType: "image/png",
+        dialogTitle: "Share Your NFT Achievement",
+        UTI: "public.png", // iOS
+      });
+  
     } catch (error) {
       console.error('Error sharing NFT:', error);
       alert('Failed to share NFT');
     }
   };
+  
 
   if (isLoading) {
     return (

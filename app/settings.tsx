@@ -96,8 +96,8 @@ const settings = (props: Props) => {
         </View>
         
         <View style={styles.settings}>
-          <View style={styles.settingItem}>
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+          <TouchableOpacity onPress={() => router.push('/editProfile')} style={styles.settingItem}>
+            <View  style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
                 source={require("@/assets/images/icons/user2.png")}
                 style={{ width: 24, height: 24 }} 
@@ -109,26 +109,26 @@ const settings = (props: Props) => {
               source={require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
-          </View>
+          </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.settingItem} 
+            style={[styles.settingItem, user?.isPremium ? styles.disabledButton : {}]} 
             onPress={() => payPro(user?.id as string)}
-            disabled={loading}
+            disabled={loading || user?.isPremium}
           >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
                 source={require("@/assets/images/icons/congrats.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>
+              <Text style={[styles.settingText, user?.isPremium ? styles.disabledText : {}]}>
                 {loading ? "Processing..." : user?.isPremium ? "Premium Active" : "Upgrade to pro"}
               </Text>
             </View>
 
             <Image 
               source={require("@/assets/images/icons/CaretRight.png")}
-              style={{ width: 24, height: 24 }}
+              style={{ width: 24, height: 24, opacity: user?.isPremium ? 0.5 : 1 }}
             />
           </TouchableOpacity>
 
@@ -476,5 +476,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Satoshi",
     fontWeight: "700",
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  disabledText: {
+    color: "#A0A0A0",
   },
 });
