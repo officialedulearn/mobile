@@ -12,6 +12,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
+import * as Sharing from 'expo-sharing';
 import { levels } from "@/utils/constants";
 import useUserStore from "@/core/userState";
 import { ProgressBar } from "react-native-paper";
@@ -128,6 +129,31 @@ const rewards = (props: Props) => {
       Alert.alert("Error", error.message || "Failed to claim SOL");
     } finally {
       setClaimingSOL(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!claimedAsset || !user?.referralCode) return;
+    
+    try {
+      const message = `I just claimed ${claimedAsset.amount} ${claimedAsset.type.toUpperCase()} tokens on EduLearn! Get in now with my referral code: ${user.referralCode} to claim yours also`;
+      
+      const isAvailable = await Sharing.isAvailableAsync();
+      
+      if (isAvailable) {
+        const shareOptions = {
+          mimeType: 'text/plain',
+          dialogTitle: 'Share your EduLearn success!',
+          UTI: 'public.plain-text'
+        };
+        
+        await Sharing.shareAsync(message, shareOptions);
+      } else {
+        Alert.alert("Sharing not available", "Sharing is not available on this device");
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      Alert.alert("Error", "Failed to share");
     }
   };
 
@@ -454,17 +480,25 @@ const rewards = (props: Props) => {
             />
             <Text style={styles.modalTitle}>Asset Claimed Successfully!</Text>
             
-            
             <Text style={styles.modalDescription}>
               Your tokens have been successfully transferred to your wallet.
             </Text>
             
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={() => setSuccessModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity 
+                style={styles.closeButton} 
+                onPress={() => setSuccessModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.shareButton} 
+                onPress={() => handleShare()}
+              >
+                <Text style={styles.shareButtonText}>Share</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -855,18 +889,36 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
   },
+  modalButtonsContainer: {
+    flexDirection: "row",
+    gap: 16,
+  },
   closeButton: {
     backgroundColor: "#000",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    width: "100%",
+    width: "45%",
   },
   closeButtonText: {
     fontFamily: "Satoshi",
     fontSize: 14,
     fontWeight: "500",
     color: "#00FF80",
+    textAlign: "center",
+  },
+  shareButton: {
+    backgroundColor: "#00FF80",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width: "45%",
+  },
+  shareButtonText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#000",
     textAlign: "center",
   },
 });

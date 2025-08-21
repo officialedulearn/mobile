@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useRef } from "react";
 import {
   Image,
   SafeAreaView,
@@ -8,6 +8,10 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
+  Dimensions,
+  Animated,
+  PanResponder,
 } from "react-native";
 
 type OnBoardingSteps = {
@@ -17,9 +21,13 @@ type OnBoardingSteps = {
   buttonTexts: string[];
 };
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const SWIPE_THRESHOLD = SCREEN_WIDTH / 3;
+
 const OnBoarding = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
-
+  const pan = useRef(new Animated.ValueXY()).current;
+  
   const onBoardingSteps: OnBoardingSteps[] = [
     {
       title: "Welcome to EduLearn",
@@ -44,11 +52,51 @@ const OnBoarding = () => {
     },
   ];
 
-  const handleSkip = () => {
+  const resetPosition = () => {
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const goToNextStep = () => {
     if (stepIndex < onBoardingSteps.length - 1) {
       setStepIndex((prev) => prev + 1);
+      resetPosition();
     }
   };
+
+  const goToPrevStep = () => {
+    if (stepIndex > 0) {
+      setStepIndex((prev) => prev - 1);
+      resetPosition();
+    }
+  };
+
+  const handleSkip = () => {
+    goToNextStep();
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: Animated.event([null, { dx: pan.x }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -SWIPE_THRESHOLD) {
+          // Swiped left
+          goToNextStep();
+        } else if (gestureState.dx > SWIPE_THRESHOLD) {
+          // Swiped right
+          goToPrevStep();
+        } else {
+          // Reset position
+          resetPosition();
+        }
+      },
+    })
+  ).current;
 
   const currentStep = onBoardingSteps[stepIndex];
 
@@ -79,24 +127,39 @@ const OnBoarding = () => {
         )}
       </View>
 
-      <View style={styles.content}>
-        <Image
-          source={currentStep.illustration}
-          style={styles.illustration}
-          resizeMode="contain"
-        />
-        <Text style={styles.title}>{currentStep.title}</Text>
-        <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
-      </View>
-
-      <View style={styles.stepsDisplay}>
-        {onBoardingSteps.map((_, index) => (
-          <View
-            key={index}
-            style={[styles.dot, stepIndex === index && styles.activeDot]}
+      <Animated.View 
+        style={[
+          styles.contentContainer, 
+          { transform: [{ translateX: pan.x }] }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <View style={styles.content}>
+          <Image
+            source={currentStep.illustration}
+            style={styles.illustration}
+            resizeMode="contain"
           />
-        ))}
-      </View>
+          <Text style={styles.title}>{currentStep.title}</Text>
+          <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
+        </View>
+
+        <View style={styles.stepsDisplay}>
+          {onBoardingSteps.map((_, index) => (
+            <TouchableOpacity 
+              key={index} 
+              onPress={() => {
+                setStepIndex(index);
+                resetPosition();
+              }}
+            >
+              <View
+                style={[styles.dot, stepIndex === index && styles.activeDot]}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Animated.View>
 
       <View style={styles.footer}>
         {stepIndex === onBoardingSteps.length - 1 ? (
@@ -131,7 +194,7 @@ const OnBoarding = () => {
         ) : (
           <TouchableOpacity
             style={styles.getStarted}
-            onPress={() => setStepIndex((prev) => prev + 1)}
+            onPress={goToNextStep}
           >
             <Text style={styles.getStartedText}>
               {currentStep.buttonTexts[0]}
@@ -149,17 +212,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FBFC",
+    paddingTop: Platform.OS === "ios" ? 0 : 30,
   },
   topNavigation: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    marginTop: 30,
+    marginTop: Platform.OS === "ios" ? 10 : 30,
+    height: 60,
   },
   logo: {
-    width: 130,
-    height: 160,
+    width: 120,
+    height: 40,
+    resizeMode: "contain",
   },
   skipButton: {
     flexDirection: "row",
@@ -184,17 +250,22 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
   },
+  contentContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingBottom: 20,
+  },
   content: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 30,
-    marginTop: 20,
+    paddingTop: Platform.OS === "ios" ? 20 : 0,
   },
   illustration: {
     width: "100%",
-    height: 300,
-    marginBottom: 32,
+    height: Platform.OS === "ios" ? 240 : 260,
+    marginBottom: Platform.OS === "ios" ? 30 : 24,
   },
   title: {
     fontSize: 28,
@@ -212,12 +283,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     lineHeight: 24,
     fontFamily: "Satoshi",
+    paddingHorizontal: 10,
+    maxWidth: Platform.OS === "ios" ? "90%" : "100%",
+    alignSelf: "center",
   },
   stepsDisplay: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: Platform.OS === "ios" ? 30 : 20,
   },
   dot: {
     width: 10,
@@ -233,7 +307,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+    paddingTop: 10,
   },
   getStarted: {
     paddingVertical: 16,

@@ -105,11 +105,21 @@ const nftPage = (props: Props) => {
             </Text>
           </TouchableOpacity>
         ) : (
-          <View style={styles.notClaimedContainer}>
-            <Text style={styles.notClaimedText}>
-              You haven't claimed this NFT yet
+          <TouchableOpacity 
+            onPress={() => {
+              if (reward?.signature) {
+                const explorerUrl = `https://solscan.io/tx/${reward.signature}`;
+                console.log("Opening explorer URL:", explorerUrl);
+                Linking.openURL(explorerUrl);
+              }
+            }} 
+            style={styles.viewOnExplorerButton}
+            disabled={!reward?.signature}
+          >
+            <Text style={styles.viewOnExplorerText}>
+              View this user's NFT on chain
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
     </View>
