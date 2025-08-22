@@ -1,8 +1,6 @@
 import { Chat } from "@/interface/Chat";
 import httpClient from "@/utils/httpClient";
 
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY
-
 export class ChatService {
     async getHistory(id: string): Promise<Chat[]> {
         try {
@@ -16,11 +14,7 @@ export class ChatService {
 
     async createChat(title: string, userId: string) {
         try {
-            const response = await httpClient.post('/chat', { title, userId }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.post('/chat', { title, userId });
             return response.data;
         } catch (error) {
             console.error("Error creating chat:", error);
@@ -30,11 +24,7 @@ export class ChatService {
     
     async getChatById(chatId: string) {
         try {
-            const response = await httpClient.get(`/chat/${chatId}`, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.get(`/chat/${chatId}`);
             return response.data;
         } catch (error) {
             console.error("Error fetching chat by ID:", error);
@@ -44,11 +34,7 @@ export class ChatService {
 
     async deleteChat(chatId: string) {
         try {
-            const response = await httpClient.delete(`/chat/${chatId}`, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.delete(`/chat/${chatId}`);
             return response.data;
         } catch (error) {
             console.error("Error deleting chat:", error);
@@ -58,11 +44,7 @@ export class ChatService {
 
     async saveMessages(messages: any[]) {
         try {
-            const response = await httpClient.post('/chat/messages', { messages }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.post('/chat/messages', { messages });
             return response.data;
         } catch (error) {
             console.error("Error saving messages:", error);
@@ -72,11 +54,7 @@ export class ChatService {
 
     async getMessagesInChat(chatId: string) {
         try {
-            const response = await httpClient.get(`/chat/${chatId}/messages`, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.get(`/chat/${chatId}/messages`);
             return response.data;
         } catch (error) {
             console.error("Error fetching messages in chat:", error);
@@ -86,11 +64,7 @@ export class ChatService {
 
     async deleteMessagesInChat(chatId: string) {
         try {
-            const response = await httpClient.delete(`/chat/${chatId}/messages`, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.delete(`/chat/${chatId}/messages`);
             return response.data;
         } catch (error) {
             console.error("Error deleting messages in chat:", error);

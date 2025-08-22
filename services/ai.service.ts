@@ -1,16 +1,10 @@
 import { Message } from "@/interface/Chat";
 import httpClient from "@/utils/httpClient";
 
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY
-
 export class AIService {
     async getTitle(message: Message) {
         try {
-            const response = await httpClient.post('/ai/title', message, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.post('/ai/title', message);
             return response.data;
         } catch (error) {
             console.error("Error generating title:", error);
@@ -24,11 +18,7 @@ export class AIService {
         userId: string;
     }) {
         try {
-            const response = await httpClient.post('/ai/message', dto, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.post('/ai/message', dto);
             
             return response.data;
         } catch (error) {
@@ -40,11 +30,7 @@ export class AIService {
 
     async generateQuiz(dto: { chatId: string; userId: string }) {
         try {
-            const response = await httpClient.post('/ai/quiz', dto, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.post('/ai/quiz', dto);
             return response.data;
         } catch (error) {
             console.error("Error generating quiz:", error);

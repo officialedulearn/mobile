@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Share,
 } from "react-native";
 import * as Sharing from 'expo-sharing';
 import { levels } from "@/utils/constants";
@@ -136,21 +137,12 @@ const rewards = (props: Props) => {
     if (!claimedAsset || !user?.referralCode) return;
     
     try {
-      const message = `I just claimed ${claimedAsset.amount} ${claimedAsset.type.toUpperCase()} tokens on EduLearn! Get in now with my referral code: ${user.referralCode} to claim yours also`;
+      const message = `I just claimed ${claimedAsset.amount} $${claimedAsset.type.toUpperCase()} tokens on EduLearn! Get in now with my referral code: ${user.referralCode} to claim yours also on edulearn.fun`;
       
-      const isAvailable = await Sharing.isAvailableAsync();
-      
-      if (isAvailable) {
-        const shareOptions = {
-          mimeType: 'text/plain',
-          dialogTitle: 'Share your EduLearn success!',
-          UTI: 'public.plain-text'
-        };
-        
-        await Sharing.shareAsync(message, shareOptions);
-      } else {
-        Alert.alert("Sharing not available", "Sharing is not available on this device");
-      }
+      await Share.share({
+        message,
+        title: 'Share your EduLearn success!'
+      });
     } catch (error) {
       console.error("Error sharing:", error);
       Alert.alert("Error", "Failed to share");
@@ -908,11 +900,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   shareButton: {
-    backgroundColor: "#00FF80",
+    backgroundColor: "#fff",
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 16,
     width: "45%",
+    borderWidth: 1,
+    borderColor: "#000",
   },
   shareButtonText: {
     fontFamily: "Satoshi",

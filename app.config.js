@@ -15,7 +15,6 @@ export default {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnon: process.env.EXPO_PUBLIC_SUPABASE_ANON,
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-      apiKey: process.env.EXPO_PUBLIC_API_KEY,
       twitterClientId: process.env.EXPO_PUBLIC_TWITTER_CLIENT_ID,
       eas: {
         projectId: "6d159de0-6be5-47c5-9571-862aed9cdd38",

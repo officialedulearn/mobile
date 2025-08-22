@@ -1,8 +1,6 @@
 import { User } from "@/interface/User";
 import httpClient from "@/utils/httpClient";
 
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY
-
 export class UserService {
     async getUser(email: string): Promise<User> {
         try {
@@ -36,11 +34,7 @@ export class UserService {
 
     async editUser(userData: { name: string; email: string; username: string }): Promise<User> {
         try {
-            const response = await httpClient.put('/auth/edit', userData, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.put('/auth/edit', userData);
             return response.data;
         } catch (error) {
             console.error("Error editing user:", error);
@@ -70,11 +64,7 @@ export class UserService {
 
     async deductCredits(userId: string): Promise<{ credits: number }> {
         try {
-            const response = await httpClient.put(`/auth/deduct-credits/${userId}`, {}, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.put(`/auth/deduct-credits/${userId}`, {});
             return response.data;
         } catch (error) {
             console.error("Error deducting credits:", error);
@@ -86,10 +76,6 @@ export class UserService {
         try {
             const response = await httpClient.put(`/auth/credits/${userId}`, { 
                 credits: amount 
-            }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
             });
             return response.data;
         } catch (error) {
@@ -120,11 +106,7 @@ export class UserService {
 
     async updateUserXP(userId: string, xp: number): Promise<User> {
         try {
-            const response = await httpClient.put(`/auth/xp/${userId}`, { xp }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
-            });
+            const response = await httpClient.put(`/auth/xp/${userId}`, { xp });
             return response.data;
         } catch (error) {
             console.error("Error updating user XP:", error);
@@ -136,10 +118,6 @@ export class UserService {
         try {
             const response = await httpClient.put(`/auth/level/${userId}`, {
                 level
-            }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
             });
             return response.data;
         } catch (error) {
@@ -152,10 +130,6 @@ export class UserService {
         try {
             const response = await httpClient.put(`/auth/streak/${userId}`, {
                 streak
-            }, {
-                headers: {
-                    'x-api-key': API_KEY
-                }
             });
             return response.data;
         } catch (error) {

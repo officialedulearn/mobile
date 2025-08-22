@@ -1,6 +1,5 @@
 import httpClient from "@/utils/httpClient";
 
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
 export class ActivityService {
   async createActivity(data: {
@@ -10,11 +9,7 @@ export class ActivityService {
     xpEarned: number;
   }) {
     try { 
-      const response = await httpClient.post('/activity', data, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.post('/activity', data);
       return response.data;
     } catch (error) {
       console.error('Error creating activity:', error);
@@ -24,11 +19,7 @@ export class ActivityService {
 
   async getActivitiesByUser(userId: string) {
     try {
-      const response = await httpClient.get(`/activity/user/${userId}`, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get(`/activity/user/${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user activities:', error);
@@ -38,11 +29,7 @@ export class ActivityService {
 
   async getQuizActivitiesByUser(userId: string) {
     try {
-      const response = await httpClient.get(`/activity/user/${userId}/quiz`, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get(`/activity/user/${userId}/quiz`);
       return response.data;
     } catch (error) {
       console.error('Error fetching quiz activities:', error);
@@ -52,11 +39,7 @@ export class ActivityService {
 
   async getQuizXpTotal(userId: string) {
     try {
-      const response = await httpClient.get(`/activity/user/${userId}/xp/quiz`, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get(`/activity/user/${userId}/xp/quiz`);
       return response.data;
     } catch (error) {
       console.error('Error fetching quiz XP total:', error);
@@ -66,11 +49,7 @@ export class ActivityService {
 
   async getXpByType(userId: string, type: 'quiz' | 'chat' | 'streak') {
     try {
-      const response = await httpClient.get(`/activity/user/${userId}/xp?type=${type}`, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get(`/activity/user/${userId}/xp?type=${type}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching ${type} XP:`, error);
@@ -80,11 +59,7 @@ export class ActivityService {
 
   async getUserWithActivities(userId: string) {
     try {
-      const response = await httpClient.get(`/activity/user/${userId}/details`, {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get(`/activity/user/${userId}/details`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user with activities:', error);
@@ -94,11 +69,7 @@ export class ActivityService {
 
   async getAllActivities() {
     try {
-      const response = await httpClient.get('/activity', {
-        headers: {
-          'x-api-key': API_KEY
-        }
-      });
+      const response = await httpClient.get('/activity');
       return response.data;
     } catch (error) {
       console.error('Error fetching all activities:', error);
