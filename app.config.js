@@ -17,7 +17,7 @@ export default {
       apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
       twitterClientId: process.env.EXPO_PUBLIC_TWITTER_CLIENT_ID,
       eas: {
-        projectId: "6d159de0-6be5-47c5-9571-862aed9cdd38",
+        projectId: "7df77703-9c64-42b0-bb4f-707a977da4be",
       }
     },
     ios: {
@@ -26,7 +26,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/logo.png",
+        foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#ffffff",
       },
       package: "com.edulearnv2.app",
@@ -48,10 +48,22 @@ export default {
           backgroundColor: "#ffffff",
         },
       ],
-
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
+      ["expo-build-properties", {
+        android: {
+          extraMavenRepos: [
+            "node_modules/@expo/maven-repository/android"
+          ],
+          kotlinVersion: "1.8.10", 
+          buildToolsVersion: "33.0.0",
+          compileSdkVersion: 34,
+          targetSdkVersion: 33,
+          minSdkVersion: 24,
+          ndkVersion: "25.1.8937393"
+        }
+      }]
     ],
     experiments: {
       typedRoutes: true,
