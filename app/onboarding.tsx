@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
     height: 60,
   },
   logo: {
-    width: 120,
-    height: 40,
+    width: 130,
+    height: 160,
     resizeMode: "contain",
   },
   skipButton: {

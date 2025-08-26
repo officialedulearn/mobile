@@ -56,8 +56,8 @@ const quizzes = (props: Props) => {
     const index = Math.round(contentOffsetX / (cardWidth + 20));
     setActiveIndex(index);
   };
-
-  return (
+  const testedChats = chats.filter(chat => !chat.tested)
+  return (  
     <ScrollView 
       style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -84,7 +84,7 @@ const quizzes = (props: Props) => {
             scrollEventThrottle={16}
             style={styles.horizontalScrollView}
           >
-            {chats.map((chat) => (
+            {testedChats.map((chat) => (
               <View
                 key={chat.id}
                 style={[styles.chatItem, { width: cardWidth }]}
@@ -122,7 +122,9 @@ const quizzes = (props: Props) => {
                   </View>
                 </View>
 
-                <TouchableOpacity style={styles.startButton} onPress={() => {
+                <TouchableOpacity style={
+                  [styles.startButton, {marginBottom: 10}]
+                } onPress={() => {
                   router.push({
                     pathname: "/quiz",
                     params: {chatId: chat.id}
@@ -431,7 +433,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 10,
     justifyContent: "center",
+    flexDirection: "column",
     gap: 5,
+    alignItems: "flex-start"
   },
   activityRightColumn: {
     flex: 1,

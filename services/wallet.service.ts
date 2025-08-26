@@ -1,6 +1,6 @@
 import httpClient from "@/utils/httpClient";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
+const LAMPORTS_PER_SOL = 1000000000
 interface BalanceResponse {
   sol: number;
   tokenAccount: number;
@@ -14,6 +14,7 @@ interface BurnResponse {
 
 interface SwapResponse {
   response: string; 
+  transactionLink?: string;
 }
 
 interface ClaimEarningsResponse {

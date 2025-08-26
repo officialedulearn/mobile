@@ -12,6 +12,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 
@@ -57,7 +58,7 @@ const Quiz = (props: Props) => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          handleFinishQuiz(); // Auto-finish quiz when time is up
+          handleFinishQuiz(); 
           return 0;
         }
         return prevTime - 1;
@@ -181,6 +182,7 @@ const Quiz = (props: Props) => {
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00FF80" />
           <Text style={styles.loadingText}>Loading quiz questions...</Text>
         </View>
       );
@@ -292,19 +294,21 @@ const Quiz = (props: Props) => {
           <View style={styles.bottomButtonsContainer}>
             <View style={styles.navigationButtons}>
               <TouchableOpacity
-                style={styles.navButton}
+                style={[styles.navButton, styles.prevButton]}
                 onPress={() => setReviewAnswers(!reviewAnswers)}
               >
                 <Text style={styles.navButtonText}>
-                  {reviewAnswers ? "Hide Answers" : "Review Answers"}
+                  {reviewAnswers ? "Hide Answers" : " Answers"}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.navButton}
+                style={[styles.navButton, styles.nextButton]}
                 onPress={() => router.back()}
               >
-                <Text style={styles.navButtonText}>Return to Quizzes</Text>
+                <Text style={[styles.navButtonText, styles.nextButtonText]}>
+                  Return 
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -714,7 +718,6 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
   },
   returnButton: {
-    flex: 1,
     backgroundColor: "#000",
     borderRadius: 50,
     paddingVertical: 16,
@@ -722,7 +725,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 20,
-    width: "100%",
+    width: "80%",
   },
   returnButtonText: {
     color: "#00FF80",
@@ -744,6 +747,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
+    gap: 12,
   },
   navButton: {
     flex: 1,
@@ -751,28 +755,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 8,
-  },
-  prevButton: {
-    display: "flex",
-    padding: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-    alignSelf: "stretch",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#000",
-    backgroundColor: "#FFFFFF",
-  },
-
-  navButtonText: {
-    fontFamily: "Satoshi",
-    fontSize: 16,
-    fontWeight: "700",
-    lineHeight: 24,
-    color: "#000", // Default color
+    paddingHorizontal: 20,
+    minWidth: 140,
   },
   xpContainer: {
     display: "flex",
@@ -786,5 +770,21 @@ const styles = StyleSheet.create({
   xpImage: {
     width: 50,
     height: 50,
+  },
+  reviewButton: {
+    backgroundColor: "#F0FFF9",
+    borderWidth: 1,
+    borderColor: "#00FF80",
+  },
+  reviewButtonText: {
+    color: "#00FF80",
+  },
+  returnQuizButton: {
+    backgroundColor: "#FFF5F5",
+    borderWidth: 1,
+    borderColor: "#FF3B30",
+  },
+  returnQuizButtonText: {
+    color: "#FF3B30",
   },
 });

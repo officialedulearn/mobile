@@ -1,7 +1,6 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, Share } from "react-native";
 import React, { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import useUserStore from "@/core/userState";
 import { RewardsService } from "@/services/rewards.service";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';

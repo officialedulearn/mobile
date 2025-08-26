@@ -103,8 +103,8 @@ export default TabLayout;
 
 const styles = StyleSheet.create({
   tabIcon: {
-    width: 30,
-    height: 30,
+    width: 20,
+    height: 20,
   },
   chatIcon: {
     width: 50,

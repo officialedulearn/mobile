@@ -4,7 +4,7 @@ import { levels } from "@/utils/constants";
 import { supabase } from "@/utils/supabase";
 import { getUserMetrics } from "@/utils/utils";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
@@ -58,6 +58,8 @@ const Profile = (props: Props) => {
   const [buyError, setBuyError] = React.useState<string | null>(null);
   const [activeTokenUtilIndex, setActiveTokenUtilIndex] = React.useState(0);
   const [burnSuccessModalVisible, setBurnSuccessModalVisible] = React.useState(false);
+  const [buySuccessModalVisible, setBuySuccessModalVisible] = React.useState(false);
+  const [transactionLink, setTransactionLink] = React.useState<string>("");
   const [isBurning, setIsBurning] = React.useState(false);
   const [isBuying, setIsBuying] = React.useState(false);
   const [isStaking, setIsStaking] = React.useState(false);
@@ -94,6 +96,7 @@ const Profile = (props: Props) => {
   const handleBuyEDLN = async () => {
     try {
       setIsBuying(true);
+      setBuyError(null);
       const amount = parseFloat(buyAmount);
       if (isNaN(amount) || amount <= 0) {
         setBuyError("Please enter a valid amount");
@@ -107,12 +110,17 @@ const Profile = (props: Props) => {
         return;
       }
 
-      await walletService.swapSolToEDLN(user?.id || "", amount);
-      console.log(`Buying ${amount} SOL worth of EDLN`);
+      const result = await walletService.swapSolToEDLN(user?.id || "", amount);
+      console.log(`Successfully bought EDLN with ${amount} SOL`);
+      
+      setTransactionLink(result.response || result.response || "");
       
       await fetchWalletBalance(); 
+      
       setIsBuying(false);
       toggleBuyModal();
+      
+      setBuySuccessModalVisible(true);
     } catch (error: any) {
       setBuyError(error.message || "Failed to complete purchase");
       setIsBuying(false);
@@ -352,7 +360,6 @@ const Profile = (props: Props) => {
             </View>
           </View>
           
-          {/* Add bottom padding to ensure content is visible */}
           <View style={styles.bottomPadding} />
         </View>
       </ScrollView>
@@ -415,13 +422,50 @@ const Profile = (props: Props) => {
             <FontAwesome5 name="fire" size={30} color="#00FF80" />
           </View>
           <Text style={styles.modalTitle}>Tokens Burned Successfully!</Text>
-          <Text style={styles.modalDescription}>You've received 10 credits and your wallet balance has been updated.</Text>
+          <Text style={styles.modalDescription}>You've received 3 credits and your wallet balance has been updated.</Text>
           <TouchableOpacity
             style={styles.okButton}
             onPress={() => setBurnSuccessModalVisible(false)}
           >
             <Text style={styles.okButtonText}>OK</Text>
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      <Modal 
+        isVisible={buySuccessModalVisible} 
+        style={styles.buyModal}
+        onBackdropPress={() => setBuySuccessModalVisible(false)}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+      >
+        <View style={styles.modalContent}>
+          <View style={styles.successIconContainer}>
+            <FontAwesome5 name="check-circle" size={30} color="#00FF80" />
+          </View>
+          <Text style={styles.modalTitle}>Purchase Successful!</Text>
+          <Text style={styles.modalDescription}>
+            Your EDLN tokens have been purchased successfully. Your wallet balance has been updated.
+          </Text>
+          
+          {transactionLink && (
+            <TouchableOpacity
+              style={[styles.okButton, styles.transactionButton]}
+              onPress={() => {
+                Linking.openURL(transactionLink);
+              }}
+            >
+              <Text style={styles.transactionButtonText}>View on Solscan</Text>
+              <FontAwesome5 name="external-link-alt" size={14} color="#00FF80" />
+            </TouchableOpacity>
+          )}
+          
+          {/* <TouchableOpacity
+            style={styles.okButton}
+            onPress={() => setBuySuccessModalVisible(false)}
+          >
+            <Text style={styles.okButtonText}>OK</Text>
+          </TouchableOpacity> */}
         </View>
       </Modal>
     </SafeAreaView>
@@ -906,5 +950,33 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 20,
-  }
+  },
+  successIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F0FFF9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#00FF80',
+    marginBottom: 16,
+  },
+  transactionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+  },
+  transactionButtonText: {
+    color: '#00FF80',
+    fontFamily: 'Satoshi',
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 8,
+  },
 });

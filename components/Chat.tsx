@@ -35,6 +35,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   const user = useUserStore((s) => s.user);
   const [inputText, setInputText] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -53,14 +54,16 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
-      () => {
+      (event) => {
         setKeyboardVisible(true);
+        setKeyboardHeight(event.endCoordinates.height);
       }
     );
     const keyboardDidHideListener = Keyboard.addListener(
       "keyboardDidHide",
       () => {
         setKeyboardVisible(false);
+        setKeyboardHeight(0);
       }
     );
 
@@ -140,126 +143,133 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" />
-        <View style={styles.container}>
-          <View style={styles.topNav}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar style="dark" />
+      <View style={styles.container}>
+        <View style={styles.topNav}>
+          <View
+            style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+          >
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setDrawerOpen(true)}
+              activeOpacity={0.8}
             >
-              <TouchableOpacity
-                style={styles.button}
-                onPress={() => setDrawerOpen(true)}
-                activeOpacity={0.8}
-              >
-                <Image
-                  source={require("@/assets/images/icons/menu.png")}
-                  style={{ width: 30, height: 30 }}
-                />
-              </TouchableOpacity>
-              <Text style={styles.headerText}>{title || "AI Tutor Chat"}</Text>
-            </View>
-            <TouchableOpacity style={styles.button} activeOpacity={0.8}>
               <Image
-                source={require("@/assets/images/icons/pen.png")}
-                style={{ width: 30, height: 30 }}
+                source={require("@/assets/images/icons/menu.png")}
+                style={{ width: 20, height: 20 }}
               />
             </TouchableOpacity>
+            <Text style={styles.headerText}>{title || "AI Tutor Chat"}</Text>
           </View>
+          <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+            <Image
+              source={require("@/assets/images/icons/pen.png")}
+              style={{ width: 20, height: 20 }}
+            />
+          </TouchableOpacity>
+        </View>
 
-          {drawerOpen && (
-            <>
-              <View
-                style={styles.backdrop}
-                onTouchStart={() => setDrawerOpen(false)}
+        {drawerOpen && (
+          <>
+            <View
+              style={styles.backdrop}
+              onTouchStart={() => setDrawerOpen(false)}
+            />
+            <ChatDrawer onClose={() => setDrawerOpen(false)} />
+          </>
+        )}
+
+        <View
+          style={[
+            styles.chatContent,
+            keyboardVisible && styles.chatContentWithKeyboard,
+            keyboardVisible && Platform.OS === 'android' && {
+              marginBottom: keyboardHeight - 90, // Adjust for bottom tabs
+            }
+          ]}
+        >
+          {messages.length === 0 ? (
+            <View style={styles.emptyStateContainer}>
+              <Image
+                source={require("@/assets/images/LOGO-1.png")}
+                style={styles.logo}
               />
-              <ChatDrawer onClose={() => setDrawerOpen(false)} />
-            </>
-          )}
-
-          <View
-            style={[
-              styles.chatContent,
-              keyboardVisible && styles.chatContentWithKeyboard,
-            ]}
-          >
-            {messages.length === 0 ? (
-              <View style={styles.emptyStateContainer}>
-                <Image
-                  source={require("@/assets/images/LOGO-1.png")}
-                  style={styles.logo}
-                />
-                {/* <Text style={styles.welcomeText}>Welcome to EduLearn</Text> */}
-                <View style={styles.suggestions}>
-                  <TouchableOpacity
-                    style={styles.suggestion}
-                    onPress={() => {
-                      setInputText("Teach me about DeFi");
-                      handleSendMessage();
-                    }}
-                  >
-                    <Text style={styles.suggestionText}>
-                      Teach me about DeFi
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.suggestion}
-                    onPress={() => {
-                      setInputText("Learn about RWAs");
-                      handleSendMessage();
-                    }}
-                  >
-                    <Text style={styles.suggestionText}>Learn about RWAs</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.suggestion}
-                    onPress={() => {
-                      setInputText("Blockchain basics");
-                      handleSendMessage();
-                    }}
-                  >
-                    <Text style={styles.suggestionText}>Blockchain basics</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.messagesContainer}>
-                <ScrollView
-                  ref={scrollViewRef}
-                  style={styles.messagesScroll}
-                  contentContainerStyle={styles.messagesScrollContent}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={400}
+              {/* <Text style={styles.welcomeText}>Welcome to EduLearn</Text> */}
+              <View style={styles.suggestions}>
+                <TouchableOpacity
+                  style={styles.suggestion}
+                  onPress={() => {
+                    setInputText("Teach me about DeFi");
+                    handleSendMessage();
+                  }}
                 >
-                  {messages.map((message) => (
-                    <MessageItem key={message.id} message={message} />
-                  ))}
-
-                  {isGenerating && <ThinkingMessage />}
-                </ScrollView>
-
-                {showScrollButton && (
-                  <TouchableOpacity
-                    style={styles.scrollToBottomButton}
-                    onPress={scrollToBottom}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={require("@/assets/images/icons/CaretDown.png")}
-                      style={styles.scrollToBottomIcon}
-                    />
-                  </TouchableOpacity>
-                )}
+                  <Text style={styles.suggestionText}>
+                    Teach me about DeFi
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.suggestion}
+                  onPress={() => {
+                    setInputText("Learn about RWAs");
+                    handleSendMessage();
+                  }}
+                >
+                  <Text style={styles.suggestionText}>Learn about RWAs</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.suggestion}
+                  onPress={() => {
+                    setInputText("Blockchain basics");
+                    handleSendMessage();
+                  }}
+                >
+                  <Text style={styles.suggestionText}>Blockchain basics</Text>
+                </TouchableOpacity>
               </View>
-            )}
-          </View>
+            </View>
+          ) : (
+            <View style={styles.messagesContainer}>
+              <ScrollView
+                ref={scrollViewRef}
+                style={styles.messagesScroll}
+                contentContainerStyle={styles.messagesScrollContent}
+                onScroll={handleScroll}
+                scrollEventThrottle={400}
+              >
+                {messages.map((message) => (
+                  <MessageItem key={message.id} message={message} />
+                ))}
 
-          <View style={styles.inputContainer}>
+                {isGenerating && <ThinkingMessage />}
+              </ScrollView>
+
+              {showScrollButton && (
+                <TouchableOpacity
+                  style={styles.scrollToBottomButton}
+                  onPress={scrollToBottom}
+                  activeOpacity={0.7}
+                >
+                  <Image
+                    source={require("@/assets/images/icons/CaretDown.png")}
+                    style={styles.scrollToBottomIcon}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        >
+          <View style={[
+            styles.inputContainer,
+            keyboardVisible && Platform.OS === 'android' && {
+              marginBottom: 0,
+            }
+          ]}>
             <View style={styles.inputWrapper}>
               <TouchableOpacity style={styles.attachmentButton}>
                 <Image
@@ -290,9 +300,9 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 };
 

@@ -64,10 +64,10 @@ const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
 
     },
     bullet_list: {
-      marginLeft: 10,
+      marginLeft: 2,
     },
     ordered_list: {
-      marginLeft: 10,
+      marginLeft: 2,
     },
     code_inline: {
       backgroundColor: "#F0F4FF",

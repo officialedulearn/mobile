@@ -20,44 +20,51 @@ interface UserState {
 const userService = new UserService();
 const activityService = new ActivityService();
 
-const calculateStreak = async (email: string, lastLoggedIn: string | undefined): Promise<number> => {
-
-  if (!lastLoggedIn) return 1;
+const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undefined): Promise<number> => {
+  if (!lastSignInAt) {
+    // First time login - set streak to 1
+    const newStreak = 1;
+    await userService.updateUserStreak(user.id, newStreak);
+    return newStreak;
+  }
   
   try {
-    const lastDate = new Date(lastLoggedIn);
-    const today = new Date();
+    const lastActive = new Date(lastSignInAt);
+    const now = new Date();
     
-    const diffTime = Math.abs(today.getTime() - lastDate.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate hours difference (same logic as streak component)
+    const hoursDiff = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
     
-    if (diffDays === 0 && 
-        today.getDate() === lastDate.getDate() && 
-        today.getMonth() === lastDate.getMonth() && 
-        today.getFullYear() === lastDate.getFullYear()) {
-      const userData = await userService.getUser(email);
-      return userData.streak || 1;
+    let newStreak: number;
+    
+    if (hoursDiff > 24) {
+      // More than 24 hours - reset streak to 1
+      newStreak = 1;
+    } else {
+      // Within 24 hours - maintain current streak
+      newStreak = user.streak || 1;
     }
     
-    if (diffDays === 1 || 
-        (diffDays === 0 && today.getDate() > lastDate.getDate())) {
-      const userData = await userService.getUser(email);
-      return (userData.streak || 0) + 1;
-    }
-    if (diffDays > 1) {
-      return 1;
+    // Update streak in database
+    await userService.updateUserStreak(user.id, newStreak);
+    
+    // Award streak bonus XP if streak is significant (same logic as streak component)
+    if (newStreak >= 3) {
+      await activityService.createActivity({
+        userId: user.id, 
+        type: "streak", 
+        title: `${newStreak}-day XP Streak Bonus`, 
+        xpEarned: 5
+      });
     }
     
-    const userData = await userService.getUser(email);
-
-    if(userData.streak && userData.streak > 3) {
-      await activityService.createActivity({userId: userData.id, type: "streak", title: `${userData.streak}-day XP Streak Bonus`, xpEarned: 5})
-    }
-
-    return userData.streak || 1;
+    return newStreak;
   } catch (error) {
     console.error("Error calculating streak:", error);
-    return 1; 
+    // On error, maintain current streak or set to 1
+    const fallbackStreak = user.streak || 1;
+    await userService.updateUserStreak(user.id, fallbackStreak);
+    return fallbackStreak;
   }
 };
 
@@ -68,32 +75,31 @@ const useUserStore = create<UserState>((set, get) => ({
     if (typeof window === "undefined") return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      if (!user || !user.email) {
+      if (!authUser || !authUser.email) {
         console.log("No authenticated user found");
         return;
       }
       
-      const userFromDB = await userService.getUser(user.email);
+      const userFromDB = await userService.getUser(authUser.email);
       
       if (!userFromDB) {
         console.log("User not found in database");
         return;
       }
 
-      const updatedStreak = await calculateStreak(
-        user.email,
-        user.last_sign_in_at
+      // Calculate and update streak based on last sign in
+      const updatedStreak = await calculateAndUpdateStreak(
+        userFromDB,
+        authUser.last_sign_in_at
       );
-      
-      await userService.updateUserStreak(user.email, updatedStreak);
       
       set({
         user: {
-          id: user.id,
+          id: authUser.id,
           name: userFromDB.name || "User",
-          email: user.email,
+          email: authUser.email,
           address: userFromDB.address || null,
           credits: userFromDB.credits || 0,
           xp: userFromDB.xp || 0,

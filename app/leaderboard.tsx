@@ -1,90 +1,40 @@
 import BackButton from "@/components/backButton";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import { DataTable } from "react-native-paper";
+import { UserService } from "@/services/auth.service";
+import { User } from "@/interface/User";
 
 const Leaderboard = () => {
-
   const [page, setPage] = useState<number>(0);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage, onItemsPerPageChange] = useState(
     numberOfItemsPerPageList[0]
   );
 
-  const [users] = useState([
-    {
-      key: 1,
-      rank: 4,
-      name: "John Smith",
-      xp: 240,
-    },
-    {
-      key: 2,
-      rank: 5,
-      name: "Emily Johnson",
-      xp: 235,
-    },
-    {
-      key: 3,
-      rank: 6,
-      name: "Michael Brown",
-      xp: 228,
-    },
-    {
-      key: 4,
-      rank: 7,
-      name: "Jessica Williams",
-      xp: 215,
-    },
-    {
-      key: 5,
-      rank: 8,
-      name: "David Jones",
-      xp: 210,
-    },
-    {
-      key: 6,
-      rank: 9,
-      name: "Sarah Miller",
-      xp: 198,
-    },
-    {
-      key: 7,
-      rank: 10,
-      name: "Robert Davis",
-      xp: 195,
-    },
-    {
-      key: 8,
-      rank: 11,
-      name: "Jennifer Garcia",
-      xp: 185,
-    },
-    {
-      key: 9,
-      rank: 12,
-      name: "Thomas Rodriguez",
-      xp: 180,
-    },
-    {
-      key: 10,
-      rank: 13,
-      name: "Lisa Martinez",
-      xp: 175,
-    },
-    {
-      key: 11,
-      rank: 14,
-      name: "Daniel Wilson",
-      xp: 165,
-    },
-    {
-      key: 12,
-      rank: 15,
-      name: "Patricia Anderson",
-      xp: 155,
-    },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const userService = new UserService();
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        setLoading(true);
+        const response = await userService.getLeaderboard();
+        setUsers(response.users);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch leaderboard:', err);
+        setError('Failed to load leaderboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, []);
 
   const from = page * itemsPerPage;
   const to = Math.min((page + 1) * itemsPerPage, users.length);
@@ -92,6 +42,71 @@ const Leaderboard = () => {
   useEffect(() => {
     setPage(0);
   }, [itemsPerPage]);
+
+  const getLevelColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'expert':
+        return '#FF6B6B';
+      case 'advanced':
+        return '#00FF66';
+      case 'intermediate':
+        return '#61728C';
+      case 'beginner':
+        return '#A78BFA';
+      default:
+        return '#61728C';
+    }
+  };
+
+  const getTopThreeUsers = () => {
+    const topThree = users.slice(0, 3);
+    return {
+      first: topThree[0] || null,
+      second: topThree[1] || null,
+      third: topThree[2] || null
+    };
+  };
+
+  const getRemainingUsers = () => {
+    return users.slice(3).map((user, index) => ({
+      key: index + 4,
+      rank: index + 4,
+      name: user.name,
+      xp: user.xp,
+    }));
+  };
+
+  const { first, second, third } = getTopThreeUsers();
+  const remainingUsers = getRemainingUsers();
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.topNav}>
+          <BackButton />
+          <Text style={styles.heading}>Leaderboard</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00FF66" />
+          <Text style={styles.loadingText}>Loading leaderboard...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.topNav}>
+          <BackButton />
+          <Text style={styles.heading}>Leaderboard</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -106,79 +121,96 @@ const Leaderboard = () => {
 
       <View style={styles.board}>
         <View style={styles.topthree}>
-          <View style={styles.second}>
-            <Image source={require("@/assets/images/silver.png")} style={styles.medal} />
-            <View style={styles.avatarWrapper}>
-              <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+          {second && (
+            <View style={styles.second}>
+              <Image source={require("@/assets/images/silver.png")} style={styles.medal} />
+              <View style={styles.avatarWrapper}>
+                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+              </View>
+              <Text style={styles.name}>{second.name}</Text>
+              <Text style={[styles.level, { color: getLevelColor(second.level) }]}>
+                {second.level || 'Novice'}
+              </Text>
+              <View style={styles.xpContainer}>
+                <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
+                <Text style={styles.xp}>{second.xp} XP</Text>
+              </View>
             </View>
-            <Text style={styles.name}>Ahmed Abiola</Text>
-            <Text style={[styles.level, { color: "#61728C" }]}>Intermediate</Text>
-            <View style={styles.xpContainer}>
-              <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-              <Text style={styles.xp}>247 XP</Text>
-            </View>
-          </View>
-          <View style={styles.first}>
-            <Image source={require("@/assets/images/gold.png")} style={styles.medal} />
-            <View style={styles.avatarWrapper}>
-              <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
-            </View>
-            <Text style={[styles.name, { color: "#00FF66" }]}>Ahmed Abiola</Text>
-            <Text style={[styles.level, { color: "#00FF66" }]}>Advanced</Text>
-            <View style={styles.xpContainer}>
-              <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-              <Text style={[styles.xp, { color: "#00FF66" }]}>247 XP</Text>
-            </View>
-          </View>
+          )}
 
-          <View style={styles.third}>
-            <Image source={require("@/assets/images/bronze.png")} style={styles.medal} />
-            <View style={styles.avatarWrapper}>
-              <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+          {first && (
+            <View style={styles.first}>
+              <Image source={require("@/assets/images/gold.png")} style={styles.medal} />
+              <View style={styles.avatarWrapper}>
+                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+              </View>
+              <Text style={[styles.name, { color: "#00FF66" }]}>{first.name}</Text>
+              <Text style={[styles.level, { color: "#00FF66" }]}>
+                {first.level || 'Novice'}
+              </Text>
+              <View style={styles.xpContainer}>
+                <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
+                <Text style={[styles.xp, { color: "#00FF66" }]}>{first.xp} XP</Text>
+              </View>
             </View>
-            <Text style={styles.name}>Ahmed Abiola</Text>
-            <Text style={[styles.level, { color: "#A78BFA" }]}>Beginner</Text>
-            <View style={styles.xpContainer}>
-              <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-              <Text style={styles.xp}>247 XP</Text>
+          )}
+
+          {third && (
+            <View style={styles.third}>
+              <Image source={require("@/assets/images/bronze.png")} style={styles.medal} />
+              <View style={styles.avatarWrapper}>
+                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+              </View>
+              <Text style={styles.name}>{third.name}</Text>
+              <Text style={[styles.level, { color: getLevelColor(third.level) }]}>
+                {third.level || 'Novice'}
+              </Text>
+              <View style={styles.xpContainer}>
+                <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
+                <Text style={styles.xp}>{third.xp} XP</Text>
+              </View>
             </View>
-          </View>
+          )}
         </View>
         
-        <View style={styles.tableContainer}>
-          <DataTable style={styles.table}>
-            {users.slice(from, to).map((user) => (
-              <DataTable.Row key={user.key} style={styles.tableRow}>
-                <DataTable.Cell style={styles.rankColumn}>
-                  <Text style={styles.rankText}>{user.rank}</Text>
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.nameColumn}>
-                  <Text style={styles.nameText}>{user.name}</Text>
-                </DataTable.Cell>
-                <DataTable.Cell style={styles.xpColumn}>
-                  <View style={styles.xpColumnContent}>
-                    <Image 
-                      source={require("@/assets/images/icons/medal-05.png")} 
-                      style={styles.tableIcon} 
-                    />
-                    <Text style={styles.xpText}>{user.xp} XP</Text>
-                  </View>
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
+        {remainingUsers.length > 0 && (
+          <View style={styles.tableContainer}>
+            <DataTable style={styles.table}>
+              {remainingUsers.slice(from, to).map((user) => (
+                <DataTable.Row key={user.key} style={styles.tableRow}>
+                  <DataTable.Cell style={styles.rankColumn}>
+                    <Text style={styles.rankText}>{user.rank}</Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={styles.nameColumn}>
+                    <Text style={styles.nameText}>{user.name}</Text>
+                  </DataTable.Cell>
+                  <DataTable.Cell style={styles.xpColumn}>
+                    <View style={styles.xpColumnContent}>
+                      <Image 
+                        source={require("@/assets/images/icons/medal-05.png")} 
+                        style={styles.tableIcon} 
+                      />
+                      <Text style={styles.xpText}>{user.xp} XP</Text>
+                    </View>
+                  </DataTable.Cell>
+                </DataTable.Row>
+              ))}
 
-            <View style={styles.paginationContainer}>
-              <DataTable.Pagination
-                page={page}
-                numberOfPages={Math.ceil(users.length / itemsPerPage)}
-                onPageChange={(page) => setPage(page)}
-                onItemsPerPageChange={onItemsPerPageChange}
-                showFastPaginationControls
-                style={styles.pagination}
-              />
-            </View>
-          </DataTable>
-        </View>
+              {remainingUsers.length > itemsPerPage && (
+                <View style={styles.paginationContainer}>
+                  <DataTable.Pagination
+                    page={page}
+                    numberOfPages={Math.ceil(remainingUsers.length / itemsPerPage)}
+                    onPageChange={(page) => setPage(page)}
+                    onItemsPerPageChange={onItemsPerPageChange}
+                    showFastPaginationControls
+                    style={styles.pagination}
+                  />
+                </View>
+              )}
+            </DataTable>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -222,36 +254,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    width: 170,
-    height: 230, 
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    width: 130,
+    height: 180, 
     zIndex: 2,
-    gap: 10,
+    gap: 8,
   },
   second: {
     backgroundColor: "#EDF3FC",
     borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    width: 140,
-    height: 200, 
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    width: 110,
+    height: 160, 
     zIndex: 1,
     alignSelf: "flex-end",
-    gap:10
+    gap: 8
   },
   third: {
     backgroundColor: "#F5F3FF",
     borderRadius: 20,
     alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    width: 130,
-    height: 180, 
+    paddingHorizontal: 8,
+    width: 100,
+    height: 140, 
     zIndex: 1,
     alignSelf: "flex-end",
-    gap: 10,
+    gap: 6,
   },
   medal: {
     position: "absolute",
@@ -263,43 +295,45 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     backgroundColor: "#fff",
     borderRadius: 999,
-    padding: 5,
+    padding: 3,
     marginTop: 5, 
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   name: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
-    marginTop: 5, // Reduced margin
+    marginTop: 3,
     color: "#2D3C52",
     fontFamily: "Satoshi",
+    textAlign: "center",
   },
   level: {
-    fontSize: 12,
+    fontSize: 10,
     fontFamily: "Satoshi",
     fontWeight: "500",
-    marginTop: 1
+    marginTop: 1,
+    textAlign: "center",
   },
   xpContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 3
+    marginTop: 2
   },
   badgeIcon: {
-    width: 12,
-    height: 12,
-    marginRight: 4,
+    width: 10,
+    height: 10,
+    marginRight: 3,
   },
   xp: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "500",
     color: "#61728C",
     fontFamily: "Satoshi",
-    lineHeight: 15
+    lineHeight: 12
   },
   tableContainer: {
     width: '100%',
@@ -373,7 +407,23 @@ const styles = StyleSheet.create({
   xpText: {
     fontFamily: "Satoshi",
   },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: "Urbanist",
+    fontSize: 16,
+    color: "#61728C",
+    marginTop: 20,
+  },
+  errorText: {
+    fontFamily: "Urbanist",
+    fontSize: 16,
+    color: "#FF6B6B",
+    textAlign: 'center',
+    marginTop: 100,
+  },
 });
-
 
 export default Leaderboard;

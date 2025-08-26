@@ -75,10 +75,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
             onPress={() => goToChat(chat.id)}
             style={styles.chatItem}
           >
-            <Image
-              source={require("@/assets/images/icons/brain.png")}
-              style={styles.chatIcon}
-            />
+            
             <View style={styles.chatInfo}>
               <Text style={styles.chatTitle} numberOfLines={1}>
                 {chat.title || "Untitled Chat"}
@@ -111,7 +108,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
           <TouchableOpacity style={styles.button} activeOpacity={0.8}>
             <Image
               source={require("@/assets/images/icons/pen.png")}
-
+              style={{width: 20, height: 20}}
             />
           </TouchableOpacity>
         </View>
