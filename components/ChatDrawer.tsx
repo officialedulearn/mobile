@@ -41,9 +41,12 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
   
   const goToChat = (id: string) => {
     onClose();
-    router.push({
+    router.replace({
       pathname: "/(tabs)/chat",
-      params: { chatIdFromNav: id, refresh: Date.now().toString() },
+      params: { 
+        chatIdFromNav: id, 
+        refresh: Date.now().toString() 
+      },
     });
   };
 

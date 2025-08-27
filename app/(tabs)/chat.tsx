@@ -4,7 +4,7 @@ import { ChatService } from "@/services/chat.service";
 import { generateUUID } from "@/utils/constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -25,35 +25,50 @@ const ChatScreen = (props: Props) => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const chatIdRef = useRef<string>(chatIdFromNav || generateUUID());
-  const chatId = chatIdRef.current;
+  const [currentChatId, setCurrentChatId] = useState<string>(() => 
+    chatIdFromNav || generateUUID()
+  );
 
   useEffect(() => {
-    if (chatIdFromNav && chatIdFromNav !== chatIdRef.current) {
-      chatIdRef.current = chatIdFromNav;
+    if (chatIdFromNav && chatIdFromNav !== currentChatId) {
+      setCurrentChatId(chatIdFromNav);
     }
+  }, [chatIdFromNav]);
 
-    if (chatId) {
-      setChat(undefined);
-      setInitialMessages([]);
+  useEffect(() => {
+    setIsLoading(true);
+    setChat(undefined);
+    setInitialMessages([]);
 
-      const fetchChatAndMessages = async () => {
-        try {
+    const fetchChatAndMessages = async () => {
+      try {
+        if (chatIdFromNav) {
+          // Only fetch if we have a specific chat ID from navigation
           const chatService = new ChatService();
-          const chatData = await chatService.getChatById(chatId);
-          const messages = await chatService.getMessagesInChat(chatId);
+          const chatData = await chatService.getChatById(currentChatId);
+          const messages = await chatService.getMessagesInChat(currentChatId);
 
           setChat(chatData);
           setInitialMessages(messages);
-        } catch (error) {
-          console.error("Error fetching chat data:", error);
+        } else {
+          // For new chats, just clear the state
+          setChat(undefined);
+          setInitialMessages([]);
         }
-      };
+      } catch (error) {
+        console.error("Error fetching chat data:", error);
+        // Reset to prevent showing stale data
+        setChat(undefined);
+        setInitialMessages([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      fetchChatAndMessages();
-    }
-  }, [chatIdFromNav, refresh]);
+    fetchChatAndMessages();
+  }, [currentChatId, chatIdFromNav, refresh]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -84,15 +99,12 @@ const ChatScreen = (props: Props) => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
         <View style={styles.container}>
-          {chatIdFromNav && chat ? (
-            <Chat
-              title={chat.title || "Chat"}
-              initialMessages={initialMessages}
-              chatId={chatId}
-            />
-          ) : (
-            <Chat title="AI Tutor Chat" initialMessages={initialMessages} chatId={chatId} />
-          )}
+          <Chat
+            title={chat?.title || "AI Tutor Chat"}
+            initialMessages={initialMessages}
+            chatId={currentChatId}
+            key={currentChatId} // Force re-render when chat ID changes
+          />
         </View>
       </SafeAreaView>
     </KeyboardAvoidingView>

@@ -3,9 +3,16 @@ import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+} from "react-native";
 import { ProgressBar } from "react-native-paper";
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
 type Props = {};
 
@@ -24,105 +31,64 @@ const index = (props: Props) => {
     beginner: 500,
     intermediate: 1500,
     advanced: 3000,
-    expert: 5000
+    expert: 5000,
   };
 
   const currentXP = user?.xp || 0;
 
   const getMilestoneProgress = () => {
     if (currentXP >= milestones.expert) {
-      return { progress: 1, xpNeeded: 0, currentLevel: milestones.expert, nextLevel: milestones.expert };
+      return {
+        progress: 1,
+        xpNeeded: 0,
+        currentLevel: milestones.expert,
+        nextLevel: milestones.expert,
+      };
     } else if (currentXP >= milestones.advanced) {
-      return { progress: (currentXP - milestones.advanced) / (milestones.expert - milestones.advanced), xpNeeded: milestones.expert - currentXP, currentLevel: milestones.advanced, nextLevel: milestones.expert };
+      return {
+        progress:
+          (currentXP - milestones.advanced) /
+          (milestones.expert - milestones.advanced),
+        xpNeeded: milestones.expert - currentXP,
+        currentLevel: milestones.advanced,
+        nextLevel: milestones.expert,
+      };
     } else if (currentXP >= milestones.intermediate) {
-      return { progress: (currentXP - milestones.intermediate) / (milestones.advanced - milestones.intermediate), xpNeeded: milestones.advanced - currentXP, currentLevel: milestones.intermediate, nextLevel: milestones.advanced };
+      return {
+        progress:
+          (currentXP - milestones.intermediate) /
+          (milestones.advanced - milestones.intermediate),
+        xpNeeded: milestones.advanced - currentXP,
+        currentLevel: milestones.intermediate,
+        nextLevel: milestones.advanced,
+      };
     } else if (currentXP >= milestones.beginner) {
-      return { progress: (currentXP - milestones.beginner) / (milestones.intermediate - milestones.beginner), xpNeeded: milestones.intermediate - currentXP, currentLevel: milestones.beginner, nextLevel: milestones.intermediate };
+      return {
+        progress:
+          (currentXP - milestones.beginner) /
+          (milestones.intermediate - milestones.beginner),
+        xpNeeded: milestones.intermediate - currentXP,
+        currentLevel: milestones.beginner,
+        nextLevel: milestones.intermediate,
+      };
     } else {
-      return { progress: currentXP / milestones.beginner, xpNeeded: milestones.beginner - currentXP, currentLevel: milestones.novice, nextLevel: milestones.beginner };
+      return {
+        progress: currentXP / milestones.beginner,
+        xpNeeded: milestones.beginner - currentXP,
+        currentLevel: milestones.novice,
+        nextLevel: milestones.beginner,
+      };
     }
   };
 
   const { progress, xpNeeded } = getMilestoneProgress();
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'quiz':
-        return require("@/assets/images/icons/brain.png");
-      case 'chat':
-        return require("@/assets/images/icons/message.png");
-      case 'streak':
-        return null; // We'll render FontAwesome5 icon instead
-      default:
-        return require("@/assets/images/icons/medal.png");
-    }
-  };
-
-  const getActivityTypeLabel = (type: string) => {
-    switch (type) {
-      case 'quiz':
-        return 'Quiz Completed';
-      case 'chat':
-        return 'AI Chat Session';
-      case 'streak':
-        return 'Daily Streak';
-      default:
-        return 'Activity';
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'quiz':
-        return '#3B82F6';
-      case 'chat':
-        return '#8B5CF6';
-      case 'streak':
-        return '#00FF80';
-      default:
-        return '#6B7280';
-    }
-  };
-
-  const renderActivityIcon = (type: string) => {
-    const color = getActivityColor(type);
-    
-    if (type === 'streak') {
-      return (
-        <View style={[styles.activityIconContainer, { backgroundColor: `${color}15` }]}>
-          <FontAwesome5 name="fire" size={20} color={color} />
-        </View>
-      );
-    }
-    return (
-      <View style={[styles.activityIconContainer, { backgroundColor: `${color}15` }]}>
-        <Image
-          source={getActivityIcon(type)}
-          style={{ width: 20, height: 20, tintColor: color }}
-        />
-      </View>
-    );
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
-    } else {
-      const days = Math.floor(diffInHours / 24);
-      return `${days}d ago`;
-    }
-  };
-
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <StatusBar style="dark" />
       <View style={styles.content}>
         <View style={styles.topNav}>
@@ -137,7 +103,7 @@ const index = (props: Props) => {
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchNav}
             onPress={() => router.push("/search")}
             activeOpacity={0.7}
@@ -162,11 +128,16 @@ const index = (props: Props) => {
           <ProgressBar
             progress={progress}
             color="#00FF80"
-            
-            style={{ height: 10, borderRadius: 5, backgroundColor: "rgba(255, 255, 255, 0.10)" }}
+            style={{
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: "rgba(255, 255, 255, 0.10)",
+            }}
           />
           <Text style={[styles.subText, { color: "#00FF80" }]}>
-            {xpNeeded > 0 ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥` : 'Congratulations! You\'ve reached the highest level! 🏆'}
+            {xpNeeded > 0
+              ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`
+              : "Congratulations! You've reached the highest level! 🏆"}
           </Text>
         </View>
 
@@ -200,49 +171,34 @@ const index = (props: Props) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.highlightsCard}>
-          <View style={styles.highlightsHeader}>
-            <View style={styles.highlightsIconContainer}>
-              <FontAwesome5 name="trophy" size={20} color="#00FF80" />
-            </View>
-            <View style={styles.highlightsTitleContainer}>
-              <Text style={styles.highlightsTitle}>Recent Highlights</Text>
-              <Text style={styles.highlightsSubtitle}>Your latest achievements</Text>
-            </View>
-            {activities.length > 3 && (
-              <TouchableOpacity 
-                style={styles.viewAllButton}
-                onPress={() => router.push("/quizzes")}
+        <View style={styles.activityContainer}>
+          <View style={styles.activityContainerHeader}>
+            <Text style={styles.activityContainerHeaderText}>
+              Recent Highlights
+            </Text>
+            <TouchableOpacity
+              style={styles.seeMoreButton}
+              onPress={() => router.push("/quizzes")}
+            >
+              <Text
+                style={{
+                  fontFamily: "Satoshi",
+                  lineHeight: 24,
+                  fontSize: 14,
+                  fontWeight: 400,
+                  color: "#2D3C52",
+                }}
               >
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
-            )}
+                See all
+              </Text>
+              <Image
+                source={require("@/assets/images/icons/CaretRight.png")}
+                style={{ width: 24, height: 24 }}
+              />
+            </TouchableOpacity>
           </View>
-          
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading...</Text>
-            </View>
-          ) : activities.length > 0 ? (
-            <View style={styles.activitiesList}>
-              {activities.slice(0, 3).map((activity, index) => (
-                <View 
-                  key={activity.id} 
-                  style={[
-                    styles.activityItem,
-                    index < activities.slice(0, 3).length - 1 && styles.activityItemBorder
-                  ]}
-                >
-                  {renderActivityIcon(activity.type)}
-                  <View style={styles.activityContent}>
-                    <Text style={styles.activityTitle}>{activity.title}</Text>
-                    <Text style={styles.activityTime}>{formatDate(activity.createdAt)}</Text>
-                  </View>
-                  <Text style={styles.activityXp}>+{activity.xpEarned} XP</Text>
-                </View>
-              ))}
-            </View>
-          ) : (
+
+          {activities.length === 0 && !isLoading ? (
             <View style={styles.emptyStateContainer}>
               <FontAwesome5 name="trophy" size={24} color="#61728C" />
               <Text style={styles.emptyStateTitle}>No highlights yet</Text>
@@ -250,7 +206,53 @@ const index = (props: Props) => {
                 Complete activities to see your achievements!
               </Text>
             </View>
+          ) : isLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading...</Text>
+            </View>
+          ) : (
+            <View style={styles.activityContainerItems}>
+              {activities.slice(0, 3).map((activity) => (
+                <View key={activity.id} style={styles.activityContainerItem}>
+                  <Text style={styles.activityTitle}>{activity.title}</Text>
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <Image
+                      source={require("@/assets/images/icons/medal-05.png")}
+                      style={{ width: 20, height: 20, marginBottom: 4 }}
+                    />
+                    <Text style={styles.activityXp}>
+                      +{activity.xpEarned} XP
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
+        </View>
+
+        <View style={styles.bountyCard}>
+          <View>
+            <View style={styles.bountyCardPill}>
+              <Image
+                source={require("@/assets/images/icons/trophy.png")}
+                style={{ width: 16, height: 16 }}
+              />
+              <Text style={styles.bountyChallengeText}>Bounty Challenge</Text>
+            </View>
+
+            <Text style={styles.bountyCardText}>Stay Top 3 This Week!</Text>
+          </View>
+          <Image
+            source={require("@/assets/images/icons/bountyCard.png")}
+            style={{ width: 66.6, height: 83, resizeMode: "contain" }}
+          />
         </View>
       </View>
     </ScrollView>
@@ -264,13 +266,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FBFC",
   },
-  content: {
-    flex: 1,
+  scrollContent: {
     flexDirection: "column",
     alignItems: "center",
     paddingTop: 50,
     paddingHorizontal: 16,
     paddingBottom: 20,
+  },
+  content: {
+    width: "100%",
   },
   topNav: {
     width: "100%",
@@ -443,7 +447,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#2D3C52",
     fontWeight: "500",
-    lineHeight: 20,
+    lineHeight: 24,
   },
   activityTime: {
     fontFamily: "Satoshi",
@@ -454,8 +458,9 @@ const styles = StyleSheet.create({
   activityXp: {
     fontFamily: "Satoshi",
     fontSize: 14,
-    color: "#00FF80",
-    fontWeight: "600",
+    color: "#61728C",
+    fontWeight: "400",
+    lineHeight: 24,
   },
   emptyStateContainer: {
     alignItems: "center",
@@ -475,5 +480,94 @@ const styles = StyleSheet.create({
     color: "#61728C",
     textAlign: "center",
     marginBottom: 16,
+  },
+  activityContainerHeaderText: {
+    color: "#2D3C52",
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: 500,
+    lineHeight: 30,
+  },
+  activityContainerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  activityContainer: {
+    width: "100%",
+    marginTop: 20,
+    flexDirection: "column",
+    gap: 10,
+  },
+  seeMoreButton: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    alignItems: "center",
+  },
+  activityContainerItems: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    gap: 8,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    flexDirection: "column",
+  },
+  activityContainerItem: {
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    width: "100%",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#EDF3FC",
+  },
+
+  bountyCard: {
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexDirection: "row",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    marginTop: 20,
+  },
+  bountyCardPill: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    backgroundColor: "#F9FBFC",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 6,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  bountyCardText: {
+    color: "#2D3C52",
+    textAlign: "center",
+    lineHeight: 36,
+    fontSize: 20,
+    fontWeight: 500,
+    fontFamily: "Satoshi",
+  },
+  bountyChallengeText: {
+    color: "#61728C",
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 20,
+    textAlign: "center",
   },
 });

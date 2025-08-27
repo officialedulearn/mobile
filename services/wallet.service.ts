@@ -14,7 +14,6 @@ interface BurnResponse {
 
 interface SwapResponse {
   response: string; 
-  transactionLink?: string;
 }
 
 interface ClaimEarningsResponse {

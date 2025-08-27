@@ -28,57 +28,37 @@ type Props = {
 
 const Chat = ({ title, initialMessages, chatId }: Props) => {
   const aiService = new AIService();
-  const [messages, setMessages] = useState<Array<Message>>(
-    Array.isArray(initialMessages) ? initialMessages : []
-  )
+  const [messages, setMessages] = useState<Array<Message>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const user = useUserStore((s) => s.user);
   const [inputText, setInputText] = useState("");
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  
-  const chatIdRef = useRef(chatId);
+
+  const [currentChatId, setCurrentChatId] = useState(chatId);
 
   useEffect(() => {
-    if (Array.isArray(initialMessages)) {
+    if (chatId !== currentChatId) {
+      setCurrentChatId(chatId);
+      setMessages(Array.isArray(initialMessages) ? initialMessages : []);
+      setIsGenerating(false);
+      setInputText("");
+    }
+  }, [chatId, currentChatId, initialMessages]);
+
+  // Update messages when initialMessages change for the same chat
+  useEffect(() => {
+    if (chatId === currentChatId && Array.isArray(initialMessages)) {
       setMessages(initialMessages);
     }
-    if (chatId && chatId !== chatIdRef.current) {
-      chatIdRef.current = chatId;
-    }
-  }, [initialMessages, chatId]);
-
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      (event) => {
-        setKeyboardVisible(true);
-        setKeyboardHeight(event.endCoordinates.height);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
+  }, [initialMessages, chatId, currentChatId]);
 
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom();
     }
   }, [messages]);
-
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -99,8 +79,6 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
-    
-    const currentChatId = chatIdRef.current;
     
     const newMessage: Message = {
       id: generateUUID(),
@@ -145,11 +123,13 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <View style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
         <View style={styles.topNav}>
-          <View
-            style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-          >
+          <View style={styles.leftNavContainer}>
             <TouchableOpacity
               style={styles.button}
               onPress={() => setDrawerOpen(true)}
@@ -160,7 +140,9 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
                 style={{ width: 20, height: 20 }}
               />
             </TouchableOpacity>
-            <Text style={styles.headerText}>{title || "AI Tutor Chat"}</Text>
+            <Text style={styles.headerText} numberOfLines={1} ellipsizeMode="tail">
+              {title || "AI Tutor Chat"}
+            </Text>
           </View>
           <TouchableOpacity style={styles.button} activeOpacity={0.8}>
             <Image
@@ -180,15 +162,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           </>
         )}
 
-        <View
-          style={[
-            styles.chatContent,
-            keyboardVisible && styles.chatContentWithKeyboard,
-            keyboardVisible && Platform.OS === 'android' && {
-              marginBottom: keyboardHeight - 90, // Adjust for bottom tabs
-            }
-          ]}
-        >
+        <View style={styles.chatContent}>
           {messages.length === 0 ? (
             <View style={styles.emptyStateContainer}>
               <Image
@@ -236,6 +210,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
                 contentContainerStyle={styles.messagesScrollContent}
                 onScroll={handleScroll}
                 scrollEventThrottle={400}
+                showsVerticalScrollIndicator={false}
               >
                 {messages.map((message) => (
                   <MessageItem key={message.id} message={message} />
@@ -260,48 +235,39 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           )}
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-        >
-          <View style={[
-            styles.inputContainer,
-            keyboardVisible && Platform.OS === 'android' && {
-              marginBottom: 0,
-            }
-          ]}>
-            <View style={styles.inputWrapper}>
-              <TouchableOpacity style={styles.attachmentButton}>
-                <Image
-                  source={require("@/assets/images/icons/attachement.png")}
-                  style={{ width: 24, height: 24 }}
-                />
-              </TouchableOpacity>
-              <TextInput
-                placeholder="Type a message..."
-                style={styles.textInput}
-                value={inputText}
-                onChangeText={setInputText}
-                returnKeyType="send"
-                onSubmitEditing={handleSendMessage}
+        <View style={styles.inputContainer}>
+          <View style={styles.inputWrapper}>
+            <TouchableOpacity style={styles.attachmentButton}>
+              <Image
+                source={require("@/assets/images/icons/attachement.png")}
+                style={{ width: 24, height: 24 }}
               />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={handleSendMessage}
-                disabled={inputText.trim() === ""}
-              >
-                <Image
-                  source={require("@/assets/images/icons/send-2.png")}
-                  style={[
-                    { width: 24, height: 24 },
-                    inputText.trim() === "" && styles.disabledSend,
-                  ]}
-                />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
+            <TextInput
+              placeholder="Type a message..."
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              returnKeyType="send"
+              onSubmitEditing={handleSendMessage}
+              multiline={false}
+            />
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleSendMessage}
+              disabled={inputText.trim() === ""}
+            >
+              <Image
+                source={require("@/assets/images/icons/send-2.png")}
+                style={[
+                  { width: 24, height: 24 },
+                  inputText.trim() === "" && styles.disabledSend,
+                ]}
+              />
+            </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -337,6 +303,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "Satoshi",
     lineHeight: 24,
+    flex: 1,
   },
   topNav: {
     flexDirection: "row",
@@ -351,14 +318,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginTop: 10,
   },
+  leftNavContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    marginRight: 10,
+  },
   chatContent: {
     flex: 1,
-    justifyContent: "center",
     paddingHorizontal: 20,
-  },
-  chatContentWithKeyboard: {
-    justifyContent: "flex-start",
-    paddingTop: 20,
   },
   emptyStateContainer: {
     alignItems: "center",

@@ -433,7 +433,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 10,
     justifyContent: "center",
-    flexDirection: "column",
     gap: 5,
     alignItems: "flex-start"
   },

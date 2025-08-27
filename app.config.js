@@ -6,7 +6,7 @@ export default {
     slug: "edulearn",
     version: "1.0.0",
     owner: "edulearn",
-    sheme: "edulearnv2",
+    scheme: "edulearnv2",
     newArchEnabled: true,
     icon: "./assets/images/mainlogo.png",
     android: {
