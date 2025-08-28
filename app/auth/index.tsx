@@ -12,10 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { UserService } from "../../services/auth.service";
-import { generateUUID } from "../../utils/constants";
 
-const userService = new UserService();
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
   
@@ -35,88 +32,100 @@ const Auth = () => {
   }, [signUp]);
 
   const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+    let sanitizedValue = value;
+    
+    if (field === 'email') {
+      sanitizedValue = value.trim().toLowerCase();
+    } else if (field === 'name') {
+      sanitizedValue = value.trim();
+    } else if (field === 'username') {
+      sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    } else if (field === 'referralCode') {
+      sanitizedValue = value.trim().toUpperCase();
+    }
+    
+    setFormData({ ...formData, [field]: sanitizedValue });
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const validateForm = (): boolean => {
+    if (!formData.email.trim()) {
+      Alert.alert("Email Required", "Please enter your email address");
+      return false;
+    }
+
+    if (!validateEmail(formData.email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address (e.g., user@example.com)");
+      return false;
+    }
+
+    if (isSignUp) {
+      if (!formData.name.trim()) {
+        Alert.alert("Name Required", "Please enter your full name");
+        return false;
+      }
+
+      if (formData.name.trim().length < 2) {
+        Alert.alert("Invalid Name", "Name must be at least 2 characters long");
+        return false;
+      }
+
+      if (formData.username && formData.username.length > 0 && formData.username.length < 3) {
+        Alert.alert("Invalid Username", "Username must be at least 3 characters long");
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const handleAuth = async () => {
+    if (!validateForm()) return;
+
     try {
-      console.log("Form Data:", formData);
-      if (isSignUp) {
-        setLoading(true);
-        if (!formData.email || !formData.email.includes("@")) {
-          Alert.alert("Please enter a valid email address");
-          setLoading(false);
-          return;
-        }
+      setLoading(true);
 
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.signInWithOtp({
-          email: formData.email,
-        });
+      const { error } = await supabase.auth.signInWithOtp({
+        email: formData.email,
+      });
 
-        if (error) {
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          Alert.alert("Too Many Attempts", "Please wait before requesting another code");
+        } else if (error.message.includes('invalid email')) {
+          Alert.alert("Invalid Email", "Please check your email address and try again");
+        } else {
           Alert.alert("Authentication Error", error.message);
-          setLoading(false);
-          return;
         }
-
-        try {
-          await userService.createUser({
-            id: generateUUID(),
-            email: formData.email,
-            name: formData.name || "User", 
-            referredBy: formData.referralCode,
-            username: formData.username
-          });
-        } catch (userCreateError: any) {
-          console.error("Error creating user:", userCreateError);
-          
-          if (userCreateError?.message?.includes('timeout') || 
-              userCreateError?.message?.includes('Network Error') ||
-              userCreateError?.code === 'ECONNABORTED') {
-            Alert.alert(
-              "Warning",
-              "Your account is being created, but some features may be limited until you reconnect to the network.",
-              [{ text: "OK" }]
-            );
-          }
-        }
-
+        return;
+      }
+      if (isSignUp) {
         router.push({
           pathname: '/auth/verifyOtp',
-          params: { email: formData.email },
+          params: { 
+            email: formData.email,
+            isSignUp: "1",
+            name: formData.name,
+            referralCode: formData.referralCode || "",
+            username: formData.username || ""
+          },
         });
       } else {
-        setLoading(true);
-        
-        if (!formData.email || !formData.email.includes("@")) {
-          Alert.alert("Please enter a valid email address");
-          setLoading(false);
-          return;
-        }
-        
-        const { data, error } = await supabase.auth.signInWithOtp({
-          email: formData.email,
-        });
-
-        if (error) {
-          Alert.alert("Authentication Error", error.message);
-          setLoading(false);
-          return;
-        }
-        
         router.push({
           pathname: '/auth/verifyOtp',
           params: { email: formData.email },
         });
       }
+      
     } catch (err) {
       console.error("Authentication error:", err);
       Alert.alert(
-        "Network Error",
-        "Unable to connect to the authentication service. Please check your internet connection and try again."
+        "Connection Error",
+        "Unable to connect to our servers. Please check your internet connection and try again."
       );
     } finally {
       setLoading(false);

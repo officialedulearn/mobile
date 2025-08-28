@@ -7,8 +7,6 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -123,11 +121,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
+      <View style={styles.container}>
         <View style={styles.topNav}>
           <View style={styles.leftNavContainer}>
             <TouchableOpacity
@@ -267,7 +261,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

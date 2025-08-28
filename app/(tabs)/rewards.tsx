@@ -39,7 +39,7 @@ const rewards = (props: Props) => {
   const [claimingSOL, setClaimingSOL] = useState(false);
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'sol', amount: string} | null>(null);
+  const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'USDC', amount: string} | null>(null);
   const rewardService = new RewardsService();
   const walletService = new WalletService();
   const screenWidth = Dimensions.get("window").width;
@@ -115,7 +115,7 @@ const rewards = (props: Props) => {
 
       if (result.success) {
         setClaimedAsset({
-          type: 'sol',
+          type: 'USDC',
           amount: String(userEarnings.sol)
         });
         setSuccessModalVisible(true);
@@ -302,7 +302,7 @@ const rewards = (props: Props) => {
                       style={styles.earningIcon}
                     />
                     <View>
-                      <Text style={[styles.earningLabel, { color: '#2D3C52' }]}>SOL Balance</Text>
+                      <Text style={[styles.earningLabel, { color: '#2D3C52' }]}>USDC Balance</Text>
                       <Text style={[styles.earningAmount, { color: '#2D3C52' }]}>{String(userEarnings.sol)} SOL</Text>
                     </View>
                   </View>

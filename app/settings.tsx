@@ -19,38 +19,39 @@ const settings = (props: Props) => {
     const [privateKey, setPrivateKey] = useState<string | null>(null);
 
     const payPro = async (userId: string) => {
-      if (!userId) {
-        Alert.alert("Error", "User information not available");
-        return;
-      }
+      // if (!userId) {
+      //   Alert.alert("Error", "User information not available");
+      //   return;
+      // }
 
-      setLoading(true);
-      const userService = new UserService();
+      // setLoading(true);
+      // const userService = new UserService();
 
-      try {
-        const response = await userService.upgradeToPremium(userId);
-        Alert.alert(
-          "Premium Upgrade Success", 
-          "You've successfully upgraded to premium! You now have access to premium features and increased daily credits.", 
-          [
-            { 
-              text: "OK", 
-              onPress: async () => {
-                router.reload()
-              }
-            }
-          ]
-        );
-      } catch (error: Error | any) {
-        Alert.alert(
-          "Upgrade Failed",
-          error.message?.includes("Insufficient balance") 
-            ? "You don't have enough SOL in your wallet to upgrade to premium. Please add more funds and try again."
-            : "Failed to upgrade to premium. Please try again later."
-        );
-      } finally {
-        setLoading(false);
-      }
+      // try {
+      //   const response = await userService.upgradeToPremium(userId);
+      //   Alert.alert(
+      //     "Premium Upgrade Success", 
+      //     "You've successfully upgraded to premium! You now have access to premium features and increased daily credits.", 
+      //     [
+      //       { 
+      //         text: "OK", 
+      //         onPress: async () => {
+      //           router.reload()
+      //         }
+      //       }
+      //     ]
+      //   );
+      // } catch (error: Error | any) {
+      //   Alert.alert(
+      //     "Upgrade Failed",
+      //     error.message?.includes("Insufficient balance") 
+      //       ? "You don't have enough SOL in your wallet to upgrade to premium. Please add more funds and try again."
+      //       : "Failed to upgrade to premium. Please try again later."
+      //   );
+      // } finally {
+      //   setLoading(false);
+      // }
+
     }
     
     const exportPrivateKey = async () => {
@@ -113,7 +114,7 @@ const settings = (props: Props) => {
 
           <TouchableOpacity 
             style={[styles.settingItem, user?.isPremium ? styles.disabledButton : {}]} 
-            onPress={() => payPro(user?.id as string)}
+            onPress={() => router.push('/subscription')}
             disabled={loading || user?.isPremium}
           >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>

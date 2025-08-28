@@ -13,19 +13,40 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  Alert,
 } from "react-native";
+import { generateUUID } from "@/utils/constants";
 
 type Props = {};
 
 const verifyOtp = (props: Props) => {
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { 
+    email, 
+    isSignUp, 
+    name, 
+    referralCode, 
+    username 
+  } = useLocalSearchParams<{ 
+    email: string;
+    isSignUp?: string;
+    name?: string;
+    referralCode?: string;
+    username?: string;
+  }>();
+  
   const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(30 * 60);
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [canResend, setCanResend] = useState(false);
+  const [loadingText, setLoadingText] = useState("Verifying...");
   const { setUser } = useUserStore();
 
   useEffect(() => {
-    if (timeLeft <= 0) return;
+    if (timeLeft <= 0) {
+      setCanResend(true);
+      return;
+    }
 
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => prevTime - 1);
@@ -46,8 +67,44 @@ const verifyOtp = (props: Props) => {
     setOtp(numericValue);
   };
 
+  const handleResendOtp = async () => {
+    try {
+      setResendLoading(true);
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+      });
+
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          Alert.alert("Too Many Attempts", "Please wait before requesting another code");
+        } else {
+          Alert.alert("Resend Failed", "Unable to resend code. Please try again later.");
+        }
+        return;
+      }
+
+      setTimeLeft(30 * 60);
+      setCanResend(false);
+      Alert.alert("Code Sent", "A new verification code has been sent to your email");
+      
+    } catch (error) {
+      console.error("Resend OTP error:", error);
+      Alert.alert("Network Error", "Unable to resend code. Please check your connection.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (otp.length !== 6) {
+      Alert.alert("Invalid Code", "Please enter the complete 6-digit verification code");
+      return;
+    }
+
     setLoading(true);
+    setLoadingText("Verifying code...");
+    
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email: email,
@@ -57,23 +114,68 @@ const verifyOtp = (props: Props) => {
 
       if (error) {
         console.error("OTP verification failed:", error.message);
-        alert("Verification failed: " + error.message);
+        
+        if (error.message.includes('expired')) {
+          Alert.alert("Code Expired", "Your verification code has expired. Please request a new one.");
+        } else if (error.message.includes('invalid')) {
+          Alert.alert("Invalid Code", "The verification code you entered is incorrect. Please try again.");
+        } else {
+          Alert.alert("Verification Failed", "Unable to verify your code. Please try again.");
+        }
         return;
       }
 
       if (data && data.user) {
         const userService = new UserService();
-        const userData = await userService.getUser(data.user.email || "");
-
-        setUser(userData);
+        if (isSignUp === "1") {
+          setLoadingText("Creating your account...");
+          
+          try {
+            const userId = generateUUID();
+            const newUser = await userService.createUser({
+              id: userId,
+              name: name || "",
+              email: email,
+              referralCode: referralCode || "",
+              username: username || "",
+            });
+            
+            setUser(newUser);
+          } catch (createError) {
+            console.error("User creation failed:", createError);
+            Alert.alert(
+              "Account Creation Failed", 
+              "Your email was verified successfully, but we couldn't complete your account setup. Please contact support or try again."
+            );
+            return;
+          }
+        } else {
+          setLoadingText("Loading your profile...");
+          
+          try {
+            const userData = await userService.getUser(data.user.email || "");
+            setUser(userData);
+          } catch (getUserError) {
+            console.error("Get user failed:", getUserError);
+            Alert.alert(
+              "Profile Load Failed",
+              "Unable to load your profile. Please try signing in again."
+            );
+            return;
+          }
+        }
 
         router.push("/auth/welcome");
       }
     } catch (error) {
       console.error("Error during OTP verification:", error);
-      alert("An error occurred during verification. Please try again.");
+      Alert.alert(
+        "Connection Error", 
+        "Unable to connect to our servers. Please check your internet connection and try again."
+      );
     } finally {
       setLoading(false);
+      setLoadingText("Verifying...");
     }
   };
 
@@ -109,6 +211,16 @@ const verifyOtp = (props: Props) => {
           Code expires in <Text style={styles.timerText}>{formatTime()}</Text>
         </Text>
 
+        <Text style={styles.expiryText}>
+          Didn't receive a code? {" "}
+          <Text 
+            style={[styles.timerText, (!canResend || resendLoading) && { opacity: 0.5 }]}
+            onPress={canResend && !resendLoading ? handleResendOtp : undefined}
+          >
+            {resendLoading ? "Resending..." : "Resend Code"}
+          </Text>
+        </Text>
+
         <TouchableOpacity
           style={[styles.signInButton, loading && styles.disabledButton]}
           onPress={() => handleSubmit()}
@@ -118,7 +230,6 @@ const verifyOtp = (props: Props) => {
         </TouchableOpacity>
       </View>
 
-      {/* Loading Overlay */}
       <Modal
         transparent={true}
         visible={loading}
@@ -127,7 +238,7 @@ const verifyOtp = (props: Props) => {
         <View style={styles.loadingOverlay}>
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#00FF80" />
-            <Text style={styles.loadingText}>Verifying...</Text>
+            <Text style={styles.loadingText}>{loadingText}</Text>
           </View>
         </View>
       </Modal>
@@ -204,6 +315,13 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
   },
   signInButton: {
+    backgroundColor: "#000",
+    width: "100%",
+    borderRadius: 50,
+    paddingVertical: 16,
+    marginTop: 10,
+  },
+  resendButton: {
     backgroundColor: "#000",
     width: "100%",
     borderRadius: 50,

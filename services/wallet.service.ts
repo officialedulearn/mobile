@@ -50,9 +50,11 @@ export class WalletService {
     }
   }
 
-  async upgradeToPremium(userId: string): Promise<any> {
+  async upgradeToPremium(userId: string, planAmount: number): Promise<any> {
     try {
-      const response = await httpClient.post(`/wallet/upgrade/${userId}`);
+      const response = await httpClient.post(`/wallet/upgrade/${userId}`, {
+        amount: planAmount
+      });
       return response.data;
     } catch (error) {
       console.error('Error upgrading to premium:', error);

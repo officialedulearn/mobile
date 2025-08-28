@@ -45,7 +45,6 @@ const ChatScreen = (props: Props) => {
     const fetchChatAndMessages = async () => {
       try {
         if (chatIdFromNav) {
-          // Only fetch if we have a specific chat ID from navigation
           const chatService = new ChatService();
           const chatData = await chatService.getChatById(currentChatId);
           const messages = await chatService.getMessagesInChat(currentChatId);
@@ -53,13 +52,11 @@ const ChatScreen = (props: Props) => {
           setChat(chatData);
           setInitialMessages(messages);
         } else {
-          // For new chats, just clear the state
           setChat(undefined);
           setInitialMessages([]);
         }
       } catch (error) {
         console.error("Error fetching chat data:", error);
-        // Reset to prevent showing stale data
         setChat(undefined);
         setInitialMessages([]);
       } finally {
@@ -94,7 +91,8 @@ const ChatScreen = (props: Props) => {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 20}
+      enabled={true}
     >
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
@@ -103,7 +101,7 @@ const ChatScreen = (props: Props) => {
             title={chat?.title || "AI Tutor Chat"}
             initialMessages={initialMessages}
             chatId={currentChatId}
-            key={currentChatId} // Force re-render when chat ID changes
+            key={currentChatId}
           />
         </View>
       </SafeAreaView>

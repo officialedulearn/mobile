@@ -45,6 +45,7 @@ export default function RootLayout() {
         <Stack.Screen name="nft/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
         <Stack.Screen name="editProfile" options={{ headerShown: false }} />
+        <Stack.Screen name="subscription" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );
