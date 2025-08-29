@@ -1,14 +1,16 @@
 import useUserStore from "@/core/userState";
 import { router } from "expo-router";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View, useColorScheme} from "react-native";
 
 type Props = {};
 
 const Welcome = (props: Props) => {
-  const { user } = useUserStore();
+  const { user, setTheme } = useUserStore();
+  const colorScheme = useColorScheme();
 
-  const handleStartChatting = () => {
+  const handleStartChatting = async () => {
+    await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
     router.push("/(tabs)");
   };
 
@@ -41,7 +43,7 @@ const Welcome = (props: Props) => {
           onPress={handleStartChatting}
         >
           <Text style={styles.buttonText}>Start Chatting</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> 
       </View>
     </View>
   );

@@ -32,7 +32,7 @@ export class UserService {
         }
     }
 
-    async editUser(userData: { name: string; email: string; username: string }): Promise<User> {
+    async editUser(userData: { name: string; email: string; username: string; learning?: string }): Promise<User> {
         try {
             const response = await httpClient.put('/auth/edit', userData);
             return response.data;
@@ -154,6 +154,16 @@ export class UserService {
             return response.data;
         } catch (error) {
             console.error("Error upgrading to premium:", error);
+            throw error;
+        }
+    }
+
+    async updateUserLearning(userData: { name: string; email: string; username: string; learning: string }): Promise<User> {
+        try {
+            const response = await httpClient.put('/auth/edit', userData);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating user learning:", error);
             throw error;
         }
     }

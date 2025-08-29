@@ -44,6 +44,8 @@ const Quiz = (props: Props) => {
   const [score, setScore] = useState(0);
   const [reviewAnswers, setReviewAnswers] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const [questionAnswers, setQuestionAnswers] = useState<(string | null)[]>([]);
 
@@ -78,6 +80,7 @@ const Quiz = (props: Props) => {
     const fetchQuestions = async () => {
       try {
         setLoading(true);
+        setError(null);
 
         try {
           const chat = await chatService.getChatById(chatId);
@@ -98,19 +101,42 @@ const Quiz = (props: Props) => {
 
         if (Array.isArray(response) && response.length > 0) {
           setQuestions(response);
+          setQuestionAnswers(new Array(response.length).fill(null));
         } else {
           console.error("No questions returned from API");
+          setError("No quiz questions could be generated from this conversation. Please ensure you had an educational discussion and try again.");
         }
 
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching quiz questions:", error);
         setLoading(false);
+        
+        // Set user-friendly error message based on error type
+        if (error.name === 'QuizGenerationError') {
+          setError(error.message);
+        } else if (error.message?.includes('credits')) {
+          setError("You don't have enough credits to generate a quiz. Please purchase more credits or wait for your daily credit refresh.");
+        } else if (error.message?.includes('quiz attempts') || error.message?.includes('Quiz limits')) {
+          setError("You've used all your quiz attempts for today. Premium users get more daily quiz attempts, or wait until tomorrow for a refresh.");
+        } else if (error.message?.includes('already been tested')) {
+          setError("This conversation has already been used for a quiz. Each chat can only generate one quiz to ensure fairness.");
+        } else if (error.message?.includes('conversation content') || error.message?.includes('educational content')) {
+          setError("This conversation doesn't contain enough educational content to generate a meaningful quiz. Try having a longer learning-focused discussion first.");
+        } else if (error.message?.includes('timeout')) {
+          setError("The quiz generation is taking longer than usual. Please check your internet connection and try again.");
+        } else {
+          setError("Something went wrong while generating your quiz. Please check your internet connection and try again.");
+        }
       }
     };
 
     fetchQuestions();
-  }, [chatId, user?.id]);
+  }, [chatId, user?.id, retryCount]);
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
 
   const handleSelectOption = (option: string) => {
     setSelectedOption(option);
@@ -184,6 +210,26 @@ const Quiz = (props: Props) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00FF80" />
           <Text style={styles.loadingText}>Loading quiz questions...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.returnButton}
+            onPress={handleRetry}
+          >
+            <Text style={styles.returnButtonText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.returnButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.returnButtonText}>Return to Quizzes</Text>
+          </TouchableOpacity>
         </View>
       );
     }

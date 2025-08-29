@@ -143,6 +143,7 @@ const User = (props: Props) => {
           style={styles.userImage}
         />
         <Text style={styles.userName}>{user?.name}</Text>
+        <Text style={styles.joinedText}>im learning {user?.learning}</Text>
         <Text style={styles.joinedText}>
           Joined on{" "}
           {joinedAt ? new Date(joinedAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "Loading..."}

@@ -6,6 +6,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -36,9 +37,7 @@ const Auth = () => {
     
     if (field === 'email') {
       sanitizedValue = value.trim().toLowerCase();
-    } else if (field === 'name') {
-      sanitizedValue = value.trim();
-    } else if (field === 'username') {
+    }  else if (field === 'username') {
       sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     } else if (field === 'referralCode') {
       sanitizedValue = value.trim().toUpperCase();
@@ -135,116 +134,141 @@ const Auth = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View style={styles.topNavigation}>
-        <Image
-          source={require("@/assets/images/LOGO-1.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </View>
-
-      <View style={styles.textContainer}>
-        <Text style={styles.welcome}>
-          {isSignUp ? "Create account" : "Welcome back"}
-        </Text>
-        <Text style={styles.subtitle}>
-          {isSignUp
-            ? "Sign up to begin your learning journey"
-            : "Log in to continue your learning journey"}
-        </Text>
-      </View>
-
-      <View style={styles.content}>
-        {isSignUp && (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#61728C"
-              value={formData.name}
-              onChangeText={(text) => handleChange("name", text)}
-            />
-          </View>
-        )}
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#61728C"
-            value={formData.email}
-            onChangeText={(text) => handleChange("email", text)}
-          />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets={true}
+      >
+        <View style={styles.topNavigation}>
           <Image
-            source={require("@/assets/images/icons/mail.png")}
-            style={styles.icon}
+            source={require("@/assets/images/LOGO-1.png")}
+            style={styles.logo}
             resizeMode="contain"
           />
         </View>
 
-        {/* <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#61728C"
-            secureTextEntry
-            value={formData.password}
-            onChangeText={(text) => handleChange("password", text)}
-          />
-          <Image
-            source={require("@/assets/images/icons/eye.png")}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-        </View> */}
-
-        {isSignUp && (
-          <>
-            <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Referral Code (Optional)"
-              placeholderTextColor="#61728C"
-              value={formData.referralCode}
-              onChangeText={(text) => handleChange("referralCode", text)}
-            />
-          </View>
-            <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="X username"
-              placeholderTextColor="#61728C"
-              value={formData.username}
-              onChangeText={(text) => handleChange("username", text)}
-            />
-          </View>
-          </>
-        )}
-
-        <TouchableOpacity
-          style={[styles.signInButton, loading ? styles.disabledButton : null]}
-          onPress={() => handleAuth()}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
+        <View style={styles.textContainer}>
+          <Text style={styles.welcome}>
+            {isSignUp ? "Create account" : "Welcome back"}
           </Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.subtitle}>
+            {isSignUp
+              ? "Sign up to begin your learning journey"
+              : "Log in to continue your learning journey"}
+          </Text>
+        </View>
 
-      <View style={{ marginTop: 30, alignItems: "flex-start" }}>
-        <Text style={styles.subtitle}>
-          {isSignUp ? "Already have an account? " : "Don't have an account? "}
-          <Text
-            onPress={() => setIsSignUp(!isSignUp)}
-            style={{ color: "#000", fontWeight: "700" }}
+        <View style={styles.content}>
+          {isSignUp && (
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Full Name"
+                placeholderTextColor="#61728C"
+                value={formData.name}
+                onChangeText={(text) => handleChange("name", text)}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="next"
+                textContentType="name"
+              />
+            </View>
+          )}
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#61728C"
+              value={formData.email}
+              onChangeText={(text) => handleChange("email", text)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              textContentType="emailAddress"
+            />
+            <Image
+              source={require("@/assets/images/icons/mail.png")}
+              style={styles.icon}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#61728C"
+              secureTextEntry
+              value={formData.password}
+              onChangeText={(text) => handleChange("password", text)}
+            />
+            <Image
+              source={require("@/assets/images/icons/eye.png")}
+              style={styles.icon}
+              resizeMode="contain"
+            />
+          </View> */}
+
+          {isSignUp && (
+            <>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Referral Code (Optional)"
+                  placeholderTextColor="#61728C"
+                  value={formData.referralCode}
+                  onChangeText={(text) => handleChange("referralCode", text)}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={[styles.input, styles.usernameInput]}
+                  placeholder="X username (optional)"
+                  placeholderTextColor="#61728C"
+                  value={formData.username}
+                  onChangeText={(text) => handleChange("username", text)}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  textContentType="username"
+                />
+              </View>
+            </>
+          )}
+
+          <TouchableOpacity
+            style={[styles.signInButton, loading ? styles.disabledButton : null]}
+            onPress={() => handleAuth()}
+            disabled={loading}
           >
-            {isSignUp ? "Sign In" : "Sign Up"}
+            <Text style={styles.buttonText}>
+              {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ marginTop: 30, alignItems: "flex-start" }}>
+          <Text style={styles.subtitle}>
+            {isSignUp ? "Already have an account? " : "Don't have an account? "}
+            <Text
+              onPress={() => setIsSignUp(!isSignUp)}
+              style={{ color: "#000", fontWeight: "700" }}
+            >
+              {isSignUp ? "Sign In" : "Sign Up"}
+            </Text>
           </Text>
-        </Text>
-      </View>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -253,8 +277,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FBFC",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 40,
+    paddingBottom: 100,
+    flexGrow: 1,
   },
   topNavigation: {
     marginBottom: 10,
@@ -319,6 +350,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+  },
+  usernameInput: {
+    color: "#2D3C52",
   },
 });
 

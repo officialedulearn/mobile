@@ -8,6 +8,7 @@ export default {
     owner: "edulearn",
     scheme: "edulearnv2",
     newArchEnabled: true,
+    userInterfaceStyle: "automatic",
     icon: "./assets/images/mainlogo.png",
     android: {
       package: "com.edulearnv2.app",

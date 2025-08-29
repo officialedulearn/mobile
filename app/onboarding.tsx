@@ -22,12 +22,25 @@ type OnBoardingSteps = {
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = SCREEN_WIDTH / 3;
+const SWIPE_THRESHOLD = SCREEN_WIDTH / 6; 
+const VELOCITY_THRESHOLD = 0.2; 
 
 const OnBoarding = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const pan = useRef(new Animated.ValueXY()).current;
-  
+  const isAnimating = useRef(false); 
+  const currentPanValue = useRef({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const listenerId = pan.addListener((value) => {
+      currentPanValue.current = value;
+    });
+
+    return () => {
+      pan.removeListener(listenerId);
+    };
+  }, [pan]);
+
   const onBoardingSteps: OnBoardingSteps[] = [
     {
       title: "Welcome to EduLearn",
@@ -53,23 +66,55 @@ const OnBoarding = () => {
   ];
 
   const resetPosition = () => {
+    if (isAnimating.current) return;
+    
+    isAnimating.current = true;
     Animated.spring(pan, {
       toValue: { x: 0, y: 0 },
       useNativeDriver: false,
-    }).start();
+      tension: 100,
+      friction: 8,
+    }).start(() => {
+      isAnimating.current = false;
+    });
+  };
+
+  const animateToStep = (direction: 'next' | 'prev') => {
+    if (isAnimating.current) return;
+    
+    isAnimating.current = true;
+    let newStepIndex = stepIndex;
+    if (direction === 'next') {
+      newStepIndex = Math.min(stepIndex + 1, onBoardingSteps.length - 1);
+    } else {
+      newStepIndex = Math.max(stepIndex - 1, 0);
+    }
+    
+    console.log(`Animating ${direction}: from step ${stepIndex} to step ${newStepIndex}`);
+    setStepIndex(newStepIndex);
+    
+    const targetX = direction === 'next' ? -SCREEN_WIDTH : SCREEN_WIDTH;
+    
+    Animated.timing(pan, {
+      toValue: { x: targetX, y: 0 },
+      duration: 250,
+      useNativeDriver: false,
+    }).start(() => {
+      pan.setValue({ x: 0, y: 0 });
+      isAnimating.current = false;
+      console.log(`Animation complete, now at step ${newStepIndex}`);
+    });
   };
 
   const goToNextStep = () => {
     if (stepIndex < onBoardingSteps.length - 1) {
-      setStepIndex((prev) => prev + 1);
-      resetPosition();
+      animateToStep('next');
     }
   };
 
   const goToPrevStep = () => {
     if (stepIndex > 0) {
-      setStepIndex((prev) => prev - 1);
-      resetPosition();
+      animateToStep('prev');
     }
   };
 
@@ -79,21 +124,52 @@ const OnBoarding = () => {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: Animated.event([null, { dx: pan.x }], {
-        useNativeDriver: false,
-      }),
+      onStartShouldSetPanResponder: () => !isAnimating.current,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return !isAnimating.current && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+      },
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: 0, y: 0 });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: (_, gestureState) => {
+        let dx = gestureState.dx;
+      
+        if (stepIndex === 0 && dx > 0) {
+          dx = dx * 0.2; 
+        } else if (stepIndex === onBoardingSteps.length - 1 && dx < 0) {
+          dx = dx * 0.2;
+        }
+        
+        pan.setValue({ x: dx, y: 0 });
+      },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx < -SWIPE_THRESHOLD) {
-          // Swiped left
-          goToNextStep();
-        } else if (gestureState.dx > SWIPE_THRESHOLD) {
-          // Swiped right
-          goToPrevStep();
+        pan.flattenOffset();
+        
+        const { dx, vx } = gestureState;
+        const absVx = Math.abs(vx);
+        const absDx = Math.abs(dx);
+        
+        console.log(`Swipe: dx=${dx}, vx=${vx}, stepIndex=${stepIndex}, absDx=${absDx}, absVx=${absVx}, canGoNext=${stepIndex < onBoardingSteps.length - 1}, canGoPrev=${stepIndex > 0}`);
+        
+        const shouldChangeStep = absDx > SWIPE_THRESHOLD || absVx > VELOCITY_THRESHOLD;
+        
+        if (shouldChangeStep) {
+          if (dx < 0 && stepIndex < onBoardingSteps.length - 1) {
+            goToNextStep();
+          } else if (dx > 0 && stepIndex > 0) {
+            goToPrevStep();
+          } else {
+            resetPosition();
+          }
         } else {
-          // Reset position
+          console.log(`Not enough distance/velocity (threshold: ${SWIPE_THRESHOLD}, velocity: ${VELOCITY_THRESHOLD}), resetting position`);
           resetPosition();
         }
+      },
+      onPanResponderTerminate: () => {
+        pan.flattenOffset();
+        resetPosition();
       },
     })
   ).current;
@@ -143,23 +219,23 @@ const OnBoarding = () => {
           <Text style={styles.title}>{currentStep.title}</Text>
           <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
         </View>
-
-        <View style={styles.stepsDisplay}>
-          {onBoardingSteps.map((_, index) => (
-            <TouchableOpacity 
-              key={index} 
-              onPress={() => {
-                setStepIndex(index);
-                resetPosition();
-              }}
-            >
-              <View
-                style={[styles.dot, stepIndex === index && styles.activeDot]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
       </Animated.View>
+
+      <View style={styles.stepsDisplay}>
+        {onBoardingSteps.map((_, index) => (
+          <TouchableOpacity 
+            key={index} 
+            onPress={() => {
+              setStepIndex(index);
+              resetPosition();
+            }}
+          >
+            <View
+              style={[styles.dot, stepIndex === index && styles.activeDot]}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={styles.footer}>
         {stepIndex === onBoardingSteps.length - 1 ? (

@@ -133,6 +133,25 @@ const settings = (props: Props) => {
             />
           </TouchableOpacity>
 
+          <TouchableOpacity 
+            style={styles.settingItem} 
+            onPress={() => router.push("/theme")}
+            disabled={loading}
+          >
+            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+              <Image
+                source={require("@/assets/images/icons/moon.png")}
+                style={{ width: 24, height: 24 }} 
+              />
+              <Text style={styles.settingText}>Theme</Text>
+            </View>
+
+            <Image 
+              source={require("@/assets/images/icons/CaretRight.png")}
+              style={{ width: 24, height: 24 }}
+            />
+          </TouchableOpacity>
+
           <View style={styles.settingItem}>
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image

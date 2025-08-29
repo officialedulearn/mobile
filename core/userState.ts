@@ -3,10 +3,12 @@ import { ActivityService } from "@/services/activity.service";
 import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
 import { create } from "zustand";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
   user: User | null;
-  walletBalance: {sol: number, tokenAccount: number} | null
+  walletBalance: {sol: number, tokenAccount: number} | null;
+  theme: 'light' | 'dark';
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => Promise<void>;
@@ -15,6 +17,8 @@ interface UserState {
     level: "novice" | "beginner" | "intermediate" | "advanced" | "expert"
   ) => void;
   fetchWalletBalance: () => Promise<void>;
+  setTheme: (theme: 'light' | 'dark') => Promise<void>;
+  loadTheme: () => Promise<void>;
 }
 
 const userService = new UserService();
@@ -22,7 +26,6 @@ const activityService = new ActivityService();
 
 const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undefined): Promise<number> => {
   if (!lastSignInAt) {
-    // First time login - set streak to 1
     const newStreak = 1;
     await userService.updateUserStreak(user.id, newStreak);
     return newStreak;
@@ -32,23 +35,19 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
     const lastActive = new Date(lastSignInAt);
     const now = new Date();
     
-    // Calculate hours difference (same logic as streak component)
     const hoursDiff = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
     
     let newStreak: number;
     
     if (hoursDiff > 24) {
-      // More than 24 hours - reset streak to 1
       newStreak = 1;
     } else {
-      // Within 24 hours - maintain current streak
       newStreak = user.streak || 1;
     }
     
-    // Update streak in database
     await userService.updateUserStreak(user.id, newStreak);
     
-    // Award streak bonus XP if streak is significant (same logic as streak component)
+  
     if (newStreak >= 3) {
       await activityService.createActivity({
         userId: user.id, 
@@ -61,7 +60,6 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
     return newStreak;
   } catch (error) {
     console.error("Error calculating streak:", error);
-    // On error, maintain current streak or set to 1
     const fallbackStreak = user.streak || 1;
     await userService.updateUserStreak(user.id, fallbackStreak);
     return fallbackStreak;
@@ -71,6 +69,7 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
 const useUserStore = create<UserState>((set, get) => ({
   user: null,
   walletBalance: {sol: 0, tokenAccount: 0},
+  theme: 'light',
   setUserAsync: async () => {
     if (typeof window === "undefined") return;
 
@@ -89,7 +88,6 @@ const useUserStore = create<UserState>((set, get) => ({
         return;
       }
 
-      // Calculate and update streak based on last sign in
       const updatedStreak = await calculateAndUpdateStreak(
         userFromDB,
         authUser.last_sign_in_at
@@ -172,6 +170,26 @@ const useUserStore = create<UserState>((set, get) => ({
       set({ user: null, walletBalance: null });
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  },
+
+  setTheme: async (theme: 'light' | 'dark') => {
+    try {
+      await AsyncStorage.setItem('theme', theme);
+      set({ theme });
+    } catch (error) {
+      console.error("Failed to set theme:", error);
+    }
+  },
+
+  loadTheme: async () => {
+    try {
+      const theme = await AsyncStorage.getItem('theme');
+      if (theme) {
+        set({ theme: theme as 'light' | 'dark' });
+      }
+    } catch (error) {
+      console.error("Failed to load theme:", error);
     }
   },
 }));

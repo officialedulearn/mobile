@@ -14,7 +14,8 @@ const editProfile = (props: Props) => {
   
   const [formData, setFormData] = useState({
     name: user?.name || "",
-    username: user?.username || ""
+    username: user?.username || "",
+    learning: user?.learning || ""
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -40,14 +41,16 @@ const editProfile = (props: Props) => {
       const updatedUser = await userService.editUser({
         name: formData.name,
         email: user?.email as string,
-        username: formData.username
+        username: formData.username,
+        learning: formData.learning
       });
       
       if (user) {
         setUser({
           ...user,
           name: updatedUser.name,
-          username: updatedUser.username
+          username: updatedUser.username,
+          learning: updatedUser.learning
         });
       }
 
@@ -111,6 +114,20 @@ const editProfile = (props: Props) => {
               />
             </View>
           </View>
+
+          <View>
+            <Text style={styles.inputLabel}>What are you learning?</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="blockchain basics, web3 design, smart contracts..."
+                placeholderTextColor="#61728C"
+                value={formData.learning}
+                onChangeText={(text) => handleChange("learning", text)}
+                maxLength={100}
+              />
+            </View>
+          </View>
         </View>
         
         <View style={styles.buttonsContainer}>
@@ -119,11 +136,13 @@ const editProfile = (props: Props) => {
               style={styles.cancelButton}
               onPress={handleCancel}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-              <Image
-                source={require('@/assets/images/icons/cancel.png')}
-                style={{ width: 20, height: 20 }}
-              />
+              <View style={styles.buttonContent}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Image
+                  source={require('@/assets/images/icons/cancel.png')}
+                  style={{ width: 20, height: 20 }}
+                />
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -134,13 +153,13 @@ const editProfile = (props: Props) => {
               {isLoading ? (
                 <ActivityIndicator size="small" color="#00FF80" />
               ) : (
-                <>
+                <View style={styles.buttonContent}>
                   <Text style={styles.saveButtonText}>Save Changes</Text>
                   <Image
                     source={require('@/assets/images/icons/checkmark.png')}
                     style={{ width: 20, height: 20 }}
                   />
-                </>
+                </View>
               )}
             </TouchableOpacity>
           </View>
@@ -183,7 +202,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60, // Increased top padding for better spacing
+    paddingTop: 60, 
   },
   headerText: {
     fontSize: 20,
@@ -249,11 +268,12 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     borderWidth: 1,
     borderRadius: 16,
-    gap: 12,
+    height: 48,
     paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
-    flexDirection: 'row',
+    justifyContent: 'center',
+    flex: 1,
   },
   cancelButtonText: {
     color: "#000",
@@ -266,12 +286,12 @@ const styles = StyleSheet.create({
   saveButton: {
     borderRadius: 16,
     paddingVertical: 10,
+    height: 48,
     paddingHorizontal: 16,
     backgroundColor: "#000",
     alignItems: 'center',
-    flexDirection: 'row',
-    minWidth: 140,
     justifyContent: 'center',
+    flex: 1,
   },
   saveButtonText: {
     color: "#00FF80",
@@ -279,7 +299,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Satoshi",
     lineHeight: 24,
-    marginRight: 8,
   },
   buttons: {
     flexDirection: 'row',
@@ -332,5 +351,10 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     justifyContent: 'center', // Center vertically in the available space
     alignItems: 'center', // Center horizontally
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   }
 })

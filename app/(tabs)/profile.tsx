@@ -47,6 +47,7 @@ const Profile = (props: Props) => {
   const user = useUserStore((state) => state.user);
   const walletBalance = useUserStore((state) => state.walletBalance);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);
+  const theme = useUserStore(s => s.theme);
   const [userMetrics, setUserMetrics] = React.useState({
     quizCompleted: 0,
     nfts: 0,
@@ -142,7 +143,7 @@ const Profile = (props: Props) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.container, { marginTop: width > 350 ? 30 : 20 }]}>
           <View style={styles.header}>
@@ -280,9 +281,9 @@ const Profile = (props: Props) => {
                 source={require("@/assets/images/icons/congrats.png")}
                 style={{ width: 62, height: 62 }}
               />
-              <View style={{flexDirection: "column", gap: 4}}>
-                <Text style={{fontFamily: "Satoshi", fontSize: 16,fontWeight: 500,color: "#2D3C52", lineHeight: 30}}>Invite friends, earn rewards!</Text>
-                <Text style={styles.cardSubText}>Share your referral link and earn XP when they join. </Text>
+              <View style={styles.inviteTextContainer}>
+                <Text style={styles.inviteTitle}>Invite friends, earn rewards!</Text>
+                <Text style={styles.inviteSubtitle}>Share your referral link and earn XP when they join.</Text>
               </View>
             </View>
 
@@ -748,9 +749,32 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   invitePush: {
-    gap: 24,
+    gap: 16,
     alignItems: "center",
     flexDirection: "row",
+    flex: 1,
+  },
+  inviteTextContainer: {
+    flexDirection: "column",
+    gap: 4,
+    flex: 1,
+    flexShrink: 1,
+  },
+  inviteTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: 500,
+    color: "#2D3C52",
+    lineHeight: 22,
+    flexWrap: "wrap",
+  },
+  inviteSubtitle: {
+    fontFamily: "Urbanist",
+    fontSize: 14,
+    fontWeight: 400,
+    color: "#61728C",
+    lineHeight: 18,
+    flexWrap: "wrap",
   },
   referralCodeContainer: {
     borderRadius: 16,
@@ -816,6 +840,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     marginTop: 16,
+    width: "100%",
   },
   cancelButton: {
     backgroundColor: "#FFFFFF",
@@ -826,6 +851,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    height: 44,
+    flex: 1,
   },
   buyModalButton: {
     backgroundColor: "#000000",
@@ -834,12 +861,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    height: 44,
+    flex: 1,
   },
   buyModalButtonText: {
     color: "#00FF80",
     fontFamily: "Satoshi",
     fontSize: 16,
     fontWeight: "700",
+  
   },
   cancelButtonText: {
     color: "#000000",
@@ -858,7 +888,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   tokenUtilitiesContainer: {
-    paddingHorizontal: 20,
+    // paddingHorizontal: 20,
   },
   tokenUtility: {
     backgroundColor: "#FFFFFF",

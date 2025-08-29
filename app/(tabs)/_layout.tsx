@@ -1,3 +1,4 @@
+import useUserStore from "@/core/userState";
 import { Tabs } from "expo-router";
 import React from "react";
 import { Image, StyleSheet } from "react-native";
@@ -5,6 +6,7 @@ import { Image, StyleSheet } from "react-native";
 type Props = {};
 
 const TabLayout = (props: Props) => {
+  const theme = useUserStore(s => s.theme);
   return (
     <Tabs
       screenOptions={{
@@ -15,7 +17,10 @@ const TabLayout = (props: Props) => {
           elevation: 0,
           height: 70,
           paddingBottom: 15,
-          paddingTop: 15
+          paddingTop: 15,
+          backgroundColor: theme === 'dark' ? '#131313' : "#FFF",
+          borderColor: theme === 'dark' ? '#131313' : "#FFF",
+          borderWidth: 1,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -26,6 +31,7 @@ const TabLayout = (props: Props) => {
         tabBarShowLabel: true,
         tabBarItemStyle: {
           backgroundColor: "transparent",
+          
         }
         
       }}
@@ -36,7 +42,7 @@ const TabLayout = (props: Props) => {
           title: "Home",
           tabBarIcon: ({ color }) => (
             <Image
-              source={require("@/assets/images/icons/home.png")}
+              source={theme === 'dark' ? require("@/assets/images/icons/dark/home.png") : require("@/assets/images/icons/home.png")}
               style={[styles.tabIcon, { tintColor: color }]}
             />
           ),
@@ -49,7 +55,7 @@ const TabLayout = (props: Props) => {
           title: "Quizzes",
           tabBarIcon: ({ color }) => (
             <Image
-              source={require("@/assets/images/icons/brain2.png")}
+              source={theme === 'dark' ? require("@/assets/images/icons/dark/brain2.png") : require("@/assets/images/icons/brain2.png")}
               style={[styles.tabIcon, { tintColor: color }]}
             />
           ),
@@ -76,7 +82,7 @@ const TabLayout = (props: Props) => {
           title: "Rewards",
           tabBarIcon: ({ color }) => (
             <Image
-              source={require("@/assets/images/icons/gift.png")}
+              source={theme === 'dark' ? require("@/assets/images/icons/dark/gift.png") : require("@/assets/images/icons/gift.png")}
               style={[styles.tabIcon, { tintColor: color }]}
             />
           ),
@@ -89,7 +95,7 @@ const TabLayout = (props: Props) => {
           title: "Profile",
           tabBarIcon: ({ color }) => (
             <Image
-              source={require("@/assets/images/icons/user.png")}
+              source={theme === 'dark' ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user.png")}
               style={[styles.tabIcon, { tintColor: color }]}
             />
           ),

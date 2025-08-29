@@ -141,6 +141,8 @@ const verifyOtp = (props: Props) => {
             });
             
             setUser(newUser);
+            // Redirect new users to identity page first
+            router.push("/auth/identity");
           } catch (createError) {
             console.error("User creation failed:", createError);
             Alert.alert(
@@ -155,6 +157,8 @@ const verifyOtp = (props: Props) => {
           try {
             const userData = await userService.getUser(data.user.email || "");
             setUser(userData);
+            // Redirect existing users directly to welcome page
+            router.push("/auth/welcome");
           } catch (getUserError) {
             console.error("Get user failed:", getUserError);
             Alert.alert(
@@ -164,8 +168,6 @@ const verifyOtp = (props: Props) => {
             return;
           }
         }
-
-        router.push("/auth/welcome");
       }
     } catch (error) {
       console.error("Error during OTP verification:", error);

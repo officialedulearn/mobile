@@ -398,12 +398,10 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     marginBottom: 20,
-    alignItems: "center",
   },
   tabs: {
     flexDirection: "row",
-    gap: 20,
-    justifyContent: "center",
+    justifyContent: "space-between",
     width: "100%",
   },
   activeTab: {

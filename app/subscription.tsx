@@ -14,7 +14,7 @@ import { WalletService } from "@/services/wallet.service";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
-
+import { Image } from "expo-image";
 const { width } = Dimensions.get("window");
 
 const walletService = new WalletService();
@@ -32,7 +32,7 @@ const planData = [
   },
   {
     name: "Pro",
-    price: 8,
+    price: 5,
     features: [
       "Unlimited AI chat support",
       "Unlimited quizzes",
@@ -78,9 +78,10 @@ const PlanCard = ({
 
       <View style={styles.featureList}>
         {features.map((feature, index) => (
-          <Text key={index} style={styles.featureText}>
-            ✅ {feature}
-          </Text>
+          <View key={index} style={styles.featureItem}>
+            <Image source={require("@/assets/images/icons/checkmark.png")} style={styles.checkmarkIcon} />
+            <Text style={styles.featureText}>{feature}</Text>
+          </View>
         ))}
       </View>
     </View>
@@ -367,6 +368,7 @@ const styles = StyleSheet.create({
     borderColor: "#00FF80",
     borderRadius: 16,
     padding: 16,
+    gap: 16,
     flexDirection: "column",
     minHeight: 450,
   },
@@ -393,12 +395,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#2D3C52",
     fontFamily: "Satoshi",
+    lineHeight: 32,
   },
   littlePriceText: {
     fontSize: 14,
     color: "#61728C",
     marginLeft: 4,
     fontFamily: "Satoshi",
+    lineHeight: 24,
   },
   planName: {
     fontSize: 18,
@@ -429,6 +433,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EDF3FC",
     gap: 6,
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  checkmarkIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 8,
   },
   featureText: {
     fontSize: 14,

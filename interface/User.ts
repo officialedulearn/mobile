@@ -13,4 +13,5 @@ export interface User {
     username: string;
     quizCompleted: number;
     isPremium: boolean;
+    learning?: string;
 }

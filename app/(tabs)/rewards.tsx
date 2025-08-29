@@ -45,6 +45,7 @@ const rewards = (props: Props) => {
   const screenWidth = Dimensions.get("window").width;
   const itemWidth = (screenWidth - 48) / 2;
   const { activities, fetchActivities } = useActivityStore();
+  const theme = useUserStore(s => s.theme);
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -151,7 +152,7 @@ const rewards = (props: Props) => {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 30 }}
     >

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  useColorScheme
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -19,7 +20,8 @@ type Props = {};
 const index = (props: Props) => {
   const { user } = useUserStore();
   const { activities, fetchActivities, isLoading } = useActivityStore();
-
+  const theme = useUserStore(s => s.theme);
+  
   useEffect(() => {
     if (user?.id) {
       fetchActivities(user.id);
@@ -85,11 +87,11 @@ const index = (props: Props) => {
 
   return (
     <ScrollView 
-      style={styles.container} 
+      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]} 
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar style="dark" />
+      {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
       <View style={styles.content}>
         <View style={styles.topNav}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -98,43 +100,43 @@ const index = (props: Props) => {
               style={{ width: 40, height: 40 }}
             />
             <View style={{ flexDirection: "column" }}>
-              <Text style={styles.headerText}>Hi {user?.name}👋</Text>
-              <Text style={styles.subText}>Learn & earn more XP today</Text>
+              <Text style={[styles.headerText, theme == "dark" && styles.headerTextDark ]}>Hi {user?.name}👋</Text>
+              <Text style={[styles.subText, theme == "dark" && { color: "#B3B3B3" }]}>Learn & earn more XP today</Text>
             </View>
           </View>
 
           <TouchableOpacity
-            style={styles.searchNav}
+            style={[styles.searchNav, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/search")}
             activeOpacity={0.7}
           >
             <Image
-              source={require("@/assets/images/icons/search-normal.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/search.png") : require("@/assets/images/icons/search-normal.png")}
               style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.xpProgress}>
+        <View style={[styles.xpProgress, theme === "dark" && { backgroundColor: "#00FF80" }]}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Image
-              source={require("@/assets/images/icons/medal.png")}
-              style={{ width: 20, height: 20 }}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/medal-05.png") : require("@/assets/images/icons/medal.png")}
+              style={{ width: 24, height: 24 }}
             />
 
-            <Text style={styles.xpText}>{user?.xp} XP</Text>
+            <Text style={[styles.xpText, theme === "dark" &&  {color: "#000"}]}>{user?.xp} XP</Text>
           </View>
 
           <ProgressBar
             progress={progress}
-            color="#00FF80"
+            color={theme === "dark" ? "#000" : "#00FF80"}
             style={{
               height: 10,
               borderRadius: 5,
-              backgroundColor: "rgba(255, 255, 255, 0.10)",
+              backgroundColor: theme === "dark" ? "rgba(255, 255, 255, 0.60)" : "rgba(255, 255, 255, 0.10)",
             }}
           />
-          <Text style={[styles.subText, { color: "#00FF80" }]}>
+          <Text style={[styles.subText, { color: "#00FF80" }, theme === "dark" && { color: "#000" }]}>
             {xpNeeded > 0
               ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`
               : "Congratulations! You've reached the highest level! 🏆"}
@@ -143,56 +145,58 @@ const index = (props: Props) => {
 
         <View style={styles.cardContainer}>
           <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             activeOpacity={0.8}
             onPress={() => router.push("/quizzes")}
           >
             <Image
               source={require("@/assets/images/icons/brain.png")}
-              style={{ width: 50, height: 50 }}
+              style={{ width:44, height: 44 }}
             />
-            <Text style={styles.cardText}>Take a Quiz</Text>
-            <Text style={styles.cardSubText}>
+            <Text style={[styles.cardText, theme === "dark" && {color: "#E0E0E0"}]}>Take a Quiz</Text>
+            <Text style={[styles.cardSubText, theme === "dark" && { color: "#B3B3B3" }]}>
               Starts a recommended or random quiz
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             activeOpacity={0.8}
             onPress={() => router.push("/leaderboard")}
           >
             <Image
               source={require("@/assets/images/icons/leaderboard.png")}
-              style={{ width: 50, height: 50 }}
+              style={{ width: 44, height: 44 }}
             />
-            <Text style={styles.cardText}>Leaderboard</Text>
-            <Text style={styles.cardSubText}>View rankings among users</Text>
+            <Text style={[styles.cardText, theme === "dark" && {color: "#E0E0E0"}]}>Leaderboard</Text>
+            <Text style={[styles.cardSubText, theme === "dark" && {color: "#B3B3B3"}]}>View rankings among users</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.activityContainer}>
           <View style={styles.activityContainerHeader}>
-            <Text style={styles.activityContainerHeaderText}>
+            <Text style={[styles.activityContainerHeaderText, theme === "dark" && styles.headerTextDark ]}>
               Recent Highlights
             </Text>
             <TouchableOpacity
-              style={styles.seeMoreButton}
+              style={[styles.seeMoreButton , theme === "dark" && {borderColor: "#2E3033"}]}
               onPress={() => router.push("/quizzes")}
             >
               <Text
-                style={{
-                  fontFamily: "Satoshi",
-                  lineHeight: 24,
-                  fontSize: 14,
-                  fontWeight: 400,
-                  color: "#2D3C52",
-                }}
+                style={[
+                  {
+                    fontFamily: "Satoshi",
+                    lineHeight: 24,
+                    fontSize: 14,
+                    fontWeight: 400,
+                    color: "#2D3C52",
+                  }, theme === "dark" && { color: "#E0E0E0" }
+                ]}
               >
                 See all
               </Text>
               <Image
-                source={require("@/assets/images/icons/CaretRight.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
                 style={{ width: 24, height: 24 }}
               />
             </TouchableOpacity>
@@ -211,10 +215,10 @@ const index = (props: Props) => {
               <Text style={styles.loadingText}>Loading...</Text>
             </View>
           ) : (
-            <View style={styles.activityContainerItems}>
+            <View style={[styles.activityContainerItems, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
               {activities.slice(0, 3).map((activity) => (
-                <View key={activity.id} style={styles.activityContainerItem}>
-                  <Text style={styles.activityTitle}>{activity.title}</Text>
+                <View key={activity.id} style={[styles.activityContainerItem, theme === "dark" && {borderBottomColor: "#2E3033"}]}>
+                  <Text style={[styles.activityTitle, theme === "dark" && { color: "#E0E0E0" }]}>{activity.title}</Text>
 
                   <View
                     style={{
@@ -227,7 +231,7 @@ const index = (props: Props) => {
                       source={require("@/assets/images/icons/medal-05.png")}
                       style={{ width: 20, height: 20, marginBottom: 4 }}
                     />
-                    <Text style={styles.activityXp}>
+                    <Text style={[styles.activityXp, theme === "dark" && { color: "#B3B3B3" }]}>
                       +{activity.xpEarned} XP
                     </Text>
                   </View>
@@ -237,17 +241,17 @@ const index = (props: Props) => {
           )}
         </View>
 
-        <View style={styles.bountyCard}>
+        <View style={[styles.bountyCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
           <View>
-            <View style={styles.bountyCardPill}>
+            <View style={[styles.bountyCardPill, theme === "dark" && { backgroundColor: "#0D0D0D", borderColor: "#2E3033" }]}>
               <Image
                 source={require("@/assets/images/icons/trophy.png")}
                 style={{ width: 16, height: 16 }}
               />
-              <Text style={styles.bountyChallengeText}>Bounty Challenge</Text>
+              <Text style={[styles.bountyChallengeText, theme === "dark" && { color: "#B3B3B3" }]}>Bounty Challenge</Text>
             </View>
 
-            <Text style={styles.bountyCardText}>Stay Top 3 This Week!</Text>
+            <Text style={[styles.bountyCardText, theme === "dark" && { color: "#E0E0E0" }]}>Stay Top 3 This Week!</Text>
           </View>
           <Image
             source={require("@/assets/images/icons/bountyCard.png")}
@@ -290,6 +294,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: "#2D3C52",
     fontWeight: "700",
+  },
+  headerTextDark: {
+    color: "#E0E0E0"
   },
   subText: {
     fontFamily: "Urbanist",

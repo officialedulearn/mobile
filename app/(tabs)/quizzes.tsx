@@ -25,6 +25,7 @@ const quizzes = (props: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const chatService = new ChatService();
   const user = useUserStore((s) => s.user);
+  const theme = useUserStore(s => s.theme);
   const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth * 0.75;
@@ -59,7 +60,7 @@ const quizzes = (props: Props) => {
   const testedChats = chats.filter(chat => !chat.tested)
   return (  
     <ScrollView 
-      style={styles.container}
+      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
       showsVerticalScrollIndicator={false}
     >
       <StatusBar style="dark" />
