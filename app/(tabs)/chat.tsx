@@ -31,32 +31,50 @@ const ChatScreen = (props: Props) => {
     chatIdFromNav || generateUUID()
   );
 
+  // Immediately update currentChatId when chatIdFromNav changes
   useEffect(() => {
     if (chatIdFromNav && chatIdFromNav !== currentChatId) {
       setCurrentChatId(chatIdFromNav);
     }
   }, [chatIdFromNav]);
 
+  // Improved data fetching with better error handling
   useEffect(() => {
-    setIsLoading(true);
-    setChat(undefined);
-    setInitialMessages([]);
-
     const fetchChatAndMessages = async () => {
+      // If no chatIdFromNav, this is a completely new chat
+      if (!chatIdFromNav) {
+        setIsLoading(false);
+        setChat(undefined);
+        setInitialMessages([]);
+        return;
+      }
+
+      setIsLoading(true);
+      setChat(undefined);
+      setInitialMessages([]);
+
       try {
-        if (chatIdFromNav) {
-          const chatService = new ChatService();
+        const chatService = new ChatService();
+        
+        // Try to fetch existing chat
+        try {
           const chatData = await chatService.getChatById(currentChatId);
           const messages = await chatService.getMessagesInChat(currentChatId);
-
-          setChat(chatData);
-          setInitialMessages(messages);
-        } else {
+          
+          if (chatData) {
+            setChat(chatData);
+            setInitialMessages(messages || []);
+          } else {
+            setChat(undefined);
+            setInitialMessages([]);
+          }
+        } catch (chatError) {
+          console.log("Chat not found, preparing for new chat:", currentChatId);
           setChat(undefined);
           setInitialMessages([]);
         }
       } catch (error) {
-        console.error("Error fetching chat data:", error);
+        console.error("Error in chat setup:", error);
         setChat(undefined);
         setInitialMessages([]);
       } finally {
@@ -91,7 +109,7 @@ const ChatScreen = (props: Props) => {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 20}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       enabled={true}
     >
       <SafeAreaView style={styles.safeArea}>
@@ -101,7 +119,7 @@ const ChatScreen = (props: Props) => {
             title={chat?.title || "AI Tutor Chat"}
             initialMessages={initialMessages}
             chatId={currentChatId}
-            key={currentChatId}
+            key={`${currentChatId}-${refresh || 'new'}`} // Force re-render on new chat
           />
         </View>
       </SafeAreaView>

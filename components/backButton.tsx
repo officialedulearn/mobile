@@ -1,3 +1,4 @@
+import useUserStore from '@/core/userState';
 import { router } from 'expo-router';
 import React from 'react';
 import { Image, ImageSourcePropType, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
@@ -10,12 +11,17 @@ type Props = {
 
 const BackButton = ({ 
   style, 
-  iconSource = require('@/assets/images/icons/CaretLeft.png'),
   onPress = () => router.back() 
 }: Props) => {
+
+  const theme = useUserStore(state => state.theme);
+
+  const iconSource = theme === "dark" 
+    ? require('@/assets/images/icons/dark/CaretLeft.png') 
+    : require('@/assets/images/icons/CaretLeft.png');
   return (
     <TouchableOpacity 
-      style={[styles.button, style]} 
+      style={[styles.button, style, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]} 
       onPress={onPress} 
     >
       <Image 
@@ -35,14 +41,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         borderRadius: 50,
         backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+ 
         
     },
     icon: {

@@ -112,21 +112,10 @@ const Quiz = (props: Props) => {
         console.error("Error fetching quiz questions:", error);
         setLoading(false);
         
-        // Set user-friendly error message based on error type
-        if (error.name === 'QuizGenerationError') {
+        if (error.name === 'QuizGenerationError' && error.message) {
           setError(error.message);
-        } else if (error.message?.includes('credits')) {
-          setError("You don't have enough credits to generate a quiz. Please purchase more credits or wait for your daily credit refresh.");
-        } else if (error.message?.includes('quiz attempts') || error.message?.includes('Quiz limits')) {
-          setError("You've used all your quiz attempts for today. Premium users get more daily quiz attempts, or wait until tomorrow for a refresh.");
-        } else if (error.message?.includes('already been tested')) {
-          setError("This conversation has already been used for a quiz. Each chat can only generate one quiz to ensure fairness.");
-        } else if (error.message?.includes('conversation content') || error.message?.includes('educational content')) {
-          setError("This conversation doesn't contain enough educational content to generate a meaningful quiz. Try having a longer learning-focused discussion first.");
-        } else if (error.message?.includes('timeout')) {
-          setError("The quiz generation is taking longer than usual. Please check your internet connection and try again.");
         } else {
-          setError("Something went wrong while generating your quiz. Please check your internet connection and try again.");
+          setError("Something went wrong while generating your quiz. Please try again later.");
         }
       }
     };

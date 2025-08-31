@@ -1,6 +1,7 @@
 import useUserStore from "@/core/userState";
 import { Chat } from "@/interface/Chat";
 import { ChatService } from "@/services/chat.service";
+import { generateUUID } from "@/utils/constants";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import * as React from "react";
@@ -45,6 +46,18 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
       pathname: "/(tabs)/chat",
       params: { 
         chatIdFromNav: id, 
+        refresh: Date.now().toString() 
+      },
+    });
+  };
+
+  const handleCreateNewChat = () => {
+    onClose();
+    const newChatId = generateUUID();
+    router.replace({
+      pathname: "/(tabs)/chat",
+      params: { 
+        chatIdFromNav: newChatId,
         refresh: Date.now().toString() 
       },
     });
@@ -108,7 +121,11 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.button} 
+            activeOpacity={0.8}
+            onPress={handleCreateNewChat}
+          >
             <Image
               source={require("@/assets/images/icons/pen.png")}
               style={{width: 20, height: 20}}
@@ -122,6 +139,12 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
             <Text style={styles.emptyStateSubtext}>
               Start a new conversation!
             </Text>
+            <TouchableOpacity 
+              style={styles.newChatButton}
+              onPress={handleCreateNewChat}
+            >
+              <Text style={styles.newChatButtonText}>+ New Chat</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <ScrollView style={styles.chatListContainer} showsVerticalScrollIndicator={false}>
@@ -132,15 +155,12 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
           </ScrollView>
         )}
         
-        {/* <TouchableOpacity 
+        <TouchableOpacity 
           style={styles.newChatButton}
-          onPress={() => {
-            onClose();
-            router.push("/chat");
-          }}
+          onPress={handleCreateNewChat}
         >
           <Text style={styles.newChatButtonText}>+ New Chat</Text>
-        </TouchableOpacity> */}
+        </TouchableOpacity>
       </View>
     </>
   );

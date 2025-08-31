@@ -7,6 +7,8 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import {
 } from "react-native";
 import ChatDrawer from "./ChatDrawer";
 import { MessageItem, ThinkingMessage } from "./MessageItem";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 type Props = {
   title: string;
@@ -33,24 +36,34 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  
+  const [activeChatId, setActiveChatId] = useState(chatId);
 
-  const [currentChatId, setCurrentChatId] = useState(chatId);
+  const router = useRouter();
+  const searchParams = useLocalSearchParams();
 
   useEffect(() => {
-    if (chatId !== currentChatId) {
-      setCurrentChatId(chatId);
-      setMessages(Array.isArray(initialMessages) ? initialMessages : []);
+    const newChatId = Array.isArray(searchParams.chatIdFromNav)
+      ? searchParams.chatIdFromNav[0]
+      : searchParams.chatIdFromNav || chatId;
+
+    if (newChatId && newChatId !== activeChatId) {
+      setMessages([]);
       setIsGenerating(false);
       setInputText("");
+      setShowScrollButton(false);
+      setDrawerOpen(false);
+      setActiveChatId(newChatId);
     }
-  }, [chatId, currentChatId, initialMessages]);
+  }, [searchParams.chatIdFromNav, chatId, activeChatId]);
 
-  // Update messages when initialMessages change for the same chat
   useEffect(() => {
-    if (chatId === currentChatId && Array.isArray(initialMessages)) {
-      setMessages(initialMessages);
+    if (activeChatId && initialMessages && initialMessages.length > 0) {
+      const relevantMessages = initialMessages.filter(msg => msg.chatId === activeChatId);
+      setMessages(relevantMessages);
     }
-  }, [initialMessages, chatId, currentChatId]);
+  }, [activeChatId, initialMessages]);
+
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -65,7 +78,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
       }
     }, 100);
   };
-
+ 
   const handleScroll = (event: { nativeEvent: { layoutMeasurement: any; contentOffset: any; contentSize: any; }; }) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
@@ -75,27 +88,28 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
     setShowScrollButton(!isCloseToBottom && messages.length > 2);
   };
 
-  const handleSendMessage = async () => {
-    if (inputText.trim() === "") return;
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || inputText.trim();
+    if (textToSend === "" || isGenerating) return;
+    
+    setInputText("");
     
     const newMessage: Message = {
       id: generateUUID(),
       role: "user",
-      content: inputText, 
+      content: textToSend, 
       createdAt: new Date(),
-      chatId: currentChatId,
+      chatId: activeChatId,
     };
 
     const updatedMessages = [...messages, newMessage];
-    
     setMessages(updatedMessages);
-    setInputText("");
     setIsGenerating(true);
 
     try {
       const response = await aiService.generateMessages({
         messages: updatedMessages,
-        chatId: currentChatId,
+        chatId: activeChatId,
         userId: user?.id as unknown as string,
       });
       
@@ -106,22 +120,46 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           ? response.content 
           : response.content,
         createdAt: response.createdAt,
-        chatId: response.chatId || currentChatId, 
+        chatId: response.chatId || activeChatId, 
       };
 
       setMessages(currentMessages => [...currentMessages, assistantMessage]);
     } catch (error) {
       console.error("Error generating message:", error);
+      setInputText(textToSend);
     } finally {
       setIsGenerating(false);
       scrollToBottom();
     }
   };
 
+  const handleCreateNewChat = () => {
+    const newChatId = generateUUID();
+    
+    setDrawerOpen(false);
+    
+    router.replace({
+      pathname: "/(tabs)/chat",
+      params: { 
+        chatIdFromNav: newChatId,
+        refresh: Date.now().toString() 
+      },
+    });
+  };
+
+  const handleSuggestionPress = (suggestion: string) => {
+    if (isGenerating) return;
+    handleSendMessage(suggestion);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <View style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
         <View style={styles.topNav}>
           <View style={styles.leftNavContainer}>
             <TouchableOpacity
@@ -138,7 +176,11 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
               {title || "AI Tutor Chat"}
             </Text>
           </View>
-          <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.button} 
+            activeOpacity={0.8}
+            onPress={handleCreateNewChat}
+          >
             <Image
               source={require("@/assets/images/icons/pen.png")}
               style={{ width: 20, height: 20 }}
@@ -163,14 +205,10 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
                 source={require("@/assets/images/LOGO-1.png")}
                 style={styles.logo}
               />
-              {/* <Text style={styles.welcomeText}>Welcome to EduLearn</Text> */}
               <View style={styles.suggestions}>
                 <TouchableOpacity
                   style={styles.suggestion}
-                  onPress={() => {
-                    setInputText("Teach me about DeFi");
-                    handleSendMessage();
-                  }}
+                  onPress={() => handleSuggestionPress("Teach me about DeFi")}
                 >
                   <Text style={styles.suggestionText}>
                     Teach me about DeFi
@@ -178,19 +216,13 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.suggestion}
-                  onPress={() => {
-                    setInputText("Learn about RWAs");
-                    handleSendMessage();
-                  }}
+                  onPress={() => handleSuggestionPress("Learn about RWAs")}
                 >
                   <Text style={styles.suggestionText}>Learn about RWAs</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.suggestion}
-                  onPress={() => {
-                    setInputText("Blockchain basics");
-                    handleSendMessage();
-                  }}
+                  onPress={() => handleSuggestionPress("Blockchain basics")}
                 >
                   <Text style={styles.suggestionText}>Blockchain basics</Text>
                 </TouchableOpacity>
@@ -243,25 +275,26 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
               value={inputText}
               onChangeText={setInputText}
               returnKeyType="send"
-              onSubmitEditing={handleSendMessage}
-              multiline={false}
+              onSubmitEditing={() => handleSendMessage()}
+              multiline={true}
+              editable={!isGenerating}
             />
             <TouchableOpacity
               style={styles.sendButton}
-              onPress={handleSendMessage}
-              disabled={inputText.trim() === ""}
+              onPress={() => handleSendMessage()}
+              disabled={inputText.trim() === "" || isGenerating}
             >
               <Image
                 source={require("@/assets/images/icons/send-2.png")}
                 style={[
                   { width: 24, height: 24 },
-                  inputText.trim() === "" && styles.disabledSend,
+                  (inputText.trim() === "" || isGenerating) && styles.disabledSend,
                 ]}
               />
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -446,5 +479,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     tintColor: "#2D3C52",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

@@ -4,9 +4,12 @@ import { Image, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import { DataTable } from "react-native-paper";
 import { UserService } from "@/services/auth.service";
 import { User } from "@/interface/User";
+import useUserStore from "@/core/userState";
+import { StatusBar } from "expo-status-bar";
 
 const Leaderboard = () => {
   const [page, setPage] = useState<number>(0);
+  const theme = useUserStore(s => s.theme);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage, onItemsPerPageChange] = useState(
     numberOfItemsPerPageList[0]
@@ -109,80 +112,81 @@ const Leaderboard = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      <StatusBar  style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.topNav}>
         <BackButton />
-        <Text style={styles.heading}>Leaderboard</Text>
+        <Text style={[styles.heading, theme === "dark" && { color: "#E0E0E0" }]}>Leaderboard</Text>
       </View>
 
-      <Text style={styles.subText}>
+      <Text style={[styles.subText, theme === "dark" && { color: "#A0A0A0" }]}>
         See how you rank against other learners and climb your way to the top.
       </Text>
 
       <View style={styles.board}>
         <View style={styles.topthree}>
           {second && (
-            <View style={styles.second}>
+            <View style={[styles.second, theme === "dark" && { backgroundColor: "#2E3033" }]}>
               <Image source={require("@/assets/images/silver.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
-              <Text style={styles.name}>{second.name}</Text>
+              <Text style={[styles.name, theme === "dark" && {color: "#E0E0E0"}]}>{second.name}</Text>
               <Text style={[styles.level, { color: getLevelColor(second.level) }]}>
                 {second.level || 'Novice'}
               </Text>
               <View style={styles.xpContainer}>
                 <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-                <Text style={styles.xp}>{second.xp} XP</Text>
+                <Text style={[styles.xp, theme === "dark" && { color: "#A0A0A0" }]}>{second.xp} XP</Text>
               </View>
             </View>
           )}
 
           {first && (
-            <View style={styles.first}>
+            <View style={[styles.first, theme === "dark" && {backgroundColor: "#00FF80"}]}>
               <Image source={require("@/assets/images/gold.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
-              <Text style={[styles.name, { color: "#00FF66" }]}>{first.name}</Text>
-              <Text style={[styles.level, { color: "#00FF66" }]}>
+              <Text style={[styles.name, theme === "dark" ? { color: "#000" } : {color: "#00FF66"}]}>{first.name}</Text>
+              <Text style={[styles.level, theme === "dark" ? { color: "#000" } : {color: "#00FF66"}]}>
                 {first.level || 'Novice'}
               </Text>
               <View style={styles.xpContainer}>
                 <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-                <Text style={[styles.xp, { color: "#00FF66" }]}>{first.xp} XP</Text>
+                <Text style={[styles.xp, theme === "dark" ? { color: "#000" } : {color: "#00FF66"}]}>{first.xp} XP</Text>
               </View>
             </View>
           )}
 
           {third && (
-            <View style={styles.third}>
+          <View style={[styles.third, theme === "dark" && { backgroundColor: "#2E3033" }]}>
               <Image source={require("@/assets/images/bronze.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
-              <Text style={styles.name}>{third.name}</Text>
+              <Text style={[styles.name, theme === "dark" && {color: "#E0E0E0"}]}>{third.name}</Text>
               <Text style={[styles.level, { color: getLevelColor(third.level) }]}>
                 {third.level || 'Novice'}
               </Text>
               <View style={styles.xpContainer}>
                 <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-                <Text style={styles.xp}>{third.xp} XP</Text>
+                <Text style={[styles.xp, theme === "dark" && {color: "#A0A0A0"}]}>{third.xp} XP</Text>
               </View>
             </View>
           )}
         </View>
         
         {remainingUsers.length > 0 && (
-          <View style={styles.tableContainer}>
-            <DataTable style={styles.table}>
+          <View style={[styles.tableContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+            <DataTable style={[styles.table, theme === "dark" && { backgroundColor: "#131313" }]}>
               {remainingUsers.slice(from, to).map((user) => (
-                <DataTable.Row key={user.key} style={styles.tableRow}>
+                <DataTable.Row key={user.key} style={[styles.tableRow, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
                   <DataTable.Cell style={styles.rankColumn}>
-                    <Text style={styles.rankText}>{user.rank}</Text>
+                    <Text style={[styles.rankText, theme === "dark" && { color: "#E0E0E0" }]}>{user.rank}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.nameColumn}>
-                    <Text style={styles.nameText}>{user.name}</Text>
+                    <Text style={[styles.nameText, theme === "dark" && { color: "#E0E0E0" }]}>{user.name}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.xpColumn}>
                     <View style={styles.xpColumnContent}>
@@ -190,7 +194,7 @@ const Leaderboard = () => {
                         source={require("@/assets/images/icons/medal-05.png")} 
                         style={styles.tableIcon} 
                       />
-                      <Text style={styles.xpText}>{user.xp} XP</Text>
+                      <Text style={[styles.xpText, theme === "dark" && { color: "#A0A0A0" }]}>{user.xp} XP</Text>
                     </View>
                   </DataTable.Cell>
                 </DataTable.Row>
@@ -220,7 +224,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#F9FBFC",
     padding: 20,
-    marginTop: 20,
     flex: 1,
   },
   topNav: {

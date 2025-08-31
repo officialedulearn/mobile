@@ -5,12 +5,16 @@ import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
+import useUserStore from "@/core/userState";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Satoshi: require("@/assets/fonts/Satoshi-Regular.otf"),
     Urbanist: require("@/assets/fonts/Urbanist-Regular.ttf"),
   });
+
+  const { theme, loadTheme } = useUserStore();
 
   const getTheme = async () => {
     try {
@@ -28,6 +32,7 @@ export default function RootLayout() {
   useEffect(() => {
     SplashScreen.preventAutoHideAsync();
     async function fetchTheme() {
+      await loadTheme();
       const theme = await getTheme();
       console.log("Current theme:", theme);
     }
@@ -46,6 +51,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />

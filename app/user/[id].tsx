@@ -7,6 +7,7 @@ import DailyCheckInStreak from "@/components/streak";
 import { getUserMetrics } from "@/utils/utils";
 import { ActivityService } from "@/services/activity.service";
 import { RewardsService } from "@/services/rewards.service";
+import useUserStore from "@/core/userState";
 
 type Props = {};
 
@@ -25,20 +26,22 @@ const AchievementCard = ({
   imageKey: keyof typeof ACHIEVEMENT_IMAGES;
   metric: string;
 }) => {
+  const theme = useUserStore(s => s.theme)
   return (
-    <View style={styles.achievementCard}>
+    <View style={[styles.achievementCard, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
       <Image
         source={ACHIEVEMENT_IMAGES[imageKey]}
         style={{ width: 30, height: 30 }}
       />
-      <Text style={styles.cardSubText}>{metric}</Text>
-      <Text style={styles.metricTitle}>{title}</Text>
+      <Text style={[styles.cardSubText, theme === "dark" && {color: "#E0E0E0"}]}>{metric}</Text>
+      <Text style={[styles.metricTitle, theme === "dark" && {color: "#B3B3B3"}]}>{title}</Text>
     </View>
   );
 };
 
 const User = (props: Props) => {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const theme = useUserStore((state) => state.theme);
   const [user, setUser] = React.useState<any>();
   const [joinedAt, setJoinedAt] = React.useState<string | undefined>();
   const [userMetrics, setUserMetrics] = React.useState({
@@ -131,26 +134,33 @@ const User = (props: Props) => {
 
   return (
     <ScrollView 
-      style={styles.container} 
-      contentContainerStyle={{ paddingBottom: 30 }}
+      style={[styles.container, theme === "dark" && {backgroundColor: '#0D0D0D'}]} 
+      contentContainerStyle={{ paddingBottom: 30, paddingTop: 60 }}
       showsVerticalScrollIndicator={false}
     >
-      <BackButton />
+      <View style={styles.header}>
+        <BackButton />
+      </View>
 
-      <View style={[styles.profileCard, { marginTop: 40 }]}>
+      <View style={[styles.profileCard, theme === "dark" && {backgroundColor: '#00FF80'}]}>
         <Image
           source={require("@/assets/images/memoji.png")}
           style={styles.userImage}
         />
-        <Text style={styles.userName}>{user?.name}</Text>
-        <Text style={styles.joinedText}>im learning {user?.learning}</Text>
-        <Text style={styles.joinedText}>
-          Joined on{" "}
-          {joinedAt ? new Date(joinedAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "Loading..."}
+        <Text style={[styles.userName, theme === "dark" && {color: "#000"}]}>{user?.name}</Text>
+        
+        <View style={[styles.learningBadge, theme === "dark" && {backgroundColor: "rgba(0, 0, 0, 0.1)", borderColor: "rgba(0, 0, 0, 0.2)"}]}>
+          <Text style={[styles.learningText, theme === "dark" && {color: "#000"}]}>
+            📚 Learning {user?.learning || "Web3 & Blockchain"}
+          </Text>
+        </View>
+        
+        <Text style={[styles.joinedText, theme === "dark" && {color: "#000"}]}>
+          Joined {joinedAt ? new Date(joinedAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "Loading..."}
         </Text>
       </View>
 
-      <View style={styles.achievements}>
+      <View style={[styles.achievements, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
         <AchievementCard
           title="XP Earned"
           imageKey="xp"
@@ -174,30 +184,30 @@ const User = (props: Props) => {
         <DailyCheckInStreak lastSignIn={joinedAt || ""} />
       </View>
 
-      <View style={styles.learningStats}>
-        <Text style={styles.learningStatsText}>Learning Stats</Text>
+      <View style={[styles.learningStats, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
+        <Text style={[styles.learningStatsText, theme === "dark" && {color: "#E0E0E0"}]}>Learning Stats</Text>
 
         <View style={styles.stats}>
           <View style={styles.stat}>
-            <Text style={styles.statText}>Quizzes Completed</Text>
-            <Text style={styles.statNumber}>{userMetrics.quizCompleted}</Text>
+            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Quizzes Completed</Text>
+            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{userMetrics.quizCompleted}</Text>
           </View>
           
           <View style={styles.stat}>
-            <Text style={styles.statText}>Questions Answered</Text>
-            <Text style={styles.statNumber}>{quizStats.totalQuestionsAnswered}</Text>
+            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Questions Answered</Text>
+            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{quizStats.totalQuestionsAnswered}</Text>
           </View>
           
           <View style={styles.stat}>
-            <Text style={styles.statText}>Accuracy Rate</Text>
-            <Text style={styles.statNumber}>{quizStats.accuracyRate}%</Text>
+            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Accuracy Rate</Text>
+            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{quizStats.accuracyRate}%</Text>
           </View>
         </View>
       </View>
 
-      <View style={styles.rewardsSection}>
+      <View style={[styles.rewardsSection, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
         <View style={styles.rewardsHeader}>
-          <Text style={styles.rewardsSectionText}>Earned Rewards</Text>
+          <Text style={[styles.rewardsSectionText, theme === "dark" && {color: "#E0E0E0"}]}>Earned Rewards</Text>
         </View>
 
         {userRewards.length > 0 ? (
@@ -227,10 +237,10 @@ const User = (props: Props) => {
           </View>
         ) : (
           <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>
+            <Text style={[styles.emptyStateText, theme === "dark" && {color: "#B3B3B3"}]}>
               No rewards earned yet.
             </Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateSubtext, theme === "dark" && {color: "#B3B3B3"}]}>
               Complete quizzes and lessons to collect NFTs!
             </Text>
           </View>
@@ -244,11 +254,13 @@ export default User;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
     paddingHorizontal: 16,
     flex: 1,
     flexDirection: "column",
     backgroundColor: "#F9FBFC",
+  },
+  header: {
+    marginBottom: 20,
   },
   profileCard: {
     borderRadius: 16,
@@ -272,6 +284,22 @@ const styles = StyleSheet.create({
     borderRadius: 18.59,
   },
   joinedText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    lineHeight: 24,
+    textAlign: "center",
+    color: "#00FF80",
+  },
+  learningBadge: {
+    backgroundColor: "#F9FBFC",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    marginTop: 8,
+  },
+  learningText: {
     fontFamily: "Satoshi",
     fontSize: 14,
     lineHeight: 24,

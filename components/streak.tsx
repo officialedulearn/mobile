@@ -10,7 +10,7 @@ interface StreakProps {
 }
 
 const DailyCheckInStreak: React.FC<StreakProps> = ({ lastSignIn }) => {
-  const { user } = useUserStore();
+  const { user, theme } = useUserStore();
   const [currentStreak, setCurrentStreak] = useState( user?.streak || 0);
   
   useEffect(() => {
@@ -62,19 +62,20 @@ const DailyCheckInStreak: React.FC<StreakProps> = ({ lastSignIn }) => {
   const activeIndexes = getActiveDays(currentStreak);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Daily Check-in Streak</Text>
+    <View style={[styles.container, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
+      <Text style={[styles.heading, theme === "dark" && {color: "#E0E0E0"}]}>Daily Check-in Streak</Text>
       <View style={styles.row}>
         {days.map((day, index) => {
           const isActive = activeIndexes.includes(index);
           return (
             <View key={index} style={styles.dayContainer}>
-              <Text style={styles.dayText}>{day}</Text>
+              <Text style={[styles.dayText, theme === "dark" && {color: "#B3B3B3"}]}>{day}</Text>
               <View
                 style={[
                   styles.iconWrapper,
-                  { backgroundColor: isActive ? '#F0FFF9' : '#F9FBFC' },
+                  { backgroundColor: isActive ? '#F0FFF9' : (theme === "dark" ? '#0D0D0D' : '#F9FBFC') },
                   isActive ? styles.activeIconWrapper : {},
+                  theme === "dark" && !isActive && {borderColor: "#2E3033"}
                 ]}
               >
                 {isActive && <FontAwesome5 name="fire" size={18} color="#00FF80" />}
@@ -83,7 +84,7 @@ const DailyCheckInStreak: React.FC<StreakProps> = ({ lastSignIn }) => {
           );
         })}
       </View>
-      <Text style={styles.streakText}>🔥 {currentStreak}-Day Streak</Text>
+      <Text style={[styles.streakText, theme === "dark" && {color: "#E0E0E0"}]}>🔥 {currentStreak}-Day Streak</Text>
     </View>
   );
 };

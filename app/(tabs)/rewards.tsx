@@ -47,6 +47,63 @@ const rewards = (props: Props) => {
   const { activities, fetchActivities } = useActivityStore();
   const theme = useUserStore(s => s.theme);
 
+  const milestones = {
+    novice: 0,
+    beginner: 500,
+    intermediate: 1500,
+    advanced: 3000,
+    expert: 5000,
+  };
+
+  const currentXP = user?.xp || 0;
+
+  const getMilestoneProgress = () => {
+    if (currentXP >= milestones.expert) {
+      return {
+        progress: 1,
+        xpNeeded: 0,
+        currentLevel: milestones.expert,
+        nextLevel: milestones.expert,
+      };
+    } else if (currentXP >= milestones.advanced) {
+      return {
+        progress:
+          (currentXP - milestones.advanced) /
+          (milestones.expert - milestones.advanced),
+        xpNeeded: milestones.expert - currentXP,
+        currentLevel: milestones.advanced,
+        nextLevel: milestones.expert,
+      };
+    } else if (currentXP >= milestones.intermediate) {
+      return {
+        progress:
+          (currentXP - milestones.intermediate) /
+          (milestones.advanced - milestones.intermediate),
+        xpNeeded: milestones.advanced - currentXP,
+        currentLevel: milestones.intermediate,
+        nextLevel: milestones.advanced,
+      };
+    } else if (currentXP >= milestones.beginner) {
+      return {
+        progress:
+          (currentXP - milestones.beginner) /
+          (milestones.intermediate - milestones.beginner),
+        xpNeeded: milestones.intermediate - currentXP,
+        currentLevel: milestones.beginner,
+        nextLevel: milestones.intermediate,
+      };
+    } else {
+      return {
+        progress: currentXP / milestones.beginner,
+        xpNeeded: milestones.beginner - currentXP,
+        currentLevel: milestones.novice,
+        nextLevel: milestones.beginner,
+      };
+    }
+  };
+
+  const { progress, xpNeeded } = getMilestoneProgress();
+
   useEffect(() => {
     const fetchRewards = async () => {
       try {
@@ -186,13 +243,19 @@ const rewards = (props: Props) => {
         </View>
 
         <ProgressBar
-          progress={250 / 1000}
+          progress={progress}
           color="#00FF80"
-          style={{ height: 10, borderRadius: 5 }}
+          style={{
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: "rgba(255, 255, 255, 0.10)",
+          }}
         />
 
         <Text style={styles.upskillText}>
-          Great work! You're just 50 XP away from the next badge 🔥
+          {xpNeeded > 0
+            ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`
+            : "Congratulations! You've reached the highest level! 🏆"}
         </Text>
       </View>
 
@@ -444,7 +507,7 @@ const rewards = (props: Props) => {
           Complete quick actions daily to level up faster, earn NFTs, and stay
           on top of the leaderboard.
         </Text>
-        <TouchableOpacity style={styles.quizButton}>
+        <TouchableOpacity style={styles.quizButton} onPress={() => router.push("/quizzes")}>  
           <Text
             style={{
               fontFamily: "Satoshi",

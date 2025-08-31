@@ -204,15 +204,15 @@ const index = (props: Props) => {
 
           {activities.length === 0 && !isLoading ? (
             <View style={styles.emptyStateContainer}>
-              <FontAwesome5 name="trophy" size={24} color="#61728C" />
-              <Text style={styles.emptyStateTitle}>No highlights yet</Text>
-              <Text style={styles.emptyStateSubtitle}>
+              <FontAwesome5 name="trophy" size={24} color={theme === "dark" ? "#B3B3B3" : "#61728C"} />
+              <Text style={[styles.emptyStateTitle, theme === "dark" && { color: "#E0E0E0" }]}>No highlights yet</Text>
+              <Text style={[styles.emptyStateSubtitle, theme === "dark" && { color: "#B3B3B3" }]}>
                 Complete activities to see your achievements!
               </Text>
             </View>
           ) : isLoading ? (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading...</Text>
+              <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>Loading...</Text>
             </View>
           ) : (
             <View style={[styles.activityContainerItems, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>

@@ -64,13 +64,13 @@ const quizzes = (props: Props) => {
       showsVerticalScrollIndicator={false}
     >
       <StatusBar style="dark" />
-      <Text style={styles.header}>Quizzes</Text>
-      <Text style={styles.subtext}>
+      <Text style={[styles.header, theme === "dark" && {color: "#E0E0E0"}]}>Quizzes</Text>
+      <Text style={[styles.subtext, theme === "dark" && {color: "#B3B3B3"}]}>
         Practice what you've learned. Earn XP. Get smarter.
       </Text>
 
 
-      <Text style={styles.sectionHeader}>Quizzes From Your AI Sessions</Text>
+      <Text style={[styles.sectionHeader, theme === "dark" && {color: "#E0E0E0"}]}>Quizzes From Your AI Sessions</Text>
 
       {chats.length > 0 ? (
         <>
@@ -88,19 +88,19 @@ const quizzes = (props: Props) => {
             {testedChats.map((chat) => (
               <View
                 key={chat.id}
-                style={[styles.chatItem, { width: cardWidth }]}
+                style={[styles.chatItem, { width: cardWidth}, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}
               >
                 <View style={styles.chatItemHeader}>
                   <Image
                     source={require("@/assets/images/icons/brain1.png")}
                     style={styles.chatIcon}
                   />
-                  <Text style={styles.chatText} numberOfLines={1}>
+                  <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
                     {chat.title || "Untitled Chat"}
                   </Text>
                 </View>
 
-                <Text style={styles.dateText}>
+                <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
                   From your chat on{" "}
                   {new Date(chat.createdAt).toLocaleDateString()}
                 </Text>
@@ -111,7 +111,7 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/medal-05.png")}
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.xpText}>Earn up to 5 XP</Text>
+                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>Earn up to 5 XP</Text>
                   </View>
 
                   <View style={styles.metadataItem}>
@@ -119,25 +119,25 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/clock.png")}
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.xpText}>~ 1 min</Text>
+                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>~ 1 min</Text>
                   </View>
                 </View>
 
                 <TouchableOpacity style={
-                  [styles.startButton, {marginBottom: 10}]
+                  [styles.startButton, {marginBottom: 10}, theme === "dark" && {backgroundColor: "#00FF80"}]
                 } onPress={() => {
                   router.push({
                     pathname: "/quiz",
                     params: {chatId: chat.id}
                   })
                 }}>
-                  <Text style={styles.startButtonText}>Start Quiz</Text>
+                  <Text style={[styles.startButtonText, theme === "dark" && {color: "#000"}]}>Start Quiz</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
 
-          <View style={styles.paginationContainer}>
+          {/* <View style={styles.paginationContainer}>
             {chats.map((_, index) => (
               <TouchableOpacity
                 key={index}
@@ -154,7 +154,7 @@ const quizzes = (props: Props) => {
                 }}
               />
             ))}
-          </View>
+          </View> */}
         </>
       ) : (
         <Text style={styles.emptyText}>
@@ -163,11 +163,11 @@ const quizzes = (props: Props) => {
       )}
 
       <View style={styles.historyHeader}>
-        <Text style={styles.sectionHeader}>Quiz History</Text>
+        <Text style={[styles.sectionHeader, theme === "dark" && {color: "#E0E0E0"}]}>Quiz History</Text>
 
-        <TouchableOpacity style={styles.searchButton}>
+        <TouchableOpacity style={[styles.searchButton, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
           <Image
-            source={require("@/assets/images/icons/search-normal.png")}
+            source={theme === "dark" ? require("@/assets/images/icons/dark/search.png") : require("@/assets/images/icons/search-normal.png")}
             style={styles.searchIcon}
           />
         </TouchableOpacity>
@@ -176,11 +176,11 @@ const quizzes = (props: Props) => {
       <View style={styles.historyList}>
         {quizActivities.length > 0 ? (
           quizActivities.map((activity, index) => (
-            <View key={index} style={styles.activityCard}>
+            <View key={index} style={[styles.activityCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
               <View style={styles.activityContainer}>
 
                 <View style={styles.activityLeftColumn}>
-                  <Text style={styles.chatText} numberOfLines={1}>
+                  <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
                     {activity.title || "Untitled Quiz"}
                   </Text>
                   
@@ -189,7 +189,7 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/clock.png")} 
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.xpText}>1 min</Text>
+                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>1 min</Text>
                   </View>
                   
                   <View style={styles.metadataItem}>
@@ -197,7 +197,7 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/medal-05.png")}
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.xpText}>+{activity.xpEarned} XP</Text>
+                    <Text style={[styles.xpText, theme === "dark" && {color: "#B3B3B3"}]}>+{activity.xpEarned} XP</Text>
                   </View>
                 </View>
 
@@ -207,7 +207,7 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/calendar.png")} 
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.dateText}>
+                    <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
                       {new Date(activity.createdAt).toLocaleDateString()}
                     </Text>
                   </View>
@@ -217,7 +217,7 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/notebook.png")}
                       style={styles.metadataIcon}
                     />
-                    <Text style={styles.scoreText}>
+                    <Text style={[styles.scoreText, theme === "dark" && {color: "#E0E0E0"}]}>
                       {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
                     </Text>
                   </View>
@@ -232,7 +232,7 @@ const quizzes = (props: Props) => {
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, theme === "dark" && {color: "#B3B3B3"}]}>
             No quiz history available.
           </Text>
         )}
@@ -297,20 +297,20 @@ const styles = StyleSheet.create({
   xpText: {
     fontSize: 14,
     color: "#2D3C52",
-    marginLeft: 10,
     fontFamily: "Satoshi",
     lineHeight: 24,
     fontWeight: "500",
   },
   chatItem: {
     backgroundColor: "#FFFFFF",
-    padding: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+
     borderRadius: 12,
     marginTop: 5,
-    marginRight: 15,
     borderWidth: 1,
     borderColor: "#E0E7F0",
-    gap: 6,
+    gap: 12,
     alignContent: "flex-start"
   },
   activityCard: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     borderColor: "#E0E7F0",
   },
   horizontalScrollView: {
-    height: 200, 
+    gap: 10,
     marginBottom: 5,
   },
   chatItemHeader: {
@@ -367,8 +367,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   scrollViewContent: {
-    paddingLeft: 20,
-    paddingRight: 40,
+    gap:10,
     paddingVertical: 10,
   },
   paginationContainer: {
