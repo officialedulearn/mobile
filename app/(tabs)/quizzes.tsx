@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { DataTable } from "react-native-paper";
 
 type Props = {};
 
@@ -23,12 +24,24 @@ const quizzes = (props: Props) => {
   const [chats, setChats] = React.useState<Array<Chat>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  const [page, setPage] = useState<number>(0);
+  const [numberOfItemsPerPageList] = useState([10, 15, 20]);
+  const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
+  
   const chatService = new ChatService();
   const user = useUserStore((s) => s.user);
   const theme = useUserStore(s => s.theme);
   const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth * 0.75;
+
+  const from = page * itemsPerPage;
+  const to = Math.min((page + 1) * itemsPerPage, quizActivities.length);
+
+  useEffect(() => {
+    setPage(0);
+  }, [itemsPerPage]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,7 +76,7 @@ const quizzes = (props: Props) => {
       style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
       showsVerticalScrollIndicator={false}
     >
-      <StatusBar style="dark" />
+      {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />} 
       <Text style={[styles.header, theme === "dark" && {color: "#E0E0E0"}]}>Quizzes</Text>
       <Text style={[styles.subtext, theme === "dark" && {color: "#B3B3B3"}]}>
         Practice what you've learned. Earn XP. Get smarter.
@@ -175,62 +188,81 @@ const quizzes = (props: Props) => {
 
       <View style={styles.historyList}>
         {quizActivities.length > 0 ? (
-          quizActivities.map((activity, index) => (
-            <View key={index} style={[styles.activityCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
-              <View style={styles.activityContainer}>
+          <>
+            {quizActivities.slice(from, to).map((activity, index) => (
+              <View key={index} style={[styles.activityCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
+                <View style={styles.activityContainer}>
 
-                <View style={styles.activityLeftColumn}>
-                  <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
-                    {activity.title || "Untitled Quiz"}
-                  </Text>
-                  
-                  <View style={styles.metadataItem}>
-                    <Image 
-                      source={require("@/assets/images/icons/clock.png")} 
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>1 min</Text>
-                  </View>
-                  
-                  <View style={styles.metadataItem}>
-                    <Image
-                      source={require("@/assets/images/icons/medal-05.png")}
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.xpText, theme === "dark" && {color: "#B3B3B3"}]}>+{activity.xpEarned} XP</Text>
-                  </View>
-                </View>
-
-                <View style={styles.activityRightColumn}>
-                  <View style={styles.metadataItem}>
-                    <Image 
-                      source={require("@/assets/images/icons/calendar.png")} 
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
-                      {new Date(activity.createdAt).toLocaleDateString()}
+                  <View style={styles.activityLeftColumn}>
+                    <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
+                      {activity.title || "Untitled Quiz"}
                     </Text>
-                  </View>
-                  
-                  <View style={styles.metadataItem}>
-                    <Image 
-                      source={require("@/assets/images/icons/notebook.png")}
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.scoreText, theme === "dark" && {color: "#E0E0E0"}]}>
-                      {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
-                    </Text>
-                  </View>
-                  
-                  {activity.xpEarned >= 3 && (
-                    <View style={styles.passed}>
-                      <Text style={styles.passedText}>Passed</Text>
+                    
+                    <View style={styles.metadataItem}>
+                      <Image 
+                        source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")} 
+                        style={styles.metadataIcon}
+                      />
+                      <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>1 min</Text>
                     </View>
-                  )}
+                    
+                    <View style={styles.metadataItem}>
+                      <Image
+                        source={require("@/assets/images/icons/medal-05.png")}
+                        style={styles.metadataIcon}
+                      />
+                      <Text style={[styles.xpText, theme === "dark" && {color: "#B3B3B3"}]}>+{activity.xpEarned} XP</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.activityRightColumn}>
+                    <View style={styles.metadataItem}>
+                      <Image 
+                        source={theme === "dark" ? require("@/assets/images/icons/dark/calendar.png") : require("@/assets/images/icons/calendar.png")} 
+                        style={styles.metadataIcon}
+                      />
+                      <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
+                        {new Date(activity.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.metadataItem}>
+                      <Image 
+                        source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
+                        style={styles.metadataIcon}
+                      />
+                      <Text style={[styles.scoreText, theme === "dark" && {color: "#E0E0E0"}]}>
+                        {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
+                      </Text>
+                    </View>
+                    
+                    {activity.xpEarned >= 3 && (
+                      <View style={styles.passed}>
+                        <Text style={styles.passedText}>Passed</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </View>
-            </View>
-          ))
+            ))}
+
+            {quizActivities.length > itemsPerPage && (
+              <View style={[styles.tableContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+                <DataTable style={[styles.table, theme === "dark" && { backgroundColor: "#131313" }]}>
+                  <View style={styles.paginationContainer}>
+                    <DataTable.Pagination
+                      page={page}
+                      numberOfPages={Math.ceil(quizActivities.length / itemsPerPage)}
+                      onPageChange={(page) => setPage(page)}
+                      onItemsPerPageChange={onItemsPerPageChange}
+                      showFastPaginationControls
+                      style={styles.pagination}
+                    />
+                  </View>
+                </DataTable>
+              </View>
+            )}
+          </>
         ) : (
           <Text style={[styles.emptyText, theme === "dark" && {color: "#B3B3B3"}]}>
             No quiz history available.
@@ -464,5 +496,15 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     textAlign: "center",
     color: "#61728C",
-  }
+  },
+  tableContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  table: {
+    backgroundColor: "#FFFFFF",
+  },
+  pagination: {
+    backgroundColor: "#FFFFFF",
+  },
 });

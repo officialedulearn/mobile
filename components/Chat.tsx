@@ -3,7 +3,7 @@ import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
 import { generateUUID } from "@/utils/constants";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Image,
   Keyboard,
@@ -27,20 +27,33 @@ type Props = {
   chatId: string;
 };
 
-const Chat = ({ title, initialMessages, chatId }: Props) => {
+const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const aiService = new AIService();
   const [messages, setMessages] = useState<Array<Message>>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const user = useUserStore((s) => s.user);
+  const theme = useUserStore((s) => s.theme);
   const [inputText, setInputText] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   
   const [activeChatId, setActiveChatId] = useState(chatId);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const router = useRouter();
   const searchParams = useLocalSearchParams();
+
+  const resetChatState = useCallback(() => {
+    setMessages([]);
+    setIsGenerating(false);
+    setInputText("");
+    setShowScrollButton(false);
+    setDrawerOpen(false);
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+    }
+  }, []);
 
   useEffect(() => {
     const newChatId = Array.isArray(searchParams.chatIdFromNav)
@@ -48,49 +61,52 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
       : searchParams.chatIdFromNav || chatId;
 
     if (newChatId && newChatId !== activeChatId) {
-      setMessages([]);
-      setIsGenerating(false);
-      setInputText("");
-      setShowScrollButton(false);
-      setDrawerOpen(false);
+      setIsTransitioning(true);
+      resetChatState();
       setActiveChatId(newChatId);
+      
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 100);
     }
-  }, [searchParams.chatIdFromNav, chatId, activeChatId]);
+  }, [searchParams.chatIdFromNav, chatId, activeChatId, resetChatState]);
 
   useEffect(() => {
-    if (activeChatId && initialMessages && initialMessages.length > 0) {
+    if (!isTransitioning && activeChatId && initialMessages.length > 0) {
       const relevantMessages = initialMessages.filter(msg => msg.chatId === activeChatId);
       setMessages(relevantMessages);
-    }
-  }, [activeChatId, initialMessages]);
+    } else if (!isTransitioning && initialMessages.length === 0) {
 
+      setMessages([]);
+    }
+  }, [activeChatId, initialMessages, isTransitioning]);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && !isTransitioning) {
       scrollToBottom();
     }
-  }, [messages]);
+  }, [messages, isTransitioning]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     setTimeout(() => {
-      if (scrollViewRef.current) {
+      if (scrollViewRef.current && !isTransitioning) {
         scrollViewRef.current.scrollToEnd({ animated: true });
       }
     }, 100);
-  };
+  }, [isTransitioning]);
  
-  const handleScroll = (event: { nativeEvent: { layoutMeasurement: any; contentOffset: any; contentSize: any; }; }) => {
+  const handleScroll = useCallback((event: { nativeEvent: { layoutMeasurement: any; contentOffset: any; contentSize: any; }; }) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
     const isCloseToBottom =
       layoutMeasurement.height + contentOffset.y >=
       contentSize.height - paddingToBottom;
     setShowScrollButton(!isCloseToBottom && messages.length > 2);
-  };
+  }, [messages.length]);
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || inputText.trim();
-    if (textToSend === "" || isGenerating) return;
+    if (textToSend === "" || isGenerating || isTransitioning) return;
     
     setInputText("");
     
@@ -133,7 +149,7 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
     }
   };
 
-  const handleCreateNewChat = () => {
+  const handleCreateNewChat = useCallback(() => {
     const newChatId = generateUUID();
     
     setDrawerOpen(false);
@@ -145,44 +161,74 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
         refresh: Date.now().toString() 
       },
     });
-  };
+  }, [router]);
 
-  const handleSuggestionPress = (suggestion: string) => {
-    if (isGenerating) return;
+  const handleSuggestionPress = useCallback((suggestion: string) => {
+    if (isGenerating || isTransitioning) return;
     handleSendMessage(suggestion);
-  };
+  }, [isGenerating, isTransitioning, handleSendMessage]);
+
+  if (isTransitioning) {
+    return (
+      <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <View style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}>
+          <View style={styles.loadingContainer}>
+            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>
+              Loading chat...
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+    <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <KeyboardAvoidingView 
-        style={styles.container}
+        style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <View style={styles.topNav}>
+        <View style={[styles.topNav, theme === "dark" && { 
+          backgroundColor: "#131313", 
+          borderBottomColor: "#2E3033" 
+        }]}>
           <View style={styles.leftNavContainer}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, theme === "dark" && { 
+                backgroundColor: "#0D0D0D", 
+                borderColor: "#2E3033" 
+              }]}
               onPress={() => setDrawerOpen(true)}
               activeOpacity={0.8}
             >
               <Image
-                source={require("@/assets/images/icons/menu.png")}
+                source={theme === "dark" 
+                  ? require("@/assets/images/icons/dark/menu.png")
+                  : require("@/assets/images/icons/menu.png")
+                }
                 style={{ width: 20, height: 20 }}
               />
             </TouchableOpacity>
-            <Text style={styles.headerText} numberOfLines={1} ellipsizeMode="tail">
+            <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={1} ellipsizeMode="tail">
               {title || "AI Tutor Chat"}
             </Text>
           </View>
           <TouchableOpacity 
-            style={styles.button} 
+            style={[styles.button, theme === "dark" && { 
+              backgroundColor: "#0D0D0D", 
+              borderColor: "#2E3033" 
+            }]} 
             activeOpacity={0.8}
             onPress={handleCreateNewChat}
           >
             <Image
-              source={require("@/assets/images/icons/pen.png")}
+              source={theme === "dark" 
+                ? require("@/assets/images/icons/dark/pen.png")
+                : require("@/assets/images/icons/pen.png")
+              }
               style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
@@ -202,29 +248,41 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           {messages.length === 0 ? (
             <View style={styles.emptyStateContainer}>
               <Image
-                source={require("@/assets/images/LOGO-1.png")}
+                source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
                 style={styles.logo}
               />
               <View style={styles.suggestions}>
                 <TouchableOpacity
-                  style={styles.suggestion}
+                  style={[styles.suggestion, theme === "dark" && { 
+                    backgroundColor: "#0D0D0D", 
+                    borderColor: "#2E3033",
+                    borderWidth: 1
+                  }]}
                   onPress={() => handleSuggestionPress("Teach me about DeFi")}
                 >
-                  <Text style={styles.suggestionText}>
+                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>
                     Teach me about DeFi
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.suggestion}
+                  style={[styles.suggestion, theme === "dark" && { 
+                    backgroundColor: "#0D0D0D", 
+                    borderColor: "#2E3033",
+                    borderWidth: 1
+                  }]}
                   onPress={() => handleSuggestionPress("Learn about RWAs")}
                 >
-                  <Text style={styles.suggestionText}>Learn about RWAs</Text>
+                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>Learn about RWAs</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.suggestion}
+                  style={[styles.suggestion, theme === "dark" && { 
+                    backgroundColor: "#0D0D0D", 
+                    borderColor: "#2E3033",
+                    borderWidth: 1
+                  }]}
                   onPress={() => handleSuggestionPress("Blockchain basics")}
                 >
-                  <Text style={styles.suggestionText}>Blockchain basics</Text>
+                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>Blockchain basics</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -261,34 +319,46 @@ const Chat = ({ title, initialMessages, chatId }: Props) => {
           )}
         </View>
 
-        <View style={styles.inputContainer}>
-          <View style={styles.inputWrapper}>
+        <View style={[styles.inputContainer, theme === "dark" && { 
+          borderTopColor: "#2E3033", 
+          backgroundColor: "#131313" 
+        }]}>
+          <View style={[styles.inputWrapper, theme === "dark" && { 
+            backgroundColor: "#0D0D0D" 
+          }]}>
             <TouchableOpacity style={styles.attachmentButton}>
               <Image
-                source={require("@/assets/images/icons/attachement.png")}
+                source={theme === "dark" 
+                  ? require("@/assets/images/icons/dark/attachement.png")
+                  : require("@/assets/images/icons/attachement.png")
+                }
                 style={{ width: 24, height: 24 }}
               />
             </TouchableOpacity>
             <TextInput
               placeholder="Type a message..."
-              style={styles.textInput}
+              placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+              style={[styles.textInput, theme === "dark" && { color: "#E0E0E0" }]}
               value={inputText}
               onChangeText={setInputText}
               returnKeyType="send"
               onSubmitEditing={() => handleSendMessage()}
               multiline={true}
-              editable={!isGenerating}
+              editable={!isGenerating && !isTransitioning}
             />
             <TouchableOpacity
               style={styles.sendButton}
               onPress={() => handleSendMessage()}
-              disabled={inputText.trim() === "" || isGenerating}
+              disabled={inputText.trim() === "" || isGenerating || isTransitioning}
             >
               <Image
-                source={require("@/assets/images/icons/send-2.png")}
+                source={theme === "dark" 
+                  ? require("@/assets/images/icons/dark/send-2.png")
+                  : require("@/assets/images/icons/send-2.png")
+                }
                 style={[
                   { width: 24, height: 24 },
-                  (inputText.trim() === "" || isGenerating) && styles.disabledSend,
+                  (inputText.trim() === "" || isGenerating || isTransitioning) && styles.disabledSend,
                 ]}
               />
             </TouchableOpacity>
@@ -482,5 +552,15 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    color: "#2D3C52",
   },
 });

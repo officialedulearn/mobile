@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { RewardsService } from "@/services/rewards.service";
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import useUserStore from "@/core/userState";
 
 type Props = {};
 
@@ -13,6 +14,7 @@ const nftClaimed = (props: Props) => {
   const [error, setError] = React.useState<string | null>(null);
   const { rewardId } = useLocalSearchParams();
   const rewardsService = new RewardsService();
+  const theme = useUserStore(state => state.theme);
 
   useEffect(() => {
     const fetchReward = async () => {
@@ -105,14 +107,14 @@ const nftClaimed = (props: Props) => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <View style={styles.topSection}>
         <Image
-          source={require("@/assets/images/icons/SealCheck.png")}
+          source={theme === "dark" ? require("@/assets/images/icons/dark/SealCheck.png") : require("@/assets/images/icons/SealCheck.png")}
           style={styles.checkImage}
         />
         <View style={styles.welcomeContainer}>
-          <Text style={styles.welcomeText}>NFT Claimed 🎉</Text>
+          <Text style={[styles.welcomeText, theme === "dark" && styles.welcomeTextDark]}>NFT Claimed 🎉</Text>
           {reward.imageUrl && (
             <Image 
               source={{ uri: reward.imageUrl }} 
@@ -120,23 +122,23 @@ const nftClaimed = (props: Props) => {
               resizeMode="contain"
             />
           )}
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
             You've successfully claimed {reward.title || "your NFT"}, a collectible NFT for
             your achievement. You can now view this in your Claimed Collection.
           </Text>
         </View>
       </View>
       <View style={styles.bottomSection}>
-        <TouchableOpacity style={styles.shareButtton} onPress={handleShareNFT}>
-          <Text style={styles.shareButtonText}>Share</Text>
+        <TouchableOpacity style={[styles.shareButtton, theme === "dark" && styles.shareButtonDark]} onPress={handleShareNFT}>
+          <Text style={[styles.shareButtonText, theme === "dark" && styles.shareButtonTextDark]}>Share</Text>
           <Image
             source={require("@/assets/images/icons/share.png")}
             style={{ width: 20, height: 20, marginLeft: 10 }}
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.viewButton} onPress={handleViewNFTs}>
-          <Text style={styles.viewButtonText}>View in collection</Text>
+        <TouchableOpacity style={[styles.viewButton, theme === "dark" && styles.viewButtonDark]} onPress={handleViewNFTs}>
+          <Text style={[styles.viewButtonText, theme === "dark" && styles.viewButtonTextDark]}>View in collection</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -152,6 +154,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     backgroundColor: "#F9FBFC",
+  },
+  containerDark: {
+    backgroundColor: "#1E1E1E",
   },
   centerContent: {
     justifyContent: "center",
@@ -199,6 +204,9 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     fontStyle: "normal",
   },
+  welcomeTextDark: {
+    color: "#FFFFFF",
+  },
   subtitle: {
     color: "#61728C",
     fontSize: 16,
@@ -207,6 +215,9 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     textAlign: "center",
     marginBottom: 24,
+  },
+  subtitleDark: {
+    color: "#A0A0A0",
   },
   infoText: {
     color: "#61728C",
@@ -249,6 +260,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flex: 1,
   },
+  shareButtonDark: {
+    borderColor: "#00FF80",
+    backgroundColor: "#000",
+  },
   shareButtonText: {
     lineHeight: 24,
     fontFamily: "Satoshi",
@@ -256,6 +271,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+  },
+  shareButtonTextDark: {
+    color: "#FFFFFF",
   },
   viewButton: {
     backgroundColor: "#000",
@@ -265,12 +283,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
+  viewButtonDark: {
+    backgroundColor: "#00FF80",
+  },
   viewButtonText: {
     color: "#00FF80",
     fontFamily: "Satoshi",
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
+  },
+  viewButtonTextDark: {
+    color: "#000000",
   },
   nftImage: {
     width: 200,

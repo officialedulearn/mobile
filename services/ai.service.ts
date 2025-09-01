@@ -31,13 +31,29 @@ export class AIService {
     async generateQuiz(dto: { chatId: string; userId: string }) {
         try {
             const response = await httpClient.post('/ai/quiz', dto);
+            if (response.data && typeof response.data === 'string' && response.data.includes('Error:')) {
+                throw new Error(response.data);
+            }
+            
+            if (response.data && response.data.message && response.data.message.includes('Error:')) {
+                throw new Error(response.data.message);
+            }
+            
             return response.data;
         } catch (error: any) {
             console.error("Error generating quiz:", error);
             
             let errorMessage = "Failed to generate quiz. Please try again later.";
             
-            if (error.response?.data?.message) {
+            if (error.message && error.message.includes('Not enough conversation content')) {
+                errorMessage = "Not enough conversation content. Have at least 2 exchanges with the AI to generate a meaningful quiz.";
+            } else if (error.message && error.message.includes('already been tested')) {
+                errorMessage = "This chat has already been used for a quiz. Each conversation can only generate one quiz.";
+            } else if (error.message && error.message.includes('No quiz attempts left')) {
+                errorMessage = "You've reached your daily quiz limit. Quiz attempts reset daily.";
+            } else if (error.message && error.message.includes('Insufficient credits')) {
+                errorMessage = "You need at least 0.5 credits to generate a quiz. Purchase more credits to continue.";
+            } else if (error.response?.data?.message) {
                 errorMessage = error.response.data.message;
             } else if (error.response?.data?.error) {
                 errorMessage = error.response.data.error;

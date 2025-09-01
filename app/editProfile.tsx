@@ -4,12 +4,14 @@ import BackButton from '@/components/backButton'
 import useUserStore from '@/core/userState'
 import { UserService } from '@/services/auth.service'
 import { router } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 
 type Props = {}
 
 const editProfile = (props: Props) => {
   const user = useUserStore((state) => state.user)
   const setUser = useUserStore((state) => state.setUser)
+  const theme = useUserStore((state) => state.theme)
   const userService = new UserService()
   
   const [formData, setFormData] = useState({
@@ -79,23 +81,24 @@ const editProfile = (props: Props) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.header}>
         <BackButton />
-        <Text style={styles.headerText}>Edit Profile</Text>
+        <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Edit Profile</Text>
       </View>
 
       <View style={styles.contentContainer}>
         <View style={styles.content}>
           <View>
-            <Text style={styles.inputLabel}>Full Name</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>Full Name</Text>
+            <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, theme === "dark" && { color: "#E0E0E0" }]}
                 placeholder="Enter your full name"
-                placeholderTextColor="#61728C"
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                 value={formData.name}
                 onChangeText={(text) => handleChange("name", text)}
               />
@@ -103,12 +106,12 @@ const editProfile = (props: Props) => {
           </View>
 
           <View>
-            <Text style={styles.inputLabel}>Username</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>Username</Text>
+            <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, theme === "dark" && { color: "#E0E0E0" }]}
                 placeholder="Enter your username"
-                placeholderTextColor="#61728C"
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                 value={formData.username}
                 onChangeText={(text) => handleChange("username", text)}
               />
@@ -116,12 +119,12 @@ const editProfile = (props: Props) => {
           </View>
 
           <View>
-            <Text style={styles.inputLabel}>What are you learning?</Text>
-            <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>What are you learning?</Text>
+            <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, theme === "dark" && { color: "#E0E0E0" }]}
                 placeholder="blockchain basics, web3 design, smart contracts..."
-                placeholderTextColor="#61728C"
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                 value={formData.learning}
                 onChangeText={(text) => handleChange("learning", text)}
                 maxLength={100}
@@ -133,30 +136,30 @@ const editProfile = (props: Props) => {
         <View style={styles.buttonsContainer}>
           <View style={styles.buttons}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={[styles.cancelButton, theme === "dark" && {borderColor: "#00FF80", backgroundColor: "#0D0D0D" }]}
               onPress={handleCancel}
             >
               <View style={styles.buttonContent}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#E0E0E0", backgroundColor: "#" }]}>Cancel</Text>
                 <Image
-                  source={require('@/assets/images/icons/cancel.png')}
+                  source={theme === "dark" ? require('@/assets/images/icons/dark/cancel.png') : require('@/assets/images/icons/cancel.png')}
                   style={{ width: 20, height: 20 }}
                 />
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.saveButton}
+              style={[styles.saveButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
               onPress={handleUpdateProfile}
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator size="small" color="#00FF80" />
+                <ActivityIndicator size="small" color={theme === "dark" ? "#000" : "#00FF80"} />
               ) : (
                 <View style={styles.buttonContent}>
-                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                  <Text style={[styles.saveButtonText, theme === "dark" && { color: "#000" }]}>Save Changes</Text>
                   <Image
-                    source={require('@/assets/images/icons/checkmark.png')}
+                    source={theme === "dark" ? require('@/assets/images/icons/dark/checkmark.png') : require('@/assets/images/icons/checkmark.png')}
                     style={{ width: 20, height: 20 }}
                   />
                 </View>
@@ -173,8 +176,13 @@ const editProfile = (props: Props) => {
         onRequestClose={() => setShowModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, isError ? styles.errorModal : styles.successModal]}>
-            <Text style={styles.modalText}>{modalMessage}</Text>
+          <View style={[
+            styles.modalContent, 
+            isError ? 
+              (theme === "dark" ? { backgroundColor: "#2E1A1A", borderColor: "#FF6B6B" } : styles.errorModal) : 
+              (theme === "dark" ? { backgroundColor: "#1A2E1A", borderColor: "#00FF80" } : styles.successModal)
+          ]}>
+            <Text style={[styles.modalText, theme === "dark" && { color: "#E0E0E0" }]}>{modalMessage}</Text>
             {!isError && (
               <Image
                 source={require('@/assets/images/icons/checkmark.png')}
@@ -183,10 +191,10 @@ const editProfile = (props: Props) => {
             )}
             {isError && (
               <TouchableOpacity 
-                style={styles.closeButton}
+                style={[styles.closeButton, theme === "dark" && { backgroundColor: "#FF6B6B" }]}
                 onPress={() => setShowModal(false)}
               >
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={[styles.closeButtonText, theme === "dark" && { color: "#000" }]}>Close</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -238,11 +246,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#EDF3FC",
-    borderRadius: 32,
+    borderRadius: 8,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 8,
     backgroundColor: "#fff",
     marginBottom: 10,
+    gap: 8
   },
   input: {
     flex: 1,

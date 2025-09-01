@@ -16,7 +16,7 @@ import {
 import * as Sharing from 'expo-sharing';
 import { levels } from "@/utils/constants";
 import useUserStore from "@/core/userState";
-import { ProgressBar } from "react-native-paper";
+import { ProgressBar, DataTable } from "react-native-paper";
 import { RewardsService } from "@/services/rewards.service";
 import { StatusBar } from "expo-status-bar";
 import useActivityStore from "@/core/activityState";
@@ -40,6 +40,12 @@ const rewards = (props: Props) => {
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'USDC', amount: string} | null>(null);
+  
+  // Pagination state for activities
+  const [page, setPage] = useState<number>(0);
+  const [numberOfItemsPerPageList] = useState([10, 15, 20]);
+  const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
+  
   const rewardService = new RewardsService();
   const walletService = new WalletService();
   const screenWidth = Dimensions.get("window").width;
@@ -103,6 +109,13 @@ const rewards = (props: Props) => {
   };
 
   const { progress, xpNeeded } = getMilestoneProgress();
+
+  const from = page * itemsPerPage;
+  const to = Math.min((page + 1) * itemsPerPage, activities.length);
+
+  useEffect(() => {
+    setPage(0);
+  }, [itemsPerPage]);
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -213,46 +226,45 @@ const rewards = (props: Props) => {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 30 }}
     >
-      <StatusBar style="dark" />
-      <Text style={styles.headerText}>Your Rewards</Text>
-      <Text style={styles.subText}>
+      {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
+      <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Your Rewards</Text>
+      <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
         Track your XP, unlock badges, and collect NFTs as you learn!
       </Text>
 
-      <View style={styles.userCard}>
+      <View style={[styles.userCard, theme === "dark" && { backgroundColor: "#00FF80" }]}>
         <View style={styles.levelContainer}>
           <View style={styles.levelIconContainer}>
             <Image
-              source={require("@/assets/images/icons/level.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/level.png") : require("@/assets/images/icons/level.png")}
               style={[styles.levelIcon, { width: 58, height: 63 }]}
             />
-            <Text style={styles.levelNumber}>
+            <Text style={[styles.levelNumber, theme === "dark" && { color: "#000" }]}>
               {levels.indexOf(user?.level?.toLowerCase() || "") + 1}
             </Text>
           </View>
-          <Text style={styles.levelText}>{user?.level}</Text>
+          <Text style={[styles.levelText, theme === "dark" && { color: "#000" }]}>{user?.level}</Text>
         </View>
 
-        <View style={{ flexDirection: "row", gap: 3 }}>
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
           <Image
-            source={require("@/assets/images/icons/medal.png")}
-            width={24}
-            height={24}
+            source={theme === "dark" ? require("@/assets/images/icons/dark/medal-05.png") : require("@/assets/images/icons/medal.png")}
+            style={{ width: 24, height: 24 }}
           />
-          <Text style={styles.xpText}>{user?.xp}</Text>
+          <Text style={[styles.xpText, theme === "dark" && { color: "#000" }]}>{user?.xp} XP</Text>
         </View>
 
         <ProgressBar
           progress={progress}
-          color="#00FF80"
+          color={theme === "dark" ? "#000" : "#00FF80"}
           style={{
             height: 10,
             borderRadius: 5,
-            backgroundColor: "rgba(255, 255, 255, 0.10)",
+            backgroundColor: theme === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.10)",
           }}
         />
 
-        <Text style={styles.upskillText}>
+        <Text style={[styles.upskillText, theme === "dark" && { color: "#000" }]}>
           {xpNeeded > 0
             ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`
             : "Congratulations! You've reached the highest level! 🏆"}
@@ -261,14 +273,14 @@ const rewards = (props: Props) => {
 
       <View style={styles.yourNfts}>
         <View style={styles.yourNftsHeader}>
-          <Text style={styles.nftHeaderText}>Your NFT's</Text>
+          <Text style={[styles.nftHeaderText, theme === "dark" && { color: "#E0E0E0" }]}>Your NFT's</Text>
           <TouchableOpacity
-            style={styles.seeMoreButton}
+            style={[styles.seeMoreButton, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/nfts")}
           >
-            <Text style={styles.subText}>See All</Text>
+            <Text style={[styles.subText, theme === "dark" && { color: "#E0E0E0" }]}>See All</Text>
             <Image
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
@@ -306,11 +318,11 @@ const rewards = (props: Props) => {
             ))}
           </View>
         ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>
+          <View style={[styles.emptyStateContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+            <Text style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}>
               You haven't earned any NFTs yet.
             </Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateSubtext, theme === "dark" && { color: "#B3B3B3" }]}>
               Complete quizzes and lessons to collect them!
             </Text>
           </View>
@@ -318,8 +330,8 @@ const rewards = (props: Props) => {
       </View>
 
       <View style={styles.activeEarningsSection}>
-        <Text style={styles.sectionHeader}>Active Earnings</Text>
-        <Text style={styles.subText}>
+        <Text style={[styles.sectionHeader, theme === "dark" && { color: "#E0E0E0" }]}>Active Earnings</Text>
+        <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
           Track your active token earnings and rewards
         </Text>
 
@@ -329,35 +341,35 @@ const rewards = (props: Props) => {
           </View>
         ) : userEarnings.hasEarnings ? (
           <View style={styles.earningsSimpleContainer}>
-            <View style={styles.earningCard}>
+            <View style={[styles.earningCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033", borderWidth: 1 }]}>
               <View style={styles.earningSimpleContent}>
                 <View style={styles.earningSimpleRow}>
                   <View style={styles.earningInfo}>
                     <Image
-                      source={require("@/assets/images/Edulearnlogomark4.jpg")}
+                      source={require("@/assets/images/mainlogo.png")}
                       style={styles.earningIcon}
                     />
                     <View>
-                      <Text style={[styles.earningLabel, { color: '#2D3C52' }]}>EDLN Balance</Text>
-                      <Text style={[styles.earningAmount, { color: '#2D3C52' }]}>{String(userEarnings.edln)} EDLN</Text>
+                      <Text style={[styles.earningLabel, theme === "dark" && { color: '#E0E0E0' }]}>EDLN Balance</Text>
+                      <Text style={[styles.earningAmount, theme === "dark" && { color: '#E0E0E0' }]}>{String(userEarnings.edln)} EDLN</Text>
                     </View>
                   </View>
                   <TouchableOpacity
-                    style={styles.claimButton}
+                    style={[styles.claimButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
                     onPress={handleClaimEDLN}
                     disabled={claimingEDLN || userEarnings.edln <= 0}
                   >
                     {claimingEDLN ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={theme === "dark" ? "#000" : "#fff"} size="small" />
                     ) : (
-                      <Text style={styles.claimButtonText}>Claim</Text>
+                      <Text style={[styles.claimButtonText, theme === "dark" && { color: "#000" }]}>Claim</Text>
                     )}
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
 
-            <View style={styles.earningCard}>
+            <View style={[styles.earningCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033", borderWidth: 1 }]}>
               <View style={styles.earningSimpleContent}>
                 <View style={styles.earningSimpleRow}>
                   <View style={styles.earningInfo}>
@@ -366,19 +378,19 @@ const rewards = (props: Props) => {
                       style={styles.earningIcon}
                     />
                     <View>
-                      <Text style={[styles.earningLabel, { color: '#2D3C52' }]}>USDC Balance</Text>
-                      <Text style={[styles.earningAmount, { color: '#2D3C52' }]}>{String(userEarnings.sol)} SOL</Text>
+                      <Text style={[styles.earningLabel, theme === "dark" && { color: '#E0E0E0' }]}>USDC Balance</Text>
+                      <Text style={[styles.earningAmount, theme === "dark" && { color: '#E0E0E0' }]}>{String(userEarnings.sol)} USDC</Text>
                     </View>
                   </View>
                   <TouchableOpacity
-                    style={styles.claimButton}
+                    style={[styles.claimButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
                     onPress={handleClaimSOL}
                     disabled={claimingSOL || userEarnings.sol <= 0}
                   >
                     {claimingSOL ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={theme === "dark" ? "#000" : "#fff"} size="small" />
                     ) : (
-                      <Text style={styles.claimButtonText}>Claim</Text>
+                      <Text style={[styles.claimButtonText, theme === "dark" && { color: "#000" }]}>Claim</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -386,11 +398,11 @@ const rewards = (props: Props) => {
             </View>
           </View>
         ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.emptyStateText}>
+          <View style={[styles.emptyStateContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+            <Text style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}>
               No active earnings available.
             </Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateSubtext, theme === "dark" && { color: "#B3B3B3" }]}>
               Complete tasks and maintain streaks to earn rewards!
             </Text>
           </View>
@@ -398,83 +410,102 @@ const rewards = (props: Props) => {
       </View>
 
       <View style={styles.xpHistory}>
-        <Text style={styles.sectionHeader}>XP Earning History</Text>
+        <Text style={[styles.sectionHeader, theme === "dark" && { color: "#E0E0E0" }]}>XP Earning History</Text>
 
         <View style={[styles.historyList, { marginTop: 10 }]}>
           {activities.length > 0 ? (
-            activities.map((activity, index) => (
-              <View key={index} style={styles.activityCard}>
-                <View style={styles.activityContainer}>
-                  <View style={styles.activityLeftColumn}>
-                    <View style={styles.chatItemHeader}>
-                      {activity.type === "quiz" ? (
-                        <Image
-                          source={require("@/assets/images/icons/brain3.png")}
-                          style={styles.chatIcon}
-                        />
-                      ) : activity.type === "chat" ? (
-                        <Image
-                          source={require("@/assets/images/icons/aichat.png")}
-                          style={styles.chatIcon}
-                        />
-                      ) : (
-                        <Image
-                          source={require("@/assets/images/icons/streak.png")}
-                          style={styles.chatIcon}
-                        />
-                      )}
-                      <Text style={styles.chatText} numberOfLines={1}>
-                        {activity.title ||
-                          activity.type.charAt(0).toUpperCase() +
-                            activity.type.slice(1)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.metadataItem}>
-                      <Image
-                        source={require("@/assets/images/icons/medal-05.png")}
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={styles.xpHistoryText}>
-                        +{activity.xpEarned} XP
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.activityRightColumn}>
-                    <View style={styles.metadataItem}>
-                      <Image
-                        source={require("@/assets/images/icons/calendar.png")}
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={styles.dateText}>
-                        {new Date(activity.createdAt).toLocaleDateString()}
-                      </Text>
-                    </View>
-
-                    <View style={styles.metadataItem}>
-                      <Text style={styles.activityTypeText}>
-                        {activity.type.charAt(0).toUpperCase() +
-                          activity.type.slice(1)}{" "}
-                        Activity
-                      </Text>
-                    </View>
-
-                    {activity.type === "streak" && (
-                      <View style={styles.streakBadge}>
-                        <Text style={styles.streakText}>Streak</Text>
+            <>
+              {activities.slice(from, to).map((activity, index) => (
+                <View key={index} style={[styles.activityCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+                  <View style={styles.activityContainer}>
+                    <View style={styles.activityLeftColumn}>
+                      <View style={styles.chatItemHeader}>
+                        {activity.type === "quiz" ? (
+                          <Image
+                            source={require("@/assets/images/icons/brain3.png")}
+                            style={styles.chatIcon}
+                          />
+                        ) : activity.type === "chat" ? (
+                          <Image
+                            source={require("@/assets/images/icons/aichat.png")}
+                            style={styles.chatIcon}
+                          />
+                        ) : (
+                          <Image
+                            source={require("@/assets/images/icons/streak.png")}
+                            style={styles.chatIcon}
+                          />
+                        )}
+                        <Text style={[styles.chatText, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={1}>
+                          {activity.title ||
+                            activity.type.charAt(0).toUpperCase() +
+                              activity.type.slice(1)}
+                        </Text>
                       </View>
-                    )}
+
+                      <View style={styles.metadataItem}>
+                        <Image
+                          source={require("@/assets/images/icons/medal-05.png")}
+                          style={styles.metadataIcon}
+                        />
+                        <Text style={[styles.xpHistoryText, theme === "dark" && { color: "#B3B3B3" }]}>
+                          +{activity.xpEarned} XP
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.activityRightColumn}>
+                      <View style={styles.metadataItem}>
+                        <Image
+                          source={theme === "dark" ? require("@/assets/images/icons/dark/calendar.png") : require("@/assets/images/icons/calendar.png")}
+                          style={styles.metadataIcon}
+                        />
+                        <Text style={[styles.dateText, theme === "dark" && { color: "#E0E0E0" }]}>
+                          {new Date(activity.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+
+                      <View style={styles.metadataItem}>
+                        <Text style={[styles.activityTypeText, theme === "dark" && { color: "#00FF80" }]}>
+                          {activity.type.charAt(0).toUpperCase() +
+                            activity.type.slice(1)}{" "}
+                          Activity
+                        </Text>
+                      </View>
+
+                      {activity.type === "streak" && (
+                        <View style={styles.streakBadge}>
+                          <Text style={styles.streakText}>Streak</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))
+              ))}
+
+              {activities.length > itemsPerPage && (
+                <View style={[styles.tableContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+                  <DataTable style={[styles.table, theme === "dark" && { backgroundColor: "#131313" }]}>
+                    <View style={styles.paginationContainer}>
+                      <DataTable.Pagination
+                        page={page}
+                        numberOfPages={Math.ceil(activities.length / itemsPerPage)}
+                        onPageChange={(page) => setPage(page)}
+                        onItemsPerPageChange={onItemsPerPageChange}
+                        showFastPaginationControls
+                        style={styles.pagination}
+                      />
+                    </View>
+                  </DataTable>
+                </View>
+              )}
+            </>
           ) : (
-            <View style={styles.emptyStateContainer}>
-              <Text style={styles.emptyStateText}>
+            <View style={[styles.emptyStateContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+              <Text style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}>
                 No activity history available.
               </Text>
-              <Text style={styles.emptyStateSubtext}>
+              <Text style={[styles.emptyStateSubtext, theme === "dark" && { color: "#B3B3B3" }]}>
                 Complete quizzes and chat with the AI to earn XP!
               </Text>
             </View>
@@ -484,7 +515,7 @@ const rewards = (props: Props) => {
 
       <View style={{ height: 30 }} />
 
-      <View style={styles.quizzes}>
+      <View style={[styles.quizzes, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
           <Image
             source={require("@/assets/images/icons/medal-07.png")}
@@ -492,31 +523,37 @@ const rewards = (props: Props) => {
           />
         </View>
         <Text
-          style={{
-            fontFamily: "Satoshi",
-            fontWeight: 500,
-            fontSize: 16,
-            lineHeight: 30,
-            color: "#2D3C52",
-            textAlign: "center",
-          }}
+          style={[
+            {
+              fontFamily: "Satoshi",
+              fontWeight: 500,
+              fontSize: 16,
+              lineHeight: 30,
+              color: "#2D3C52",
+              textAlign: "center",
+            },
+            theme === "dark" && { color: "#E0E0E0" }
+          ]}
         >
           Boost Your XP, Unlock New Rewards
         </Text>
-        <Text style={[styles.subText, { textAlign: "center" }]}>
+        <Text style={[styles.subText, { textAlign: "center" }, theme === "dark" && { color: "#B3B3B3" }]}>
           Complete quick actions daily to level up faster, earn NFTs, and stay
           on top of the leaderboard.
         </Text>
-        <TouchableOpacity style={styles.quizButton} onPress={() => router.push("/quizzes")}>  
+        <TouchableOpacity style={[styles.quizButton, theme === "dark" && { backgroundColor: "#00FF80" }]} onPress={() => router.push("/quizzes")}>  
           <Text
-            style={{
-              fontFamily: "Satoshi",
-              fontWeight: 500,
-              fontSize: 14,
-              lineHeight: 24,
-              color: "#00FF80",
-              textAlign: "center",
-            }}
+            style={[
+              {
+                fontFamily: "Satoshi",
+                fontWeight: 500,
+                fontSize: 14,
+                lineHeight: 24,
+                color: "#00FF80",
+                textAlign: "center",
+              },
+              theme === "dark" && { color: "#000" }
+            ]}
           >
             Start Quizzes
           </Text>
@@ -529,30 +566,30 @@ const rewards = (props: Props) => {
         animationType="fade"
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>
             <Image 
               source={require("@/assets/images/icons/SealCheck.png")} 
               style={styles.successIcon}
             />
-            <Text style={styles.modalTitle}>Asset Claimed Successfully!</Text>
+            <Text style={[styles.modalTitle, theme === "dark" && { color: "#E0E0E0" }]}>Asset Claimed Successfully!</Text>
             
-            <Text style={styles.modalDescription}>
+            <Text style={[styles.modalDescription, theme === "dark" && { color: "#B3B3B3" }]}>
               Your tokens have been successfully transferred to your wallet.
             </Text>
             
             <View style={styles.modalButtonsContainer}>
               <TouchableOpacity 
-                style={styles.closeButton} 
+                style={[styles.closeButton, theme === "dark" && { backgroundColor: "#00FF80" }]} 
                 onPress={() => setSuccessModalVisible(false)}
               >
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={[styles.closeButtonText, theme === "dark" && { color: "#000" }]}>Close</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.shareButton} 
+                style={[styles.shareButton, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
                 onPress={() => handleShare()}
               >
-                <Text style={styles.shareButtonText}>Share</Text>
+                <Text style={[styles.shareButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Share</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -746,13 +783,13 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     fontSize: 14,
     fontWeight: "500",
-    color: "#fff",
+    color: "#000",
   },
   earningAmount: {
     fontFamily: "Satoshi",
     fontSize: 18,
     fontWeight: "700",
-    color: "#fff",
+    color: "#000",
   },
   claimButton: {
     backgroundColor: "#000",
@@ -978,5 +1015,25 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#000",
     textAlign: "center",
+  },
+  tableContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 20,
+  },
+  table: {
+    backgroundColor: '#fff',
+  },
+  paginationContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  pagination: {
+    paddingHorizontal: 0,
   },
 });

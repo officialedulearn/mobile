@@ -53,34 +53,38 @@ const PlanCard = ({
   isAnnual: boolean;
   features: string[];
 }) => {
+  const { theme } = useUserStore();
   const isFree = price === 0;
   return (
-    <View style={styles.planCard}>
-      <Text style={styles.billingLabel}>
+    <View style={[styles.planCard, theme === "dark" && styles.planCardDark]}>
+      <Text style={[styles.billingLabel, theme === "dark" && styles.billingLabelDark]}>
         {isAnnual ? "🔥 Annually" : "🔥 Monthly"}
       </Text>
 
       <View style={styles.priceContainer}>
-        <Text style={styles.numberPriceText}>
+        <Text style={[styles.numberPriceText, theme === "dark" && styles.numberPriceTextDark]}>
           ${isAnnual ? price * 10 : price}
         </Text>
-        <Text style={styles.littlePriceText}>/{isAnnual ? "year" : "month"}</Text>
+        <Text style={[styles.littlePriceText, theme === "dark" && styles.littlePriceTextDark]}>/{isAnnual ? "year" : "month"}</Text>
       </View>
 
-      <Text style={styles.planName}>{isFree ? "Free" : name}</Text>
+      <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>{isFree ? "Free" : name}</Text>
 
-      <Text style={styles.planDescription}>
-        Upgrade your edulearn Plan to get access to more features that aren’t
+      <Text style={[styles.planDescription, theme === "dark" && styles.planDescriptionDark]}>
+        Upgrade your edulearn Plan to get access to more features that aren't
         available on the free plan
       </Text>
 
-      <Text style={styles.featuresTitle}>Features:</Text>
+      <Text style={[styles.featuresTitle, theme === "dark" && styles.featuresTitleDark]}>Features:</Text>
 
-      <View style={styles.featureList}>
+      <View style={[styles.featureList, theme === "dark" && styles.featureListDark]}>
         {features.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
-            <Image source={require("@/assets/images/icons/checkmark.png")} style={styles.checkmarkIcon} />
-            <Text style={styles.featureText}>{feature}</Text>
+            <Image 
+              source={require("@/assets/images/icons/checkmark.png")} 
+              style={styles.checkmarkIcon} 
+            />
+            <Text style={[styles.featureText, theme === "dark" && styles.featureTextDark]}>{feature}</Text>
           </View>
         ))}
       </View>
@@ -92,9 +96,8 @@ const Subscription = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const user = useUserStore(s => s.user)
+  const { user, theme } = useUserStore();
   const scrollViewRef = useRef<ScrollView>(null);
-
 
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -185,19 +188,28 @@ const Subscription = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />  
+    <View style={[styles.container, theme === "dark" && styles.containerDark]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />  
       <View style={styles.topNav}>
         <BackButton />
-        <Text style={styles.headerText}>Upgrade your Plan</Text>
+        <Text style={[styles.headerText, theme === "dark" && styles.headerTextDark]}>Upgrade your Plan</Text>
       </View>
 
-      <View style={styles.switchPills}>
+      <View style={[styles.switchPills, theme === "dark" && styles.switchPillsDark]}>
         <TouchableOpacity
-          style={[styles.switchPill, !isAnnual && styles.switchPillActive]}
+          style={[
+            styles.switchPill, 
+            !isAnnual && styles.switchPillActive,
+            theme === "dark" && !isAnnual && styles.switchPillActiveDark
+          ]}
           onPress={() => setIsAnnual(false)}
         >
-          <Text style={[styles.pillText, !isAnnual && styles.pillTextActive]}>
+          <Text style={[
+            styles.pillText, 
+            !isAnnual && theme === "dark" ? styles.pillTextActive : {color: "#000"},
+            !isAnnual && {color: "#000"},
+            theme === "dark" && styles.pillTextDark
+          ]}>
             Monthly
           </Text>
         </TouchableOpacity>
@@ -205,14 +217,19 @@ const Subscription = () => {
           style={[
             styles.switchPill,
             isAnnual && styles.switchPillActive,
+            theme === "dark" && isAnnual && styles.switchPillActiveDark
           ]}
           onPress={() => setIsAnnual(true)}
         >
           <View style={styles.annuallyContent}>
-            <Text style={[styles.pillText, isAnnual && styles.pillTextActive]}>
+            <Text style={[
+              styles.pillText, 
+              isAnnual && styles.pillTextActive,
+              theme === "dark" && styles.pillTextDark
+            ]}>
               Annually
             </Text>
-            <View style={styles.discountBox}>
+            <View style={[styles.discountBox, theme === "dark" && styles.discountBoxDark]}>
               <Text style={styles.discountBoxText}>-20%</Text>
             </View>
           </View>
@@ -248,6 +265,8 @@ const Subscription = () => {
             style={[
               styles.dot,
               currentPlanIndex === index && styles.activeDot,
+              theme === "dark" && styles.dotDark,
+              theme === "dark" && currentPlanIndex === index && styles.activeDotDark,
             ]}
           />
         ))}
@@ -256,7 +275,9 @@ const Subscription = () => {
       <TouchableOpacity 
         style={[
           styles.upgradeButton, 
-          (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabled
+          (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabled,
+          theme === "dark" && styles.upgradeButtonDark,
+          theme === "dark" && (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabledDark
         ]}
         onPress={handleUpgrade}
         disabled={isLoading || planData[currentPlanIndex].price === 0}
@@ -264,12 +285,17 @@ const Subscription = () => {
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator color="#00FF80" size="small" />
-            <Text style={styles.upgradeButtonText}>Processing...</Text>
+            <Text style={[
+              styles.upgradeButtonText,
+              theme === "dark" && styles.upgradeButtonTextDark
+            ]}>Processing...</Text>
           </View>
         ) : (
           <Text style={[
             styles.upgradeButtonText,
-            planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabled
+            planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabled,
+            theme === "dark" && styles.upgradeButtonTextDark,
+            theme === "dark" && planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabledDark
           ]}>
             {planData[currentPlanIndex].price === 0 ? 'Current Plan' : 'Upgrade'}
           </Text>
@@ -283,21 +309,28 @@ export default Subscription;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
     flex: 1,
     backgroundColor: "#F9FBFC",
-    paddingHorizontal: 16,
+  },
+  containerDark: {
+    backgroundColor: "#0D0D0D",
   },
   topNav: {
     flexDirection: "row",
     gap: 16,
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    marginBottom: 16,
   },
   headerText: {
     fontSize: 20,
     fontWeight: "600",
     color: "#2D3C52",
     fontFamily: "Satoshi",
+  },
+  headerTextDark: {
+    color: "#E0E0E0",
   },
   switchPills: {
     backgroundColor: "#fff",
@@ -311,7 +344,12 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingBottom: 4,
     paddingLeft: 4,
-    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  switchPillsDark: {
+    backgroundColor: "#131313",
+    borderColor: "#2E3033",
   },
   switchPill: {
     backgroundColor: "transparent",
@@ -325,13 +363,19 @@ const styles = StyleSheet.create({
   switchPillActive: {
     backgroundColor: "#000",
   },
+  switchPillActiveDark: {
+    backgroundColor: "#00FF80",
+  },
   pillText: {
     fontSize: 14,
     color: "#2D3C52",
     fontFamily: "Satoshi",
   },
+  pillTextDark: {
+    color: "#E0E0E0",
+  },
   pillTextActive: {
-    color: "#00FF80",
+    color: "#000",
     fontFamily: "Satoshi",
   },
   discountBox: {
@@ -339,6 +383,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     paddingVertical: 4,
     paddingHorizontal: 8,
+  },
+  discountBoxDark: {
+    backgroundColor: "#2E3033",
   },
   discountBoxText: {
     fontSize: 10,
@@ -351,7 +398,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   scrollView: {
-    marginTop: 16,
     flex: 1,
   },
   scrollContent: {
@@ -372,6 +418,10 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     minHeight: 450,
   },
+  planCardDark: {
+    backgroundColor: "#131313",
+    borderColor: "#00FF80",
+  },
   billingLabel: {
     fontSize: 12,
     color: "#61728C",
@@ -385,6 +435,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: "Satoshi",
   },
+  billingLabelDark: {
+    color: "#B3B3B3",
+    backgroundColor: "#2E3033",
+    borderColor: "#2E3033",
+  },
   priceContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -397,12 +452,18 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     lineHeight: 32,
   },
+  numberPriceTextDark: {
+    color: "#E0E0E0",
+  },
   littlePriceText: {
     fontSize: 14,
     color: "#61728C",
     marginLeft: 4,
     fontFamily: "Satoshi",
     lineHeight: 24,
+  },
+  littlePriceTextDark: {
+    color: "#B3B3B3",
   },
   planName: {
     fontSize: 18,
@@ -411,12 +472,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontFamily: "Satoshi",
   },
+  planNameDark: {
+    color: "#E0E0E0",
+  },
   planDescription: {
     fontSize: 14,
     color: "#2D3C52",
     marginTop: 4,
     lineHeight: 20,
     fontFamily: "Satoshi",
+  },
+  planDescriptionDark: {
+    color: "#B3B3B3",
   },
   featuresTitle: {
     fontSize: 16,
@@ -426,6 +493,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: "Satoshi",
   },
+  featuresTitleDark: {
+    color: "#E0E0E0",
+  },
   featureList: {
     backgroundColor: "#F9FBFC",
     padding: 12,
@@ -433,6 +503,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EDF3FC",
     gap: 6,
+  },
+  featureListDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
   },
   featureItem: {
     flexDirection: "row",
@@ -448,10 +522,14 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     fontFamily: "Satoshi",
   },
+  featureTextDark: {
+    color: "#E0E0E0",
+  },
   dotsContainer: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 16,
+    marginBottom: 16,
   },
   dot: {
     width: 8,
@@ -460,7 +538,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#EDF3FC",
     marginHorizontal: 4,
   },
+  dotDark: {
+    backgroundColor: "#2E3033",
+  },
   activeDot: {
+    backgroundColor: "#00FF80",
+  },
+  activeDotDark: {
     backgroundColor: "#00FF80",
   },
   upgradeButton: {
@@ -470,11 +554,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 16,
-    marginTop: 24,
     marginBottom: 40,
+  },
+  upgradeButtonDark: {
+    backgroundColor: "#00FF80",
   },
   upgradeButtonDisabled: {
     backgroundColor: "#EDF3FC",
+  },
+  upgradeButtonDisabledDark: {
+    backgroundColor: "#2E3033",
   },
   loadingContainer: {
     flexDirection: "row",
@@ -487,7 +576,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontFamily: "Satoshi",
   },
+  upgradeButtonTextDark: {
+    color: "#000",
+  },
   upgradeButtonTextDisabled: {
     color: "#61728C",
+  },
+  upgradeButtonTextDisabledDark: {
+    color: "#B3B3B3",
   },
 });

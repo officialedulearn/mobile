@@ -14,7 +14,8 @@ const nftPage = (props: Props) => {
   const [userReward, setUserReward] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const rewardService = new RewardsService();
-  const { user } = useUserStore();
+  const { user, theme } = useUserStore();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +61,7 @@ const nftPage = (props: Props) => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <BackButton />
 
       <View style={styles.contentContainer}>
@@ -70,20 +71,20 @@ const nftPage = (props: Props) => {
             style={styles.image}
             resizeMode="contain"
           />
-          <Text style={styles.rewardTitle}>
+          <Text style={[styles.rewardTitle, theme === "dark" && { color: "#E0E0E0" }]}>
             {reward?.title}
           </Text>
-          <Text style={styles.rewardSubtitle}>
+          <Text style={[styles.rewardSubtitle, theme === "dark" && { color: "#B3B3B3" }]}>
             {reward?.description}
           </Text>
           {userReward?.earnedAt && (
             <View style={styles.claimedAt}>
               <Image
-                source={require("@/assets/images/icons/calendar.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/calendar.png") : require("@/assets/images/icons/calendar.png")}
                 style={{ width: 16, height: 16, marginRight: 8 }}
               />
-              <Text style={styles.claimedAtText}>
-                Claimed at: {formatDate(userReward.earnedAt)}
+              <Text style={[styles.claimedAtText, theme === "dark" && { color: "#B3B3B3" }]}>
+                Claimed at: <Text style={{ color: "#E0E0E0", fontWeight: "700" }}>{formatDate(userReward.earnedAt)}</Text>
               </Text>
             </View>
           )}
@@ -98,9 +99,9 @@ const nftPage = (props: Props) => {
               console.log("Opening explorer URL:", explorerUrl);
               Linking.openURL(explorerUrl);
             }} 
-            style={styles.viewOnExplorerButton}
+            style={[styles.viewOnExplorerButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
           >
-            <Text style={styles.viewOnExplorerText}>
+            <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
               View on Explorer
             </Text>
           </TouchableOpacity>
@@ -113,10 +114,10 @@ const nftPage = (props: Props) => {
                 Linking.openURL(explorerUrl);
               }
             }} 
-            style={styles.viewOnExplorerButton}
+            style={[styles.viewOnExplorerButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
             disabled={!reward?.signature}
           >
-            <Text style={styles.viewOnExplorerText}>
+            <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
               View this user's NFT on chain
             </Text>
           </TouchableOpacity>
@@ -131,12 +132,12 @@ export default nftPage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 50,
     padding: 20,
     backgroundColor: "#F9FBFC",
   },
   contentContainer: {
     flex: 1,
+    marginTop: 50,
     justifyContent: "center",
     alignItems: "center",
   },

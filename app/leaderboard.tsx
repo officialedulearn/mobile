@@ -84,7 +84,7 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
         <View style={styles.topNav}>
           <BackButton />
           <Text style={styles.heading}>Leaderboard</Text>
@@ -99,7 +99,7 @@ const Leaderboard = () => {
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
         <View style={styles.topNav}>
           <BackButton />
           <Text style={styles.heading}>Leaderboard</Text>

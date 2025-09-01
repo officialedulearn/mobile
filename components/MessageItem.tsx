@@ -1,15 +1,24 @@
-import { Message } from "@/interface/Chat";
 import React from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Markdown from "react-native-markdown-display";
+import { Message } from "@/interface/Chat";
+import useUserStore from "@/core/userState";
 
-type MessageItemProps = {
+type Props = {
   message: Message;
-  isLoading?: boolean;
 };
 
-const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
+const MessageItem = ({ message }: Props) => {
+  const theme = useUserStore((s) => s.theme);
   const isUser = message.role === "user";
+  const isLoading = false;
 
   const getMessageContent = () => {
     if (typeof message.content === "string") {
@@ -26,57 +35,57 @@ const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
 
   const markdownStyles = {
     body: {
-      color: isUser ? "#2D3C52" : "#2D3C52",
-      fontFamily: "Satoshi",
-      fontSize: 16,
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 14,
+      lineHeight: 20,
     },
     heading1: {
-      fontSize: 24,
-      fontWeight: "normal",
-      marginTop: 10,
-      marginBottom: 5,
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Satoshi",
+      fontSize: 18,
+      fontWeight: "700" as const,
+      marginBottom: 8,
     },
     heading2: {
-      fontSize: 20,
-      fontWeight: "bold",
-      marginTop: 8,
-      marginBottom: 4,
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Satoshi",
+      fontSize: 16,
+      fontWeight: "700" as const,
+      marginBottom: 8,
+    },
+    paragraph: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 8,
     },
     strong: {
-      fontWeight: "700",
-      fontFamily: "Satoshi",
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontWeight: "700" as const,
     },
     em: {
-      fontStyle: "italic",
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontStyle: "italic" as const,
     },
-    link: {
-      color: "#0075FF",
-      textDecorationLine: "underline",
-    },
-    blockquote: {
-      borderLeftWidth: 4,
-      borderLeftColor: "#00FF80",
-      paddingLeft: 10,
-      marginLeft: 10,
-      fontStyle: "italic",
-
-    },
-    bullet_list: {
-      marginLeft: 2,
-    },
-    ordered_list: {
-      marginLeft: 2,
+    list_item: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 14,
+      lineHeight: 20,
     },
     code_inline: {
-      backgroundColor: "#F0F4FF",
+      backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
+      color: theme === "dark" ? "#00FF80" : "#2D3C52",
       padding: 4,
       borderRadius: 4,
       fontFamily: "Urbanist",
+      fontSize: 14,
     },
     code_block: {
-      backgroundColor: "#F0F4FF",
+      backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       padding: 10,
       borderRadius: 8,
       fontFamily: "Urbanist",
@@ -94,8 +103,8 @@ const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
       {!isUser && (
         <View style={styles.avatarContainer}>
           <Image
-            source={require("@/assets/images/chatbotlogo.png")}
-            style={styles.avatar}
+            source={theme === "dark" ? require("@/assets/images/icons/dark/LOGO.png") : require("@/assets/images/chatbotlogo.png")}
+            style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
           />
         </View>
       )}
@@ -103,13 +112,18 @@ const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
       <View
         style={[
           styles.messageBubble,
-          isUser ? styles.userBubble : styles.botBubble,
+          isUser ? [styles.userBubble, theme === "dark" && { 
+            backgroundColor: "#0D0D0D", 
+            borderColor: "#2E3033" 
+          }] : [styles.botBubble, theme === "dark" && { 
+            backgroundColor: "#131313" 
+          }],
         ]}
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color="#2D3C52" />
-            <Text style={styles.loadingText}>Thinking...</Text>
+            <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
+            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Thinking...</Text>
           </View>
         ) : (
           <Markdown style={markdownStyles}>
@@ -130,20 +144,24 @@ const MessageItem = ({ message, isLoading = false }: MessageItemProps) => {
   );
 };
 
-const ThinkingMessage = () => {
+export const ThinkingMessage = () => {
+  const theme = useUserStore((s) => s.theme);
+  
   return (
     <View style={styles.messageContainer}>
       <View style={styles.avatarContainer}>
         <Image
-          source={require("@/assets/images/chatbotlogo.png")}
-          style={styles.avatar}
+          source={theme === "dark" ? require("@/assets/images/icons/dark/LOGO.png") : require("@/assets/images/chatbotlogo.png")}
+          style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
         />
       </View>
 
-      <View style={[styles.messageBubble, styles.botBubble]}>
+      <View style={[styles.messageBubble, styles.botBubble, theme === "dark" && { 
+        backgroundColor: "#131313" 
+      }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#2D3C52" />
-          <Text style={styles.loadingText}>Thinking...</Text>
+          <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
+          <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Thinking...</Text>
         </View>
       </View>
     </View>
@@ -183,11 +201,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   userBubble: {
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#EDF3FC",
     borderTopRightRadius: 4,
   },
   botBubble: {
+    backgroundColor: "#F0F4FF",
     borderTopLeftRadius: 4,
   },
   messageText: {
@@ -204,12 +224,22 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   loadingText: {
-    marginLeft: 8,
+    fontSize: 14,
     color: "#2D3C52",
     fontFamily: "Satoshi",
   },
+  editButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  editIcon: {
+    width: 16,
+    height: 16,
+    tintColor: "#61728C",
+  },
 });
 
-export { MessageItem, ThinkingMessage };
+export { MessageItem };

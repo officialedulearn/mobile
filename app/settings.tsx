@@ -12,7 +12,7 @@ import * as Clipboard from "expo-clipboard";
 type Props = {};
 
 const settings = (props: Props) => {
-    const {user, logout} = useUserStore();
+    const {user, logout, theme} = useUserStore();
     const [loading, setLoading] = useState(false);
     const [privateKeyModalVisible, setPrivateKeyModalVisible] = useState(false);
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
@@ -88,32 +88,36 @@ const settings = (props: Props) => {
     }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View>
         <View style={styles.headerNav}>
           <BackButton />
-          <Text style={styles.headerTitle}>Settings</Text>
+          <Text style={[styles.headerTitle, theme === "dark" && { color: "#E0E0E0" }]}>Settings</Text>
         </View>
         
         <View style={styles.settings}>
-          <TouchableOpacity onPress={() => router.push('/editProfile')} style={styles.settingItem}>
+          <TouchableOpacity onPress={() => router.push('/editProfile')} style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <View  style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={require("@/assets/images/icons/user2.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user2.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>Edit Profile Info</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Edit Profile Info</Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.settingItem, user?.isPremium ? styles.disabledButton : {}]} 
+            style={[
+              styles.settingItem, 
+              user?.isPremium ? styles.disabledButton : {},
+              theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }
+            ]} 
             onPress={() => router.push('/subscription')}
             disabled={loading || user?.isPremium}
           >
@@ -122,81 +126,85 @@ const settings = (props: Props) => {
                 source={require("@/assets/images/icons/congrats.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={[styles.settingText, user?.isPremium ? styles.disabledText : {}]}>
+              <Text style={[
+                styles.settingText, 
+                user?.isPremium ? styles.disabledText : {},
+                theme === "dark" && { color: "#E0E0E0" }
+              ]}>
                 {loading ? "Processing..." : user?.isPremium ? "Premium Active" : "Upgrade to pro"}
               </Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24, opacity: user?.isPremium ? 0.5 : 1 }}
             />
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.settingItem} 
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
             onPress={() => router.push("/theme")}
             disabled={loading}
           >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={require("@/assets/images/icons/moon.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/moon.png") : require("@/assets/images/icons/moon.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>Theme</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Theme</Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
 
-          <View style={styles.settingItem}>
+          <View style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={require("@/assets/images/icons/message.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/message.png") : require("@/assets/images/icons/message.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>Help & Support</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Help & Support</Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </View>
 
-          <View style={styles.settingItem}>
+          <View style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={require("@/assets/images/icons/notebook.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>Give Feedback</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Give Feedback</Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </View>
 
           <TouchableOpacity 
-            style={styles.settingItem} 
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
             onPress={exportPrivateKey}
             disabled={loading}
           >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={require("@/assets/images/icons/notebook.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={styles.settingText}>Export Private Key</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Export Private Key</Text>
             </View>
 
             <Image 
-              source={require("@/assets/images/icons/CaretRight.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
@@ -207,41 +215,39 @@ const settings = (props: Props) => {
         onPress={() => {
           logout();
           router.push("/")
-
         }}
-        style={styles.logoutButton}
+        style={[styles.logoutButton]}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-
-        <Text style={styles.logoutText}>Logout</Text>
-        <Image
-          source={require("@/assets/images/icons/logout.png")}
-          style={{ width: 20, height: 20 }}
-        />
+          <Text style={[styles.logoutText]}>Logout</Text>
+          <Image
+            source={require("@/assets/images/icons/logout.png")}
+            style={{ width: 20, height: 20 }}
+          />
         </View>
       </TouchableOpacity>
 
       <Modal isVisible={privateKeyModalVisible} style={styles.modal}>
-        <View style={styles.modalContent}>
-          <View style={styles.warningIconContainer}>
+        <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>
+          <View style={[styles.warningIconContainer, theme === "dark" && { backgroundColor: 'rgba(255, 176, 32, 0.1)', borderColor: '#FFB020' }]}>
             <Image
               source={require("@/assets/images/icons/warning.png")}
               style={{ width: 30, height: 30 }}
             />
           </View>
-          <Text style={styles.modalTitle}>Your Private Key</Text>
-          <Text style={styles.modalDescription}>
+          <Text style={[styles.modalTitle, theme === "dark" && { color: "#E0E0E0" }]}>Your Private Key</Text>
+          <Text style={[styles.modalDescription, theme === "dark" && { color: "#B3B3B3" }]}>
             Keep this private key secure. Anyone with access to this key will have full control over your wallet.
           </Text>
           
-          <View style={styles.privateKeyContainer}>
-            <Text style={styles.privateKeyText} selectable={true}>
+          <View style={[styles.privateKeyContainer, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}>
+            <Text style={[styles.privateKeyText, theme === "dark" && { color: "#E0E0E0" }]} selectable={true}>
               {privateKey}
             </Text>
           </View>
           
           <TouchableOpacity 
-            style={styles.copyButton}
+            style={[styles.copyButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
             onPress={async () => {
               await Clipboard.setStringAsync(privateKey || "");
               Alert.alert("Success", "Private key copied to clipboard");
@@ -252,53 +258,53 @@ const settings = (props: Props) => {
                 source={require("@/assets/images/icons/copy.png")}
                 style={{ width: 16, height: 16 }}
               />
-              <Text style={styles.copyButtonText}>Copy to clipboard</Text>
+              <Text style={[styles.copyButtonText, theme === "dark" && { color: "#000" }]}>Copy to clipboard</Text>
             </View>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.closeButton}
+            style={[styles.closeButton, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}
             onPress={() => {
               setPrivateKeyModalVisible(false);
               setPrivateKey(null);
             }}
           >
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={[styles.closeButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
 
       <Modal isVisible={confirmModalVisible} style={styles.modal}>
-        <View style={styles.modalContent}>
-          <View style={styles.warningIconContainer}>
+        <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>
+          <View style={[styles.warningIconContainer, theme === "dark" && { backgroundColor: 'rgba(255, 176, 32, 0.1)', borderColor: '#FFB020' }]}>
             <Image
               source={require("@/assets/images/icons/warning.png")}
               style={{ width: 40, height: 40 }}
             />
           </View>
-          <Text style={styles.modalTitle}>Security Warning</Text>
-          <Text style={styles.modalDescription}>
+          <Text style={[styles.modalTitle, theme === "dark" && { color: "#E0E0E0" }]}>Security Warning</Text>
+          <Text style={[styles.modalDescription, theme === "dark" && { color: "#B3B3B3" }]}>
             Are you sure you want to export your private key? This key provides complete access to your wallet and funds.
             Only proceed if you are in a secure location.
           </Text>
           
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={styles.cancelButton}
+              style={[styles.cancelButton, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}
               onPress={() => setConfirmModalVisible(false)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.confirmButton}
+              style={[styles.confirmButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
               onPress={async () => confirmExportPrivateKey()}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color={theme === "dark" ? "#000" : "#FFFFFF"} />
               ) : (
-                <Text style={styles.confirmButtonText}>Confirm</Text>
+                <Text style={[styles.confirmButtonText, theme === "dark" && { color: "#000" }]}>Confirm</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -314,11 +320,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FBFC",
-    marginTop: 50,
     padding: 20,
     justifyContent: "space-between",
   },
   headerNav: {
+    marginTop: 50,
     flexDirection: "row",
     alignItems: "center",
     gap: 16,

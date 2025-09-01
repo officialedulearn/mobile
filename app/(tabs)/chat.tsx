@@ -1,4 +1,5 @@
 import Chat from "@/components/Chat";
+import useUserStore from "@/core/userState";
 import { Chat as chatInterface, Message } from "@/interface/Chat";
 import { ChatService } from "@/services/chat.service";
 import { generateUUID } from "@/utils/constants";
@@ -26,22 +27,20 @@ const ChatScreen = (props: Props) => {
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const theme = useUserStore((state) => state.theme);
 
   const [currentChatId, setCurrentChatId] = useState<string>(() => 
     chatIdFromNav || generateUUID()
   );
 
-  // Immediately update currentChatId when chatIdFromNav changes
   useEffect(() => {
     if (chatIdFromNav && chatIdFromNav !== currentChatId) {
       setCurrentChatId(chatIdFromNav);
     }
   }, [chatIdFromNav]);
 
-  // Improved data fetching with better error handling
   useEffect(() => {
     const fetchChatAndMessages = async () => {
-      // If no chatIdFromNav, this is a completely new chat
       if (!chatIdFromNav) {
         setIsLoading(false);
         setChat(undefined);
@@ -56,7 +55,6 @@ const ChatScreen = (props: Props) => {
       try {
         const chatService = new ChatService();
         
-        // Try to fetch existing chat
         try {
           const chatData = await chatService.getChatById(currentChatId);
           const messages = await chatService.getMessagesInChat(currentChatId);
@@ -112,14 +110,14 @@ const ChatScreen = (props: Props) => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       enabled={true}
     >
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
         <StatusBar style="light" />
-        <View style={styles.container}>
+        <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
           <Chat
             title={chat?.title || "AI Tutor Chat"}
             initialMessages={initialMessages}
             chatId={currentChatId}
-            key={`${currentChatId}-${refresh || 'new'}`} // Force re-render on new chat
+            key={`${currentChatId}-${refresh || 'new'}`} 
           />
         </View>
       </SafeAreaView>
