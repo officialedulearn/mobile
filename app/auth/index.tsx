@@ -1,6 +1,6 @@
 import { supabase } from "@/utils/supabase";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Alert,
   Image,
@@ -13,12 +13,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import useUserStore from "@/core/userState";
+import { StatusBar } from "expo-status-bar";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
-  
+  const theme = useUserStore((state) => state.theme);
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const [isSignUp, setIsSignUp] = useState(signUp === "1");
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -34,16 +38,26 @@ const Auth = () => {
 
   const handleChange = (field: string, value: string) => {
     let sanitizedValue = value;
-    
+
     if (field === 'email') {
       sanitizedValue = value.trim().toLowerCase();
-    }  else if (field === 'username') {
+    } else if (field === 'username') {
       sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
     } else if (field === 'referralCode') {
       sanitizedValue = value.trim().toUpperCase();
     }
-    
+
     setFormData({ ...formData, [field]: sanitizedValue });
+  };
+
+  const handleInputFocus = (inputType: string) => {
+    // Small delay to ensure keyboard animation starts
+    setTimeout(() => {
+      if (scrollViewRef.current && inputType === 'username') {
+        // Scroll to bottom to ensure username input is visible
+        scrollViewRef.current.scrollToEnd({ animated: true });
+      }
+    }, 100);
   };
 
   const validateEmail = (email: string): boolean => {
@@ -105,7 +119,7 @@ const Auth = () => {
       if (isSignUp) {
         router.push({
           pathname: '/auth/verifyOtp',
-          params: { 
+          params: {
             email: formData.email,
             isSignUp: "1",
             name: formData.name,
@@ -119,7 +133,7 @@ const Auth = () => {
           params: { email: formData.email },
         });
       }
-      
+
     } catch (err) {
       console.error("Authentication error:", err);
       Alert.alert(
@@ -133,30 +147,31 @@ const Auth = () => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, theme === "dark" && styles.containerDark]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      keyboardVerticalOffset={0}
     >
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets={true}
       >
         <View style={styles.topNavigation}>
           <Image
-            source={require("@/assets/images/LOGO-1.png")}
+            source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
             style={styles.logo}
             resizeMode="contain"
           />
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.welcome}>
-            {isSignUp ? "Create account" : "Welcome back"}
+          <Text style={[styles.welcome, theme === "dark" && styles.welcomeDark]}>
+            {isSignUp ? "Create account" : "Welcome back 👋"}
           </Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
             {isSignUp
               ? "Sign up to begin your learning journey"
               : "Log in to continue your learning journey"}
@@ -165,11 +180,11 @@ const Auth = () => {
 
         <View style={styles.content}>
           {isSignUp && (
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, theme === "dark" && styles.inputDark]}
                 placeholder="Full Name"
-                placeholderTextColor="#61728C"
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                 value={formData.name}
                 onChangeText={(text) => handleChange("name", text)}
                 autoCapitalize="words"
@@ -180,11 +195,11 @@ const Auth = () => {
             </View>
           )}
 
-          <View style={styles.inputContainer}>
+          <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, theme === "dark" && styles.inputDark]}
               placeholder="Email"
-              placeholderTextColor="#61728C"
+              placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
               value={formData.email}
               onChangeText={(text) => handleChange("email", text)}
               keyboardType="email-address"
@@ -194,35 +209,19 @@ const Auth = () => {
               textContentType="emailAddress"
             />
             <Image
-              source={require("@/assets/images/icons/mail.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/mail.png") : require("@/assets/images/icons/mail.png")}
               style={styles.icon}
               resizeMode="contain"
             />
           </View>
 
-          {/* <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#61728C"
-              secureTextEntry
-              value={formData.password}
-              onChangeText={(text) => handleChange("password", text)}
-            />
-            <Image
-              source={require("@/assets/images/icons/eye.png")}
-              style={styles.icon}
-              resizeMode="contain"
-            />
-          </View> */}
-
           {isSignUp && (
             <>
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, theme === "dark" && styles.inputDark]}
                   placeholder="Referral Code (Optional)"
-                  placeholderTextColor="#61728C"
+                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                   value={formData.referralCode}
                   onChangeText={(text) => handleChange("referralCode", text)}
                   autoCapitalize="characters"
@@ -230,13 +229,14 @@ const Auth = () => {
                   returnKeyType="next"
                 />
               </View>
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
                 <TextInput
-                  style={[styles.input, styles.usernameInput]}
+                  style={[styles.input, styles.usernameInput, theme === "dark" && styles.inputDark]}
                   placeholder="X username (optional)"
-                  placeholderTextColor="#61728C"
+                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                   value={formData.username}
                   onChangeText={(text) => handleChange("username", text)}
+                  onFocus={() => handleInputFocus("username")}
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="done"
@@ -247,22 +247,26 @@ const Auth = () => {
           )}
 
           <TouchableOpacity
-            style={[styles.signInButton, loading ? styles.disabledButton : null]}
+            style={[
+              styles.signInButton,
+              loading ? styles.disabledButton : null,
+              theme === "dark" && styles.signInButtonDark
+            ]}
             onPress={() => handleAuth()}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>
+            <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
               {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ marginTop: 30, alignItems: "flex-start" }}>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
             {isSignUp ? "Already have an account? " : "Don't have an account? "}
             <Text
               onPress={() => setIsSignUp(!isSignUp)}
-              style={{ color: "#000", fontWeight: "700" }}
+              style={[{ fontWeight: "700" }, theme === "dark" ? { color: "#00FF80" } : { color: "#000" }]}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </Text>
@@ -278,13 +282,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FBFC",
   },
+  containerDark: {
+    backgroundColor: "#0D0D0D",
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 40,
-    paddingBottom: 100,
+    paddingBottom: 40,
     flexGrow: 1,
   },
   topNavigation: {
@@ -304,11 +311,17 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     marginBottom: 8,
   },
+  welcomeDark: {
+    color: "#E0E0E0",
+  },
   subtitle: {
     fontSize: 14,
     fontWeight: "500",
     color: "#61728C",
     fontFamily: "Satoshi",
+  },
+  subtitleDark: {
+    color: "#B3B3B3",
   },
   content: {
     gap: 16,
@@ -324,11 +337,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 10,
   },
+  inputContainerDark: {
+    backgroundColor: "#131313",
+    borderColor: "#2E3033",
+  },
   input: {
     flex: 1,
     fontSize: 16,
     color: "#2D3C52",
     fontFamily: "Satoshi",
+  },
+  inputDark: {
+    color: "#E0E0E0",
   },
   icon: {
     width: 20,
@@ -345,11 +365,17 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 10,
   },
+  signInButtonDark: {
+    backgroundColor: "#00FF80",
+  },
   buttonText: {
     color: "#00FF80",
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+  },
+  buttonTextDark: {
+    color: "#000",
   },
   usernameInput: {
     color: "#2D3C52",

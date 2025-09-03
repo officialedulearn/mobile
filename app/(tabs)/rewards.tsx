@@ -568,7 +568,7 @@ const rewards = (props: Props) => {
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>
             <Image 
-              source={require("@/assets/images/icons/SealCheck.png")} 
+              source={theme === "dark" ? require("@/assets/images/icons/dark/SealCheck.png") : require("@/assets/images/icons/SealCheck.png")} 
               style={styles.successIcon}
             />
             <Text style={[styles.modalTitle, theme === "dark" && { color: "#E0E0E0" }]}>Asset Claimed Successfully!</Text>

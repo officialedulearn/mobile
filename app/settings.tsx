@@ -160,20 +160,24 @@ const settings = (props: Props) => {
             />
           </TouchableOpacity>
 
-          <View style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+          <TouchableOpacity 
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+            onPress={() => router.push("/community")}
+            disabled={loading}
+          >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/message.png") : require("@/assets/images/icons/message.png")}
                 style={{ width: 24, height: 24 }} 
               />
-              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Help & Support</Text>
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Community</Text>
             </View>
 
             <Image 
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
-          </View>
+          </TouchableOpacity>
 
           <View style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
@@ -197,7 +201,7 @@ const settings = (props: Props) => {
           >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
-                source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
+                source={theme === "dark" ? require("@/assets/images/icons/dark/eye.png") : require("@/assets/images/icons/eye.png")}
                 style={{ width: 24, height: 24 }} 
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Export Private Key</Text>

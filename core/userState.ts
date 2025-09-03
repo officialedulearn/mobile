@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface UserState {
   user: User | null;
   walletBalance: {sol: number, tokenAccount: number} | null;
+  walletBalanceLoading: boolean;
   theme: 'light' | 'dark';
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
@@ -69,6 +70,7 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
 const useUserStore = create<UserState>((set, get) => ({
   user: null,
   walletBalance: {sol: 0, tokenAccount: 0},
+  walletBalanceLoading: false,
   theme: 'light',
   setUserAsync: async () => {
     if (typeof window === "undefined") return;
@@ -157,10 +159,13 @@ const useUserStore = create<UserState>((set, get) => ({
     if (!currentUser || !currentUser.id) return;
     
     try {
+      set({ walletBalanceLoading: true });
       const { balance } = await userService.getUserWalletBalance(currentUser.address as unknown as string);
       set({ walletBalance: {sol: balance.sol, tokenAccount: balance.tokenAccount} });
     } catch (error) {
       console.error("Failed to fetch wallet balance:", error);
+    } finally {
+      set({ walletBalanceLoading: false });
     }
   },
   

@@ -41,6 +41,7 @@ const verifyOtp = (props: Props) => {
   const [canResend, setCanResend] = useState(false);
   const [loadingText, setLoadingText] = useState("Verifying...");
   const { setUser } = useUserStore();
+  const theme = useUserStore((state) => state.theme);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -141,7 +142,6 @@ const verifyOtp = (props: Props) => {
             });
             
             setUser(newUser);
-            // Redirect new users to identity page first
             router.push("/auth/identity");
           } catch (createError) {
             console.error("User creation failed:", createError);
@@ -182,26 +182,26 @@ const verifyOtp = (props: Props) => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.topNav}>
         <BackButton />
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.boldText}>Verify email address?</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.boldText, theme === "dark" && { color: "#E0E0E0" }]}>Verify email address?</Text>
+        <Text style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}>
           Enter the six digits code sent to your email address {email}
         </Text>
 
         <View style={styles.formContainer}>
-          <Text style={styles.inputLabel}>Code</Text>
-          <View style={styles.inputContainer}>
+          <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>Code</Text>
+          <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <TextInput
               keyboardType="numeric"
-              style={styles.input}
+              style={[styles.input, theme === "dark" && { color: "#E0E0E0" }]}
               placeholder="Enter OTP"
-              placeholderTextColor="#61728C"
+              placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
               value={otp}
               onChangeText={handleTextChange}
               maxLength={6}
@@ -209,14 +209,18 @@ const verifyOtp = (props: Props) => {
           </View>
         </View>
 
-        <Text style={styles.expiryText}>
-          Code expires in <Text style={styles.timerText}>{formatTime()}</Text>
+        <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
+          Code expires in <Text style={[styles.timerText, theme === "dark" && { color: "#E0E0E0" }]}>{formatTime()}</Text>
         </Text>
 
-        <Text style={styles.expiryText}>
+        <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
           Didn't receive a code? {" "}
           <Text 
-            style={[styles.timerText, (!canResend || resendLoading) && { opacity: 0.5 }]}
+            style={[
+              styles.timerText, 
+              theme === "dark" && { color: "#00FF80" },
+              (!canResend || resendLoading) && { opacity: 0.5 }
+            ]}
             onPress={canResend && !resendLoading ? handleResendOtp : undefined}
           >
             {resendLoading ? "Resending..." : "Resend Code"}
@@ -224,11 +228,15 @@ const verifyOtp = (props: Props) => {
         </Text>
 
         <TouchableOpacity
-          style={[styles.signInButton, loading && styles.disabledButton]}
+          style={[
+            styles.signInButton, 
+            theme === "dark" && { backgroundColor: "#00FF80" },
+            loading && styles.disabledButton
+          ]}
           onPress={() => handleSubmit()}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>Submit</Text>
+          <Text style={[styles.buttonText, theme === "dark" && { color: "#000" }]}>Submit</Text>
         </TouchableOpacity>
       </View>
 
@@ -238,9 +246,9 @@ const verifyOtp = (props: Props) => {
         animationType="fade"
       >
         <View style={styles.loadingOverlay}>
-          <View style={styles.loaderContainer}>
+          <View style={[styles.loaderContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
             <ActivityIndicator size="large" color="#00FF80" />
-            <Text style={styles.loadingText}>{loadingText}</Text>
+            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>{loadingText}</Text>
           </View>
         </View>
       </Modal>
@@ -253,10 +261,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F9FBFC",
     padding: 20,
-    marginTop: 30,
   },
   topNav: {
-    marginTop: 20,
+    marginTop: 30,
     marginBottom: 30,
   },
   contentContainer: {
@@ -309,8 +316,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#61728C",
     marginTop: 10,
-    alignContent: "center",
-    alignItems: "center",
+    textAlign: "center",
+    marginBottom: 8,
   },
   timerText: {
     fontWeight: "700",
@@ -321,7 +328,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: 50,
     paddingVertical: 16,
-    marginTop: 10,
+    marginTop: 30,
   },
   resendButton: {
     backgroundColor: "#000",

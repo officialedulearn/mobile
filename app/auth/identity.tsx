@@ -13,7 +13,7 @@ const identity = (props: Props) => {
   const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [learningGoal, setLearningGoal] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const { user, setUser } = useUserStore();
+  const { user, setUser, theme } = useUserStore();
   const userService = new UserService();
 
   const avatarImages = {
@@ -78,15 +78,15 @@ const identity = (props: Props) => {
   const avatars = [1, 2, 3, 4, 5, 6, 7];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <View style={styles.topNav}>
         <BackButton />
       </View>
 
       <View style={styles.content}>
         <View style={{ gap: 8 }}>
-          <Text style={styles.headerText}>Choose your identity</Text>
-          <Text style={styles.subText}>
+          <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Choose your identity</Text>
+          <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
             This name and avatar will be visible on leaderboards and in your
             profile.
           </Text>
@@ -94,10 +94,11 @@ const identity = (props: Props) => {
 
         <View style={styles.inputs}>
           <View>
-            <Text style={styles.displayNameText}>What do you want to learn?</Text>
+            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>What do you want to learn?</Text>
             <TextInput 
               placeholder="blockchain basics, web3 design, smart contracts..." 
-              style={styles.bioInput}
+              placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+              style={[styles.bioInput, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033", color: "#E0E0E0" }]}
               value={learningGoal}
               onChangeText={setLearningGoal}
               maxLength={100}
@@ -106,7 +107,7 @@ const identity = (props: Props) => {
           </View>
 
           <View>
-            <Text style={styles.displayNameText}>Select Avatar</Text>
+            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>Select Avatar</Text>
             <View style={styles.avatarGrid}>
               {avatars.map((avatarNumber) => (
                 <TouchableOpacity
@@ -129,18 +130,21 @@ const identity = (props: Props) => {
         </View>
 
         <TouchableOpacity 
-          style={{
-            marginTop: 32,
-            backgroundColor: selectedAvatar && learningGoal.trim() ? "#00FF80" : "#EDF3FC",
-            paddingVertical: 16,
-            borderRadius: 32,
-            alignItems: "center",
-          }} 
+          style={[
+            {
+              marginTop: 32,
+              backgroundColor: selectedAvatar && learningGoal.trim() ? "#00FF80" : (theme === "dark" ? "#2E3033" : "#EDF3FC"),
+              paddingVertical: 16,
+              borderRadius: 32,
+              alignItems: "center",
+            },
+            (!selectedAvatar || !learningGoal.trim() || isLoading) && { opacity: 0.5 }
+          ]}
           disabled={!selectedAvatar || !learningGoal.trim() || isLoading}
           onPress={handleFinishSetup}
         >
           <Text style={{ 
-            color: selectedAvatar && learningGoal.trim() ? "#2D3C52" : "#61728C",
+            color: selectedAvatar && learningGoal.trim() ? "#2D3C52" : (theme === "dark" ? "#B3B3B3" : "#61728C"),
             fontWeight: "600",
             fontSize: 16,
             fontFamily: "Satoshi",
@@ -157,12 +161,12 @@ export default identity;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 50,
     flex: 1,
     paddingHorizontal: 16,
     backgroundColor: "#F9FBFC",
   },
   topNav: {
+    marginTop: 50,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -193,6 +197,7 @@ const styles = StyleSheet.create({
   },
   inputs: {
     marginTop: 32,
+    gap: 24
   },
   bioInput: {
     gap: 8,
@@ -208,16 +213,16 @@ const styles = StyleSheet.create({
   },
   avatarGrid: {
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "space-between",
     marginTop: 16,
-    gap: 12,
+    flexWrap: "wrap",
   },
   avatarContainer: {
     width: "22%",
     aspectRatio: 1,
     borderRadius: 30,
     overflow: "hidden",
+    marginBottom: 12,
     borderWidth: 2,
     borderColor: "transparent",
   },

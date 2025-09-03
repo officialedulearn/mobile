@@ -72,6 +72,7 @@ export default function RootLayout() {
         <Stack.Screen name="editProfile" options={{ headerShown: false }} />
         <Stack.Screen name="subscription" options={{ headerShown: false }} />
         <Stack.Screen name="theme" options={{ headerShown: false }} />
+        <Stack.Screen name="community" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

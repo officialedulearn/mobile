@@ -189,7 +189,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       <KeyboardAvoidingView 
         style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        keyboardVerticalOffset={0}
       >
         <View style={[styles.topNav, theme === "dark" && { 
           backgroundColor: "#131313", 
@@ -345,6 +345,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
               onSubmitEditing={() => handleSendMessage()}
               multiline={true}
               editable={!isGenerating && !isTransitioning}
+              textAlignVertical="center"
             />
             <TouchableOpacity
               style={styles.sendButton}
@@ -381,7 +382,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FBFC",
     display: "flex",
     flexDirection: "column",
-    marginTop: 50,
   },
   button: {
     borderRadius: 50,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EDF3FC",
     borderRadius: 10,
     marginHorizontal: 10,
-    marginTop: 10,
+    marginTop: 20,
   },
   leftNavContainer: {
     flexDirection: "row",

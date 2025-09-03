@@ -1,27 +1,50 @@
 import useUserStore from "@/core/userState";
 import { Tabs } from "expo-router";
-import React from "react";
-import { Image, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Image, StyleSheet, Keyboard, Platform } from "react-native";
 
 type Props = {};
 
 const TabLayout = (props: Props) => {
   const theme = useUserStore(s => s.theme);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    return () => {
+      keyboardDidHideListener?.remove();
+      keyboardDidShowListener?.remove();
+    };
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#00FF80",
         tabBarInactiveTintColor: "#777777",
-        tabBarStyle: {
-          borderTopWidth: 0,
-          elevation: 0,
-          height: 70,
-          paddingBottom: 15,
-          paddingTop: 15,
-          backgroundColor: theme === 'dark' ? '#131313' : "#FFF",
-          borderColor: theme === 'dark' ? '#131313' : "#FFF",
-          borderWidth: 1,
-        },
+        tabBarStyle: [
+          {
+            borderTopWidth: 0,
+            elevation: 0,
+            height: 70,
+            paddingBottom: 15,
+            paddingTop: 15,
+            backgroundColor: theme === 'dark' ? '#131313' : "#FFF",
+            borderColor: theme === 'dark' ? '#131313' : "#FFF",
+            borderWidth: 1,
+          },
+          isKeyboardVisible && {
+            display: 'none',
+          }
+        ],
         tabBarLabelStyle: {
           fontSize: 12,
           marginBottom: 5,
@@ -31,9 +54,7 @@ const TabLayout = (props: Props) => {
         tabBarShowLabel: true,
         tabBarItemStyle: {
           backgroundColor: "transparent",
-          
         }
-        
       }}
     >
       <Tabs.Screen
@@ -64,7 +85,6 @@ const TabLayout = (props: Props) => {
 
       <Tabs.Screen
         name="chat"
-        
         options={{
           title: "", 
           tabBarIcon: ({ focused }) => (

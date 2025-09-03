@@ -140,7 +140,7 @@ const editProfile = (props: Props) => {
               onPress={handleCancel}
             >
               <View style={styles.buttonContent}>
-                <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#E0E0E0", backgroundColor: "#" }]}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#00FF80", backgroundColor: "#" }]}>Cancel</Text>
                 <Image
                   source={theme === "dark" ? require('@/assets/images/icons/dark/cancel.png') : require('@/assets/images/icons/cancel.png')}
                   style={{ width: 20, height: 20 }}

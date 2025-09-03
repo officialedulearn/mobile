@@ -4,15 +4,20 @@ import { supabase } from "@/utils/supabase";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Image, View } from "react-native";
+import { Image, View, useColorScheme } from "react-native";
 
 export default function Index() {
-  const {user, setUser} = useUserStore();
+  const {user, setUser, setTheme} = useUserStore();
   const userService = new UserService();
+  const colorScheme = useColorScheme();
+
+
   
   useEffect(() => {
     const fetchUser = async () => {
       try {
+
+    await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
         const supabaseUser = await supabase.auth.getUser();
         if(supabaseUser.data.user) {
           const userData = await userService.getUser(supabaseUser.data.user.email || "");

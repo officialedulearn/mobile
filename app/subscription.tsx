@@ -206,9 +206,8 @@ const Subscription = () => {
         >
           <Text style={[
             styles.pillText, 
-            !isAnnual && theme === "dark" ? styles.pillTextActive : {color: "#000"},
-            !isAnnual && {color: "#000"},
-            theme === "dark" && styles.pillTextDark
+            theme === "dark" && styles.pillTextDark,
+            !isAnnual && styles.pillTextActive,
           ]}>
             Monthly
           </Text>
@@ -224,8 +223,8 @@ const Subscription = () => {
           <View style={styles.annuallyContent}>
             <Text style={[
               styles.pillText, 
+              theme === "dark" && styles.pillTextDark,
               isAnnual && styles.pillTextActive,
-              theme === "dark" && styles.pillTextDark
             ]}>
               Annually
             </Text>
@@ -378,6 +377,10 @@ const styles = StyleSheet.create({
     color: "#000",
     fontFamily: "Satoshi",
   },
+  pillTextActiveDark: {
+    color: "#000",
+    fontFamily: "Satoshi",
+  },
   discountBox: {
     borderRadius: 16,
     backgroundColor: "#000",
@@ -402,11 +405,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardContainer: {
     width: width - 32,
     paddingHorizontal: 16,
-    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   planCard: {
     backgroundColor: "#fff",

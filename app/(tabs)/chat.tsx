@@ -7,9 +7,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   SafeAreaView,
   StyleSheet,
   View,
@@ -23,7 +20,6 @@ const ChatScreen = (props: Props) => {
     refresh: string;
   }>();
   const router = useRouter();
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,45 +79,18 @@ const ChatScreen = (props: Props) => {
     fetchChatAndMessages();
   }, [currentChatId, chatIdFromNav, refresh]);
 
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      () => {
-        setKeyboardVisible(true);
-      }
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setKeyboardVisible(false);
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
-  }, []);
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      enabled={true}
-    >
-      <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-        <StatusBar style="light" />
-        <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-          <Chat
-            title={chat?.title || "AI Tutor Chat"}
-            initialMessages={initialMessages}
-            chatId={currentChatId}
-            key={`${currentChatId}-${refresh || 'new'}`} 
-          />
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+    <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      <StatusBar style="light" />
+      <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+        <Chat
+          title={chat?.title || "AI Tutor Chat"}
+          initialMessages={initialMessages}
+          chatId={currentChatId}
+          key={`${currentChatId}-${refresh || 'new'}`} 
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 

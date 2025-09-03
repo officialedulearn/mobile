@@ -3,8 +3,8 @@ import useUserStore from "@/core/userState";
 import { levels } from "@/utils/constants";
 import { supabase } from "@/utils/supabase";
 import { getUserMetrics } from "@/utils/utils";
-import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
@@ -47,6 +47,7 @@ const AchievementCard = ({
 const Profile = (props: Props) => {
   const {user, theme} = useUserStore();
   const walletBalance = useUserStore((state) => state.walletBalance);
+  const walletBalanceLoading = useUserStore((state) => state.walletBalanceLoading);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);
   const [userMetrics, setUserMetrics] = React.useState({
     quizCompleted: 0,
@@ -64,6 +65,10 @@ const Profile = (props: Props) => {
   const [isBurning, setIsBurning] = React.useState(false);
   const [isBuying, setIsBuying] = React.useState(false);
   const [isStaking, setIsStaking] = React.useState(false);
+  const [showEDLNPopover, setShowEDLNPopover] = React.useState(false);
+  const [hasShownPopover, setHasShownPopover] = React.useState(false);
+  const popoverOpacity = useRef(new Animated.Value(0)).current;
+  const popoverTranslateY = useRef(new Animated.Value(-20)).current;
   const { width } = useWindowDimensions();
 
   const walletService = new WalletService()
@@ -85,6 +90,58 @@ const Profile = (props: Props) => {
     }
     fetchMetrics();
   }, [user?.id, fetchWalletBalance]);
+
+  useEffect(() => {
+    if (
+      !walletBalanceLoading && 
+      walletBalance && 
+      typeof walletBalance.tokenAccount === 'number' && 
+      typeof walletBalance.sol === 'number' &&
+      walletBalance.tokenAccount < 1000 && 
+      !hasShownPopover &&
+      user?.id
+    ) {
+      const timer = setTimeout(() => {
+        console.log('Showing EDLN popover for balance:', walletBalance.tokenAccount);
+        setShowEDLNPopover(true);
+        setHasShownPopover(true);
+
+        Animated.parallel([
+          Animated.timing(popoverOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(popoverTranslateY, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        
+        const hideTimer = setTimeout(() => {
+          Animated.parallel([
+            Animated.timing(popoverOpacity, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(popoverTranslateY, {
+              toValue: -20,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowEDLNPopover(false);
+          });
+        }, 5000);
+        
+        return () => clearTimeout(hideTimer);
+      }, 4000); 
+      
+      return () => clearTimeout(timer);
+    }
+  }, [walletBalance?.tokenAccount, walletBalance?.sol, walletBalanceLoading, hasShownPopover, user?.id, popoverOpacity, popoverTranslateY]);
 
   const toggleBuyModal = () => {
     setBuyModalVisible(!isBuyModalVisible);
@@ -144,6 +201,46 @@ const Profile = (props: Props) => {
 
   return (
     <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      {showEDLNPopover && (
+        <Animated.View style={[
+          styles.edlnPopover,
+          theme === "dark" && styles.edlnPopoverDark,
+          {
+            opacity: popoverOpacity,
+            transform: [{ translateY: popoverTranslateY }],
+          }
+        ]}>
+          <Text style={[
+            styles.edlnPopoverText,
+            theme === "dark" && styles.edlnPopoverTextDark
+          ]}>
+            Buy EDLN with the + button at a discount and earn 5 XP
+          </Text>
+          <TouchableOpacity 
+            style={styles.dismissButton}
+            onPress={() => {
+              // Animate out when manually dismissed
+              Animated.parallel([
+                Animated.timing(popoverOpacity, {
+                  toValue: 0,
+                  duration: 300,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(popoverTranslateY, {
+                  toValue: -20,
+                  duration: 300,
+                  useNativeDriver: true,
+                }),
+              ]).start(() => {
+                setShowEDLNPopover(false);
+              });
+            }}
+          >
+            <Text style={[styles.dismissButtonText, theme === "dark" && {color: "#000"}]}>×</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.container, { marginTop: width > 350 ? 30 : 20 }]}>
           <View style={styles.header}>
@@ -1003,5 +1100,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginRight: 8,
+  },
+  edlnPopover: {
+    position: "absolute",
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 20,
+    right: 20,
+    backgroundColor: "#000000",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  edlnPopoverDark: {
+    backgroundColor: "#00FF80",
+    shadowColor: "#00FF80",
+    shadowOpacity: 0.3,
+  },
+  edlnPopoverText: {
+    color: "#00FF80",
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+    marginRight: 12,
+  },
+  edlnPopoverTextDark: {
+    color: "#000000",
+  },
+  dismissButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dismissButtonText: {
+    color: "#00FF80",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 16,
   },
 });

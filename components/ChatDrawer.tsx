@@ -134,15 +134,12 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
               <Text style={[styles.chatTitle, theme === "dark" && { color: "#B3B3B3" }]} numberOfLines={1}>
                 {chat.title || "Untitled Chat"}
               </Text>
-              <Text style={[styles.chatDate, theme === "dark" && { color: "#777777" }]}>
-                {new Date(chat.createdAt).toLocaleDateString()}
-              </Text>
             </View>
             {!isNavigating && (
               <Image
                 source={theme === "dark" 
-                  ? require("@/assets/images/icons/dark/arrow-right.png")
-                  : require("@/assets/images/icons/arrow-right.png")
+                  ? require("@/assets/images/icons/dark/CaretRight.png")
+                  : require("@/assets/images/icons/CaretRight.png")
                 }
                 style={[styles.arrowIcon, theme === "dark" && { tintColor: "#777777" }]}
               />
