@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EDF3FC",
     borderRadius: 10,
     marginHorizontal: 10,
-    marginTop: 20,
+    marginTop: 30,
   },
   leftNavContainer: {
     flexDirection: "row",

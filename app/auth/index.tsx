@@ -5,6 +5,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -15,6 +16,7 @@ import {
 } from "react-native";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
+import { Route } from "expo-router/build/Route";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
@@ -51,10 +53,8 @@ const Auth = () => {
   };
 
   const handleInputFocus = (inputType: string) => {
-    // Small delay to ensure keyboard animation starts
     setTimeout(() => {
       if (scrollViewRef.current && inputType === 'username') {
-        // Scroll to bottom to ensure username input is visible
         scrollViewRef.current.scrollToEnd({ animated: true });
       }
     }, 100);
@@ -102,6 +102,31 @@ const Auth = () => {
     try {
       setLoading(true);
 
+      if (formData.email === "playreview@edulearn.com") {
+        if (isSignUp) {
+          router.push({
+            pathname: '/auth/verifyOtp',
+            params: {
+              email: formData.email,
+              isSignUp: "1",
+              name: formData.name,
+              referralCode: formData.referralCode || "",
+              username: formData.username || "",
+              isReviewer: "1"
+            },
+          });
+        } else {
+          router.push({
+            pathname: '/auth/verifyOtp',
+            params: {
+              email: formData.email,
+              isReviewer: "1"
+            },
+          });
+        }
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email: formData.email,
       });
@@ -116,6 +141,7 @@ const Auth = () => {
         }
         return;
       }
+
       if (isSignUp) {
         router.push({
           pathname: '/auth/verifyOtp',
@@ -259,6 +285,22 @@ const Auth = () => {
               {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
+
+          {isSignUp && (
+            <View style={styles.privacyContainer}>
+              <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>
+                By signing up, you are agreeing to our{" "}
+                <Text
+                  style={[styles.privacyLink, theme === "dark" && styles.privacyLinkDark]}
+                  onPress={() => {
+                    Linking.openURL("https://support.edulearn.com/privacy-policy");
+                  }}
+                >
+                  Privacy Policy
+                </Text>
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={{ marginTop: 30, alignItems: "flex-start" }}>
@@ -379,6 +421,25 @@ const styles = StyleSheet.create({
   },
   usernameInput: {
     color: "#2D3C52",
+  },
+  privacyContainer: {
+    marginTop: 10,
+    alignItems: "center",
+  },
+  privacyText: {
+    fontSize: 12,
+    color: "#61728C",
+    textAlign: "center",
+  },
+  privacyTextDark: {
+    color: "#B3B3B3",
+  },
+  privacyLink: {
+    fontWeight: "700",
+    color: "#000",
+  },
+  privacyLinkDark: {
+    color: "#00FF80",
   },
 });
 

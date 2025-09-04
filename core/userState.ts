@@ -172,6 +172,8 @@ const useUserStore = create<UserState>((set, get) => ({
   logout: async () => {
     try {
       await supabase.auth.signOut();
+      // Clear reviewer flag when logging out
+      await AsyncStorage.removeItem('isReviewer');
       set({ user: null, walletBalance: null });
     } catch (error) {
       console.error("Logout failed:", error);

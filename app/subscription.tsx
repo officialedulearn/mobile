@@ -24,20 +24,24 @@ const planData = [
     name: "Free",
     price: 0,
     features: [
-      "Basic AI chat support",
-      "5 quizzes per day",
-      "Basic progress tracking",
-      "Community access",
+      "Basic AI models (Gemini 1.5 Flash)",
+      "5 quiz attempts per day",
+      "5 chat credits per day",
+      "Daily credit renewal",
+      "Basic NFT rewards",
+      "Community access"
     ],
   },
   {
     name: "Pro",
     price: 5,
     features: [
-      "Unlimited AI chat support",
-      "Unlimited quizzes",
-      "Advanced analytics",
-      "Priority support",
+      "Advanced AI models (Gemini 2.0 Flash)",
+      "10 quiz attempts per day",
+      "10 chat credits per day",
+      "Credit rollovers & priority support",
+      "Exclusive premium NFTs",
+      "Enhanced earning opportunities"
     ],
   },
 ];
