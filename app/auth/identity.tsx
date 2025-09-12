@@ -102,7 +102,6 @@ const identity = (props: Props) => {
               value={learningGoal}
               onChangeText={setLearningGoal}
               maxLength={100}
-              multiline
             />
           </View>
 

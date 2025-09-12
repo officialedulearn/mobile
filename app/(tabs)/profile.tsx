@@ -299,7 +299,7 @@ const Profile = (props: Props) => {
                 <Text style={[styles.xpText, theme === "dark" && {color: "#000"}]}>{user?.xp} XP</Text>
               </View>
             </View>
-            <View style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}>
+            {/* <View style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}>
               <View style={styles.walletInfoContainer}>
                 <Image 
                   source={theme === "dark" ? require("@/assets/images/icons/dark/wallet.png") : require("@/assets/images/icons/wallet.png")} 
@@ -350,7 +350,7 @@ const Profile = (props: Props) => {
                   </View>
                 </View>
               </View>
-            </View>
+            </View> */}
           </View>
 
           <View style={[styles.achievements, { marginTop: 12 }, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
@@ -401,7 +401,7 @@ const Profile = (props: Props) => {
             </View>
           </View>
 
-          <View style={styles.tokenUtilities}>
+          {/* <View style={styles.tokenUtilities}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -457,7 +457,7 @@ const Profile = (props: Props) => {
                 />
               ))}
             </View>
-          </View>
+          </View> */}
           
           <View style={styles.bottomPadding} />
         </View>

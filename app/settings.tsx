@@ -194,7 +194,7 @@ const settings = (props: Props) => {
             />
           </View>
 
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
             onPress={exportPrivateKey}
             disabled={loading}
@@ -211,7 +211,7 @@ const settings = (props: Props) => {
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 

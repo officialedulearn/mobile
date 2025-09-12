@@ -271,6 +271,8 @@ const rewards = (props: Props) => {
         </Text>
       </View>
 
+      {/* NFT Section - Commented out for mobile */}
+      {/* 
       <View style={styles.yourNfts}>
         <View style={styles.yourNftsHeader}>
           <Text style={[styles.nftHeaderText, theme === "dark" && { color: "#E0E0E0" }]}>Your NFT's</Text>
@@ -328,7 +330,24 @@ const rewards = (props: Props) => {
           </View>
         )}
       </View>
+      */}
 
+      {/* Web Version Notice for NFTs */}
+      <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+        <Image
+          source={require("@/assets/images/icons/medal-07.png")}
+          style={{ width: 48, height: 48 }}
+        />
+        <Text style={[styles.webNoticeTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+          NFT Collection
+        </Text>
+        <Text style={[styles.webNoticeText, theme === "dark" && { color: "#B3B3B3" }]}>
+          Open the web version to view and claim your NFTs
+        </Text>
+      </View>
+
+      {/* Active Earnings Section - Commented out for mobile */}
+      {/* 
       <View style={styles.activeEarningsSection}>
         <Text style={[styles.sectionHeader, theme === "dark" && { color: "#E0E0E0" }]}>Active Earnings</Text>
         <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
@@ -407,6 +426,21 @@ const rewards = (props: Props) => {
             </Text>
           </View>
         )}
+      </View>
+      */}
+
+      {/* Web Version Notice for Token Claims */}
+      <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+        <Image
+          source={require("@/assets/images/mainlogo.png")}
+          style={{ width: 48, height: 48 }}
+        />
+        <Text style={[styles.webNoticeTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+          Token Earnings
+        </Text>
+        <Text style={[styles.webNoticeText, theme === "dark" && { color: "#B3B3B3" }]}>
+          Open the web version to claim your EDLN tokens and USDC rewards
+        </Text>
       </View>
 
       <View style={styles.xpHistory}>
@@ -1015,6 +1049,31 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#000",
     textAlign: "center",
+  },
+  webNoticeContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0F4FF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    marginBottom: 20,
+    gap: 12,
+  },
+  webNoticeTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2D3C52",
+    textAlign: "center",
+  },
+  webNoticeText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    color: "#61728C",
+    textAlign: "center",
+    lineHeight: 20,
   },
   tableContainer: {
     width: '100%',

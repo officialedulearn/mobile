@@ -16,6 +16,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Dimensions,
 } from "react-native";
 import ChatDrawer from "./ChatDrawer";
 import { MessageItem, ThinkingMessage } from "./MessageItem";
@@ -37,12 +38,34 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   const [activeChatId, setActiveChatId] = useState(chatId);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const router = useRouter();
   const searchParams = useLocalSearchParams();
+
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const resetChatState = useCallback(() => {
     setMessages([]);
@@ -85,7 +108,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     if (messages.length > 0 && !isTransitioning) {
       scrollToBottom();
     }
-  }, [messages, isTransitioning]);
+  }, [messages, isTransitioning, keyboardHeight]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -184,19 +207,20 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
+    <View style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <KeyboardAvoidingView 
-        style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
-        <View style={[styles.topNav, theme === "dark" && { 
-          backgroundColor: "#131313", 
-          borderBottomColor: "#2E3033" 
-        }]}>
-          <View style={styles.leftNavContainer}>
-            <TouchableOpacity
+      <SafeAreaView style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
+        >
+          <View style={[styles.topNav, theme === "dark" && { 
+            backgroundColor: "#131313", 
+            borderBottomColor: "#2E3033" 
+          }]}>
+            <View style={styles.leftNavContainer}>
+              <TouchableOpacity
               style={[styles.button, theme === "dark" && { 
                 backgroundColor: "#0D0D0D", 
                 borderColor: "#2E3033" 
@@ -343,6 +367,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
               onChangeText={setInputText}
               returnKeyType="send"
               onSubmitEditing={() => handleSendMessage()}
+              onFocus={() => {
+                setTimeout(() => scrollToBottom(), 100);
+              }}
               multiline={true}
               editable={!isGenerating && !isTransitioning}
               textAlignVertical="center"
@@ -365,8 +392,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 };
 
@@ -488,10 +516,12 @@ const styles = StyleSheet.create({
   },
   messagesScrollContent: {
     paddingVertical: 10,
+    paddingBottom: 20,
   },
   inputContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingBottom: Platform.OS === "ios" ? 16 : 12,
     borderTopWidth: 1,
     borderTopColor: "#EDF3FC",
     backgroundColor: "#FFFFFF",
