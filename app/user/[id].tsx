@@ -238,10 +238,10 @@ const User = (props: Props) => {
         ) : (
           <View style={styles.emptyStateContainer}>
             <Text style={[styles.emptyStateText, theme === "dark" && {color: "#B3B3B3"}]}>
-              No rewards earned yet.
+              No badge earned yet.
             </Text>
             <Text style={[styles.emptyStateSubtext, theme === "dark" && {color: "#B3B3B3"}]}>
-              Complete quizzes and lessons to collect NFTs!
+              Complete quizzes and lessons to collect badges!
             </Text>
           </View>
         )}

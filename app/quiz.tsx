@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
+import * as StoreReview from 'expo-store-review';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type Props = {};
 
@@ -56,7 +58,40 @@ const Quiz = (props: Props) => {
   const { user, updateUserPoints, theme } = useUserStore();
   const { addActivity } = useActivityStore();
 
+  const requestReviewIfAppropriate = async (score: number) => {
+    try {
+    
+      if (score < 3) return;
+
+      const isAvailable = await StoreReview.isAvailableAsync();
+      if (!isAvailable) return;
+
+      const hasAction = await StoreReview.hasAction();
+      if (!hasAction) return;
+
+      const lastReviewRequest = await AsyncStorage.getItem('lastReviewRequest');
+      const now = Date.now();
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+      if (lastReviewRequest) {
+        const lastRequestTime = parseInt(lastReviewRequest);
+        if (now - lastRequestTime < oneWeekInMs) {
+          return; 
+        }
+      }
+
+      await StoreReview.requestReview();
+    
+      await AsyncStorage.setItem('lastReviewRequest', now.toString());
+      
+    } catch (error) {
+      console.log('Review request failed:', error);
+    }
+  };
+
   useEffect(() => {
+    if (quizCompleted) return; // Don't run timer if quiz is already completed
+    
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
@@ -69,7 +104,7 @@ const Quiz = (props: Props) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [quizCompleted]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -192,6 +227,11 @@ const Quiz = (props: Props) => {
     } catch (error) {
       console.error("Error saving quiz result:", error);
     }
+
+    // Request review if appropriate (after a short delay to let the UI settle)
+    setTimeout(() => {
+      requestReviewIfAppropriate(correctCount);
+    }, 2000);
   };
 
   const renderQuizContent = () => {
@@ -331,27 +371,26 @@ const Quiz = (props: Props) => {
             <View style={styles.navigationButtons}>
               <TouchableOpacity
                 style={[
-                  styles.navButton, 
-                  styles.prevButton,
+                  styles.resultsButton,
                   theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }
                 ]}
                 onPress={() => setReviewAnswers(!reviewAnswers)}
               >
-                <Text style={[styles.navButtonText, theme === "dark" && { color: "#E0E0E0" }]}>
-                  {reviewAnswers ? "Hide Answers" : " Answers"}
+                <Text style={[styles.resultsButtonText, theme === "dark" && { color: "#E0E0E0" }]}>
+                  {reviewAnswers ? "Hide Answers" : "Review Answers"}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
-                  styles.navButton, 
-                  styles.nextButton,
-                  theme === "dark" && { backgroundColor: "#00FF80" }
+                  styles.resultsButton, 
+                  styles.resultsButtonPrimary,
+                  theme === "dark" && { backgroundColor: "#00FF80", borderColor: "#00FF80" }
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={[styles.navButtonText, styles.nextButtonText, theme === "dark" && { color: "#000" }]}>
-                  Return 
+                <Text style={[styles.resultsButtonText, styles.resultsButtonTextPrimary, theme === "dark" && { color: "#000" }]}>
+                  Return to Quizzes
                 </Text>
               </TouchableOpacity>
             </View>
@@ -795,16 +834,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 20,
     backgroundColor: "#F9FBFC",
     width: "100%",
+    alignItems: "center",
   },
   navigationButtons: {
     flexDirection: "row",
-    justifyContent: "space-between",
     width: "100%",
-    gap: 12,
+    maxWidth: 400,
+    gap: 16,
+    alignItems: "stretch",
+    justifyContent: "center",
   },
   navButton: {
     flex: 1,
@@ -843,5 +885,32 @@ const styles = StyleSheet.create({
   },
   returnQuizButtonText: {
     color: "#FF3B30",
+  },
+  resultsButton: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    minWidth: 120,
+  },
+  resultsButtonPrimary: {
+    backgroundColor: "#00FF80",
+    borderColor: "#00FF80",
+  },
+  resultsButtonText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+    color: "#2D3C52",
+    textAlign: "center",
+  },
+  resultsButtonTextPrimary: {
+    color: "#000000",
   },
 });

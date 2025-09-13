@@ -118,7 +118,7 @@ const nftPage = (props: Props) => {
             disabled={!reward?.signature}
           >
             <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
-              View this user's NFT on chain
+              View this user's badge on chain
             </Text>
           </TouchableOpacity>
         )}

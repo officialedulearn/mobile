@@ -54,14 +54,14 @@ const OnBoarding = () => {
     {
       title: "Earn Rewards While You Learn",
       subtitle:
-        "Collect XP, climb leaderboards, and unlock unique NFTs as you grow.",
+        "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
       illustration: require("@/assets/images/xp.png"),
       buttonTexts: ["Continue"],
     },
     {
       title: "Track Progress, Compete With Friends",
       subtitle:
-        "Collect XP, climb leaderboards, and unlock unique NFTs as you grow.",
+        "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
       illustration: require("@/assets/images/compete.png"),
       buttonTexts: ["Sign In", "Sign Up"],
     },

@@ -6,7 +6,7 @@ export default {
     slug: "edulearn",
     version: "1.0.0",
     owner: "edulearn",
-    scheme: "edulearnv2",
+    scheme: "edulearn",
     newArchEnabled: true,
     userInterfaceStyle: "automatic",
     icon: "./assets/images/mainlogo.png",

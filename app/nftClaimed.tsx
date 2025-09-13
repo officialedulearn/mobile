@@ -90,7 +90,7 @@ const nftClaimed = (props: Props) => {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#00FF80" />
-        <Text style={styles.loadingText}>Loading your NFT...</Text>
+        <Text style={styles.loadingText}>Loading your badge...</Text>
       </View>
     );
   }
@@ -123,7 +123,7 @@ const nftClaimed = (props: Props) => {
             />
           )}
           <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
-            You've successfully claimed {reward.title || "your NFT"}, a collectible NFT for
+            You've successfully claimed {reward.title || "your badge"}, a collectible badge for
             your achievement. You can now view this in your Claimed Collection.
           </Text>
         </View>

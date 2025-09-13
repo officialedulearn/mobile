@@ -201,7 +201,7 @@ const Profile = (props: Props) => {
 
   return (
     <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-      {showEDLNPopover && (
+      {/* {showEDLNPopover && (
         <Animated.View style={[
           styles.edlnPopover,
           theme === "dark" && styles.edlnPopoverDark,
@@ -239,7 +239,7 @@ const Profile = (props: Props) => {
             <Text style={[styles.dismissButtonText, theme === "dark" && {color: "#000"}]}>×</Text>
           </TouchableOpacity>
         </Animated.View>
-      )}
+      )} */}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.container, { marginTop: width > 350 ? 30 : 20 }]}>

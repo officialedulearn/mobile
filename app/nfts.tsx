@@ -122,7 +122,7 @@ const NFT = (props: Props) => {
     } catch (error: any) {
       console.error("Failed to claim reward:", error);
       
-      let errorMessage = "Failed to claim NFT";
+      let errorMessage = "Failed to claim badge";
       
       if (error?.message) {
         if (error.message.includes("insufficient funds for rent")) {
@@ -175,7 +175,7 @@ const NFT = (props: Props) => {
     <View style={[styles.container, theme === "dark" && styles.darkContainer]}>
       <View style={styles.headerNav}>
         <BackButton />
-        <Text style={[styles.headerTitle, theme === "dark" && styles.darkHeaderTitle]}>NFT's</Text>
+        <Text style={[styles.headerTitle, theme === "dark" && styles.darkHeaderTitle]}>Badges</Text>
       </View>
 
       <View style={styles.tabsContainer}>
@@ -257,7 +257,7 @@ const NFT = (props: Props) => {
         ) : (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
-              You haven't claimed any rewards yet.
+              You haven't claimed any badge yet.
             </Text>
           </View>
         )
@@ -292,7 +292,7 @@ const NFT = (props: Props) => {
         ) : (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
-              No unclaimed rewards found.
+              No unclaimed badges found.
             </Text>
           </View>
         )
@@ -356,7 +356,7 @@ const NFT = (props: Props) => {
                 <Text style={[styles.nftNameText, theme === "dark" && styles.darkNftNameText]}>
                   {selectedReward?.title}
                 </Text>
-                , collectible NFT for your achievement!
+                , collectible badge for your achievement!
               </Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity

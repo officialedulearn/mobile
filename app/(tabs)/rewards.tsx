@@ -229,7 +229,7 @@ const rewards = (props: Props) => {
       {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
       <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Your Rewards</Text>
       <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
-        Track your XP, unlock badges, and collect NFTs as you learn!
+        Track your XP, unlock badges, and collect badges as you learn!
       </Text>
 
       <View style={[styles.userCard, theme === "dark" && { backgroundColor: "#00FF80" }]}>
@@ -270,12 +270,10 @@ const rewards = (props: Props) => {
             : "Congratulations! You've reached the highest level! 🏆"}
         </Text>
       </View>
-
-      {/* NFT Section - Commented out for mobile */}
-      {/* 
+      
       <View style={styles.yourNfts}>
         <View style={styles.yourNftsHeader}>
-          <Text style={[styles.nftHeaderText, theme === "dark" && { color: "#E0E0E0" }]}>Your NFT's</Text>
+          <Text style={[styles.nftHeaderText, theme === "dark" && { color: "#E0E0E0" }]}>Your Badges</Text>
           <TouchableOpacity
             style={[styles.seeMoreButton, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/nfts")}
@@ -322,7 +320,7 @@ const rewards = (props: Props) => {
         ) : (
           <View style={[styles.emptyStateContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
             <Text style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}>
-              You haven't earned any NFTs yet.
+              You haven't earned any badges yet.
             </Text>
             <Text style={[styles.emptyStateSubtext, theme === "dark" && { color: "#B3B3B3" }]}>
               Complete quizzes and lessons to collect them!
@@ -330,9 +328,9 @@ const rewards = (props: Props) => {
           </View>
         )}
       </View>
-      */}
+     
 
-      {/* Web Version Notice for NFTs */}
+      {/* Web Version Notice for NFTs
       <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
         <Image
           source={require("@/assets/images/icons/medal-07.png")}
@@ -344,7 +342,7 @@ const rewards = (props: Props) => {
         <Text style={[styles.webNoticeText, theme === "dark" && { color: "#B3B3B3" }]}>
           Open the web version to view and claim your NFTs
         </Text>
-      </View>
+      </View> */}
 
       {/* Active Earnings Section - Commented out for mobile */}
       {/* 
@@ -430,7 +428,7 @@ const rewards = (props: Props) => {
       */}
 
       {/* Web Version Notice for Token Claims */}
-      <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+      {/* <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
         <Image
           source={require("@/assets/images/mainlogo.png")}
           style={{ width: 48, height: 48 }}
@@ -441,7 +439,7 @@ const rewards = (props: Props) => {
         <Text style={[styles.webNoticeText, theme === "dark" && { color: "#B3B3B3" }]}>
           Open the web version to claim your EDLN tokens and USDC rewards
         </Text>
-      </View>
+      </View> */}
 
       <View style={styles.xpHistory}>
         <Text style={[styles.sectionHeader, theme === "dark" && { color: "#E0E0E0" }]}>XP Earning History</Text>
@@ -572,7 +570,7 @@ const rewards = (props: Props) => {
           Boost Your XP, Unlock New Rewards
         </Text>
         <Text style={[styles.subText, { textAlign: "center" }, theme === "dark" && { color: "#B3B3B3" }]}>
-          Complete quick actions daily to level up faster, earn NFTs, and stay
+          Complete quick actions daily to level up faster, earn badges, and stay
           on top of the leaderboard.
         </Text>
         <TouchableOpacity style={[styles.quizButton, theme === "dark" && { backgroundColor: "#00FF80" }]} onPress={() => router.push("/quizzes")}>  
