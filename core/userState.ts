@@ -90,6 +90,9 @@ const useUserStore = create<UserState>((set, get) => ({
         return;
       }
 
+
+      console.log(authUser.last_sign_in_at);
+
       const updatedStreak = await calculateAndUpdateStreak(
         userFromDB,
         authUser.last_sign_in_at
