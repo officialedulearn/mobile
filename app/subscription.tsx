@@ -28,7 +28,7 @@ const planData = [
       "5 quiz attempts per day",
       "5 chat credits per day",
       "Daily credit renewal",
-      "Basic NFT rewards",
+      "Basic Badge rewards",
       "Community access"
     ],
   },
@@ -40,7 +40,7 @@ const planData = [
       "10 quiz attempts per day",
       "10 chat credits per day",
       "Credit rollovers & priority support",
-      "Exclusive premium NFTs",
+      "Exclusive premium badges",
       "Enhanced earning opportunities"
     ],
   },

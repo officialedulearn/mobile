@@ -42,6 +42,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   
   const [activeChatId, setActiveChatId] = useState(chatId);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
   const router = useRouter();
   const searchParams = useLocalSearchParams();
@@ -109,6 +111,27 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       scrollToBottom();
     }
   }, [messages, isTransitioning, keyboardHeight]);
+
+  const fetchSuggestions = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoadingSuggestions(true);
+      const fetchedSuggestions = await aiService.generateSuggestions({ userId: user.id });
+      setSuggestions(fetchedSuggestions || []);
+    } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      setSuggestions(["Teach me about DeFi", "Learn about RWAs", "Blockchain basics"]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id && messages.length === 0) {
+      fetchSuggestions();
+    }
+  }, [user?.id, fetchSuggestions, messages.length]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -276,38 +299,23 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 style={styles.logo}
               />
               <View style={styles.suggestions}>
-                <TouchableOpacity
-                  style={[styles.suggestion, theme === "dark" && { 
-                    backgroundColor: "#0D0D0D", 
-                    borderColor: "#2E3033",
-                    borderWidth: 1
-                  }]}
-                  onPress={() => handleSuggestionPress("Teach me about DeFi")}
-                >
-                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>
-                    Teach me about DeFi
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.suggestion, theme === "dark" && { 
-                    backgroundColor: "#0D0D0D", 
-                    borderColor: "#2E3033",
-                    borderWidth: 1
-                  }]}
-                  onPress={() => handleSuggestionPress("Learn about RWAs")}
-                >
-                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>Learn about RWAs</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.suggestion, theme === "dark" && { 
-                    backgroundColor: "#0D0D0D", 
-                    borderColor: "#2E3033",
-                    borderWidth: 1
-                  }]}
-                  onPress={() => handleSuggestionPress("Blockchain basics")}
-                >
-                  <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>Blockchain basics</Text>
-                </TouchableOpacity>
+                {!loadingSuggestions &&
+                  suggestions.map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.suggestion, theme === "dark" && { 
+                        backgroundColor: "#0D0D0D", 
+                        borderColor: "#2E3033",
+                        borderWidth: 1
+                      }]}
+                      onPress={() => handleSuggestionPress(suggestion)}
+                    >
+                      <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>
+                        {suggestion}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                }
               </View>
             </View>
           ) : (
