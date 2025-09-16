@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
   user: User | null;
+  isLoading: boolean;
   walletBalance: {sol: number, tokenAccount: number} | null;
   walletBalanceLoading: boolean;
   theme: 'light' | 'dark';
@@ -69,14 +70,19 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
 
 const useUserStore = create<UserState>((set, get) => ({
   user: null,
+  isLoading: false,
   walletBalance: {sol: 0, tokenAccount: 0},
   walletBalanceLoading: false,
   theme: 'light',
   setUserAsync: async () => {
-    if (typeof window === "undefined") return;
-
+    set({ isLoading: true });
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data: { user: authUser }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error("Supabase auth error:", error);
+        return;
+      }
       
       if (!authUser || !authUser.email) {
         console.log("No authenticated user found");
@@ -90,36 +96,42 @@ const useUserStore = create<UserState>((set, get) => ({
         return;
       }
 
-
-      console.log(authUser.last_sign_in_at);
+      console.log("Loading user data for:", authUser.email);
+      console.log("Last sign in:", authUser.last_sign_in_at);
 
       const updatedStreak = await calculateAndUpdateStreak(
         userFromDB,
         authUser.last_sign_in_at
       );
       
-      set({
-        user: {
-          id: authUser.id,
-          name: userFromDB.name || "User",
-          email: authUser.email,
-          address: userFromDB.address || null,
-          credits: userFromDB.credits || 0,
-          xp: userFromDB.xp || 0,
-          streak: updatedStreak,
-          referralCode: userFromDB.referralCode || "",
-          level: userFromDB.level || "beginner",
-          referralCount: userFromDB.referralCount || 0,
-          username: userFromDB.username || "User",
-          referredBy: userFromDB.referredBy || null,
-          quizCompleted:  userFromDB.quizCompleted,
-          isPremium: userFromDB.isPremium || false,
-        },
-      });
+      const userData = {
+        id: authUser.id,
+        name: userFromDB.name || "User",
+        email: authUser.email,
+        address: userFromDB.address || null,
+        credits: userFromDB.credits || 0,
+        xp: userFromDB.xp || 0,
+        streak: updatedStreak,
+        referralCode: userFromDB.referralCode || "",
+        level: userFromDB.level || "beginner",
+        referralCount: userFromDB.referralCount || 0,
+        username: userFromDB.username || "User",
+        referredBy: userFromDB.referredBy || null,
+        quizCompleted: userFromDB.quizCompleted,
+        isPremium: userFromDB.isPremium || false,
+      };
       
+      set({ user: userData });
+      
+      // Fetch wallet balance after setting user
       await get().fetchWalletBalance();
+      
+      console.log("User data loaded successfully:", userData.email);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
+      throw error; // Re-throw to handle in calling component
+    } finally {
+      set({ isLoading: false });
     }
   },
   
@@ -177,7 +189,7 @@ const useUserStore = create<UserState>((set, get) => ({
       await supabase.auth.signOut();
       // Clear reviewer flag when logging out
       await AsyncStorage.removeItem('isReviewer');
-      set({ user: null, walletBalance: null });
+      set({ user: null, walletBalance: null, isLoading: false });
     } catch (error) {
       console.error("Logout failed:", error);
     }

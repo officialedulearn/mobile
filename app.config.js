@@ -6,12 +6,12 @@ export default {
     slug: "edulearn",
     version: "1.0.0",
     owner: "edulearn",
-    scheme: "edulearn",
+    scheme: "edulearnv2",
     newArchEnabled: true,
     userInterfaceStyle: "automatic",
     icon: "./assets/images/mainlogo.png",
     android: {
-      package: "com.edulearn.app",
+      package: "com.edulearnv2.app",
       adaptiveIcon: {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000"

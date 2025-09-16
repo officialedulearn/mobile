@@ -4,25 +4,26 @@ import { supabase } from "@/utils/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { Image, View, useColorScheme } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, View, useColorScheme, ActivityIndicator, Text } from "react-native";
 
 export default function Index() {
-  const {user, setUser, setTheme, setUserAsync} = useUserStore();
-  const userService = new UserService();
+  const { setTheme, setUserAsync} = useUserStore();
   const colorScheme = useColorScheme();
   
   useEffect(() => {
-    const fetchUser = async () => {
+    const initializeApp = async () => {
       try {
-
-        const theme = await AsyncStorage.getItem("theme")
-
+        const theme = await AsyncStorage.getItem("theme");
         theme ? await setTheme(theme as "light" | "dark") : await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
+        
         const supabaseUser = await supabase.auth.getUser();
-        if(supabaseUser.data.user) {
-          setUserAsync().catch(error => console.error("Failed to set user:", error));
-          router.push("/(tabs)");
+        
+        if (supabaseUser.data.user) {
+          await setUserAsync();
+          setTimeout(() => {
+            router.push("/(tabs)");
+          }, 100);
         } else {  
           router.push("/onboarding");
         }
@@ -32,11 +33,18 @@ export default function Index() {
       }
     };
 
-    const timeout = setTimeout(() => {
-      fetchUser();
-    }, 2000);
+    // const minSplashTimer = setTimeout(() => {
+    //   setShowMinSplash(false);
+    // }, 2000);
+
+    const initTimer = setTimeout(() => {
+      initializeApp();
+    }, 1500); 
   
-    return () => clearTimeout(timeout);
+    return () => {
+      // clearTimeout(minSplashTimer);
+      clearTimeout(initTimer);
+    };
   }, []);
 
   return (
@@ -50,6 +58,20 @@ export default function Index() {
     >
       <StatusBar style="light" />
       <Image source={require("../assets/images/logo.png")} />
+      
+      {/* {(showMinSplash || isLoading) && (
+        <View style={{ marginTop: 40, alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={{ 
+            color: "#fff", 
+            marginTop: 16, 
+            fontSize: 16,
+            opacity: 0.8 
+          }}>
+            {isLoading ? "Loading your profile..." : "Initializing..."}
+          </Text>
+        </View>
+      )} */}
     </View>
   );
 }

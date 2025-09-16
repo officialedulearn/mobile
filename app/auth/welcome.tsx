@@ -6,11 +6,9 @@ import { Image, StyleSheet, Text, TouchableOpacity, View, useColorScheme} from "
 type Props = {};
 
 const Welcome = (props: Props) => {
-  const { user, setTheme, theme } = useUserStore();
-  const colorScheme = useColorScheme();
+  const { user, theme } = useUserStore();
 
   const handleStartChatting = async () => {
-    await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
     router.push("/(tabs)");
   };
 
