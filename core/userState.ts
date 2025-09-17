@@ -6,7 +6,7 @@ import { create } from "zustand";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
-  user: User | null;
+  user: User | null; 
   isLoading: boolean;
   walletBalance: {sol: number, tokenAccount: number} | null;
   walletBalanceLoading: boolean;
@@ -105,7 +105,7 @@ const useUserStore = create<UserState>((set, get) => ({
       );
       
       const userData = {
-        id: authUser.id,
+        id: userFromDB.id,
         name: userFromDB.name || "User",
         email: authUser.email,
         address: userFromDB.address || null,
