@@ -1,12 +1,16 @@
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
+  Linking,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import * as Clipboard from 'expo-clipboard';
 import Markdown from "react-native-markdown-display";
 import { Message } from "@/interface/Chat";
 import useUserStore from "@/core/userState";
@@ -19,6 +23,48 @@ const MessageItem = ({ message }: Props) => {
   const theme = useUserStore((s) => s.theme);
   const isUser = message.role === "user";
   const isLoading = false;
+
+  const handleCopyMessage = async () => {
+    try {
+      const messageText = getMessageContent();
+      await Clipboard.setStringAsync(messageText);
+      Alert.alert("Success", "Message copied to clipboard!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to copy message");
+    }
+  };
+
+  const handleShareMessage = async () => {
+    try {
+      const messageText = getMessageContent();
+      await Share.share({
+        message: messageText,
+        title: "AI Response",
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to share message");
+    }
+  };
+
+  const handleReportMessage = async () => {
+    try {
+      const messageText = getMessageContent();
+      const subject = encodeURIComponent("Report AI Response");
+      const body = encodeURIComponent(
+        `I would like to report the following AI response:\n\n"${messageText}"\n\nReason for report:\n\n`
+      );
+      const mailtoUrl = `mailto:support@edulearn.com?subject=${subject}&body=${body}`;
+      
+      const canOpenURL = await Linking.canOpenURL(mailtoUrl);
+      if (canOpenURL) {
+        await Linking.openURL(mailtoUrl);
+      } else {
+        Alert.alert("Error", "No email app available to send the report");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open email client");
+    }
+  };
 
   const getMessageContent = () => {
     if (typeof message.content === "string") {
@@ -103,8 +149,15 @@ const MessageItem = ({ message }: Props) => {
       {!isUser && (
         <View style={styles.avatarContainer}>
           <Image
-            source={theme === "dark" ? require("@/assets/images/icons/dark/LOGO.png") : require("@/assets/images/chatbotlogo.png")}
-            style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
+            source={
+              theme === "dark"
+                ? require("@/assets/images/icons/dark/LOGO.png")
+                : require("@/assets/images/chatbotlogo.png")
+            }
+            style={[
+              styles.avatar,
+              theme === "dark" && { width: 20, height: 20 },
+            ]}
           />
         </View>
       )}
@@ -112,23 +165,63 @@ const MessageItem = ({ message }: Props) => {
       <View
         style={[
           styles.messageBubble,
-          isUser ? [styles.userBubble, theme === "dark" && { 
-            backgroundColor: "#0D0D0D", 
-            borderColor: "#2E3033" 
-          }] : [styles.botBubble, theme === "dark" && { 
-            backgroundColor: "#131313" 
-          }],
+          isUser
+            ? [
+                styles.userBubble,
+                theme === "dark" && {
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#2E3033",
+                },
+              ]
+            : [
+                styles.botBubble,
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                },
+              ],
         ]}
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
-            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Thinking...</Text>
+            <ActivityIndicator
+              size="small"
+              color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
+            />
+            <Text
+              style={[
+                styles.loadingText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              Thinking...
+            </Text>
           </View>
         ) : (
-          <Markdown style={markdownStyles}>
-            {getMessageContent()}
-          </Markdown>
+          <View>
+            <Markdown style={markdownStyles}>{getMessageContent()}</Markdown>
+            {!isUser && (
+              <View style={styles.messageActionContainer}>
+                <TouchableOpacity onPress={handleCopyMessage} style={styles.actionButton}>
+                  <Image
+                    source={require("@/assets/images/icons/dark/copy.png")}
+                    style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleShareMessage} style={styles.actionButton}>
+                  <Image
+                    source={require("@/assets/images/icons/dark/share.png")}
+                    style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleReportMessage} style={styles.actionButton}>
+                  <Image
+                    source={require("@/assets/images/icons/dark/report.png")}
+                    style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         )}
       </View>
 
@@ -146,22 +239,42 @@ const MessageItem = ({ message }: Props) => {
 
 export const ThinkingMessage = () => {
   const theme = useUserStore((s) => s.theme);
-  
+
   return (
     <View style={styles.messageContainer}>
       <View style={styles.avatarContainer}>
         <Image
-          source={theme === "dark" ? require("@/assets/images/icons/dark/LOGO.png") : require("@/assets/images/chatbotlogo.png")}
+          source={
+            theme === "dark"
+              ? require("@/assets/images/icons/dark/LOGO.png")
+              : require("@/assets/images/chatbotlogo.png")
+          }
           style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
         />
       </View>
 
-      <View style={[styles.messageBubble, styles.botBubble, theme === "dark" && { 
-        backgroundColor: "#131313" 
-      }]}>
+      <View
+        style={[
+          styles.messageBubble,
+          styles.botBubble,
+          theme === "dark" && {
+            backgroundColor: "#131313",
+          },
+        ]}
+      >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
-          <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Thinking...</Text>
+          <ActivityIndicator
+            size="small"
+            color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
+          />
+          <Text
+            style={[
+              styles.loadingText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Thinking...
+          </Text>
         </View>
       </View>
     </View>
@@ -187,7 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 7,
   },
   avatar: {
     width: 50,
@@ -239,6 +352,16 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     tintColor: "#61728C",
+  },
+  messageActionContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+    justifyContent: "flex-end",
+  },
+  actionButton: {
+    padding: 4,
+    borderRadius: 4,
   },
 });
 
