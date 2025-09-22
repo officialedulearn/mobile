@@ -3,6 +3,7 @@ import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
 import { generateUUID } from "@/utils/constants";
 import { StatusBar } from "expo-status-bar";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Image,
@@ -17,14 +18,22 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
+  Alert,
 } from "react-native";
+import {
+  useAudioRecorder,
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorderState,
+} from 'expo-audio';
 import ChatDrawer from "./ChatDrawer";
 import { MessageItem, ThinkingMessage } from "./MessageItem";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
 type Props = {
   title: string;
-  initialMessages?: Array<Message>; 
+  initialMessages?: Array<Message>;
   chatId: string;
 };
 
@@ -39,34 +48,53 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  
+
   const [activeChatId, setActiveChatId] = useState(chatId);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const router = useRouter();
   const searchParams = useLocalSearchParams();
 
-  // Keyboard event listeners
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
+      "keyboardDidShow",
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
-      }
+      },
     );
     const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
+      "keyboardDidHide",
       () => {
         setKeyboardHeight(0);
-      }
+      },
     );
 
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
     };
+  }, []);
+
+  // Audio permissions and setup
+  useEffect(() => {
+    (async () => {
+      const status = await AudioModule.requestRecordingPermissionsAsync();
+      if (!status.granted) {
+        Alert.alert('Permission to access microphone was denied');
+      }
+
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        allowsRecording: true,
+      });
+    })();
   }, []);
 
   const resetChatState = useCallback(() => {
@@ -89,7 +117,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       setIsTransitioning(true);
       resetChatState();
       setActiveChatId(newChatId);
-      
+
       setTimeout(() => {
         setIsTransitioning(false);
       }, 100);
@@ -98,10 +126,11 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   useEffect(() => {
     if (!isTransitioning && activeChatId && initialMessages.length > 0) {
-      const relevantMessages = initialMessages.filter(msg => msg.chatId === activeChatId);
+      const relevantMessages = initialMessages.filter(
+        (msg) => msg.chatId === activeChatId,
+      );
       setMessages(relevantMessages);
     } else if (!isTransitioning && initialMessages.length === 0) {
-
       setMessages([]);
     }
   }, [activeChatId, initialMessages, isTransitioning]);
@@ -114,14 +143,20 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   const fetchSuggestions = useCallback(async () => {
     if (!user?.id) return;
-    
+
     try {
       setLoadingSuggestions(true);
-      const fetchedSuggestions = await aiService.generateSuggestions({ userId: user.id });
+      const fetchedSuggestions = await aiService.generateSuggestions({
+        userId: user.id,
+      });
       setSuggestions(fetchedSuggestions || []);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
-      setSuggestions(["Teach me about DeFi", "Learn about RWAs", "Blockchain basics"]);
+      setSuggestions([
+        "Teach me about DeFi",
+        "Learn about RWAs",
+        "Blockchain basics",
+      ]);
     } finally {
       setLoadingSuggestions(false);
     }
@@ -140,26 +175,36 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       }
     }, 100);
   }, [isTransitioning]);
- 
-  const handleScroll = useCallback((event: { nativeEvent: { layoutMeasurement: any; contentOffset: any; contentSize: any; }; }) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
-    const isCloseToBottom =
-      layoutMeasurement.height + contentOffset.y >=
-      contentSize.height - paddingToBottom;
-    setShowScrollButton(!isCloseToBottom && messages.length > 2);
-  }, [messages.length]);
+
+  const handleScroll = useCallback(
+    (event: {
+      nativeEvent: {
+        layoutMeasurement: any;
+        contentOffset: any;
+        contentSize: any;
+      };
+    }) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const paddingToBottom = 20;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom;
+      setShowScrollButton(!isCloseToBottom && messages.length > 2);
+    },
+    [messages.length],
+  );
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || inputText.trim();
     if (textToSend === "" || isGenerating || isTransitioning) return;
-    
+
     setInputText("");
-    
+
     const newMessage: Message = {
       id: generateUUID(),
       role: "user",
-      content: textToSend, 
+      content: textToSend,
       createdAt: new Date(),
       chatId: activeChatId,
     };
@@ -174,18 +219,19 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         chatId: activeChatId,
         userId: user?.id as unknown as string,
       });
-      
+
       const assistantMessage: Message = {
         id: response.id,
         role: "assistant",
-        content: typeof response.content === 'string' 
-          ? response.content 
-          : response.content,
+        content:
+          typeof response.content === "string"
+            ? response.content
+            : response.content,
         createdAt: response.createdAt,
-        chatId: response.chatId || activeChatId, 
+        chatId: response.chatId || activeChatId,
       };
 
-      setMessages(currentMessages => [...currentMessages, assistantMessage]);
+      setMessages((currentMessages) => [...currentMessages, assistantMessage]);
     } catch (error) {
       console.error("Error generating message:", error);
       setInputText(textToSend);
@@ -197,30 +243,90 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   const handleCreateNewChat = useCallback(() => {
     const newChatId = generateUUID();
-    
+
     setDrawerOpen(false);
-    
+
     router.replace({
       pathname: "/(tabs)/chat",
-      params: { 
+      params: {
         chatIdFromNav: newChatId,
-        refresh: Date.now().toString() 
+        refresh: Date.now().toString(),
       },
     });
   }, [router]);
 
-  const handleSuggestionPress = useCallback((suggestion: string) => {
-    if (isGenerating || isTransitioning) return;
-    handleSendMessage(suggestion);
-  }, [isGenerating, isTransitioning, handleSendMessage]);
+  const handleSuggestionPress = useCallback(
+    (suggestion: string) => {
+      if (isGenerating || isTransitioning) return;
+      handleSendMessage(suggestion);
+    },
+    [isGenerating, isTransitioning, handleSendMessage],
+  );
+
+  const startRecording = async () => {
+    try {
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      await audioRecorder.stop();
+      if (audioRecorder.uri) {
+        setRecordingUri(audioRecorder.uri);
+        console.log('Recording saved to:', audioRecorder.uri);
+      
+        try {
+          setIsTranscribing(true);
+          const response = await aiService.transcribeAudio({
+            audioUri: audioRecorder.uri,
+          });
+          
+          setInputText(response.transcription);
+          
+          setTimeout(() => {
+            
+          }, 100);
+          
+        } catch (transcriptionError) {
+          console.error('Error transcribing audio:', transcriptionError);
+          Alert.alert('Error', 'Failed to process your audio message. Please try again.');
+        } finally {
+          setIsTranscribing(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      Alert.alert('Error', 'Failed to stop recording');
+    }
+  };
 
   if (isTransitioning) {
     return (
-      <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          theme === "dark" && { backgroundColor: "#131313" },
+        ]}
+      >
         <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <View style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}>
+        <View
+          style={[
+            styles.container,
+            theme === "dark" && { backgroundColor: "#131313" },
+          ]}
+        >
           <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>
+            <Text
+              style={[
+                styles.loadingText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
               Loading chat...
             </Text>
           </View>
@@ -230,176 +336,249 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   }
 
   return (
-    <View style={[styles.safeArea, theme === "dark" && { backgroundColor: "#131313" }]}>
+    <View
+      style={[
+        styles.safeArea,
+        theme === "dark" && { backgroundColor: "#131313" },
+      ]}
+    >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <SafeAreaView style={[styles.container, theme === "dark" && { backgroundColor: "#131313" }]}>
-        <KeyboardAvoidingView 
+      <SafeAreaView
+        style={[
+          styles.container,
+          theme === "dark" && { backgroundColor: "#131313" },
+        ]}
+      >
+        <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
         >
-          <View style={[styles.topNav, theme === "dark" && { 
-            backgroundColor: "#131313", 
-            borderBottomColor: "#2E3033" 
-          }]}>
+          <View
+            style={[
+              styles.topNav,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderBottomColor: "#2E3033",
+              },
+            ]}
+          >
             <View style={styles.leftNavContainer}>
               <TouchableOpacity
-              style={[styles.button, theme === "dark" && { 
-                backgroundColor: "#0D0D0D", 
-                borderColor: "#2E3033" 
-              }]}
-              onPress={() => setDrawerOpen(true)}
+                style={[
+                  styles.button,
+                  theme === "dark" && {
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+                onPress={() => setDrawerOpen(true)}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={
+                    theme === "dark"
+                      ? require("@/assets/images/icons/dark/menu.png")
+                      : require("@/assets/images/icons/menu.png")
+                  }
+                  style={{ width: 20, height: 20 }}
+                />
+              </TouchableOpacity>
+              <Text
+                style={[
+                  styles.headerText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {title || "AI Tutor Chat"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                theme === "dark" && {
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#2E3033",
+                },
+              ]}
               activeOpacity={0.8}
+              onPress={handleCreateNewChat}
             >
               <Image
-                source={theme === "dark" 
-                  ? require("@/assets/images/icons/dark/menu.png")
-                  : require("@/assets/images/icons/menu.png")
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/dark/pen.png")
+                    : require("@/assets/images/icons/pen.png")
                 }
                 style={{ width: 20, height: 20 }}
               />
             </TouchableOpacity>
-            <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={1} ellipsizeMode="tail">
-              {title || "AI Tutor Chat"}
-            </Text>
           </View>
-          <TouchableOpacity 
-            style={[styles.button, theme === "dark" && { 
-              backgroundColor: "#0D0D0D", 
-              borderColor: "#2E3033" 
-            }]} 
-            activeOpacity={0.8}
-            onPress={handleCreateNewChat}
-          >
-            <Image
-              source={theme === "dark" 
-                ? require("@/assets/images/icons/dark/pen.png")
-                : require("@/assets/images/icons/pen.png")
-              }
-              style={{ width: 20, height: 20 }}
-            />
-          </TouchableOpacity>
-        </View>
 
-        {drawerOpen && (
-          <>
-            <View
-              style={styles.backdrop}
-              onTouchStart={() => setDrawerOpen(false)}
-            />
-            <ChatDrawer onClose={() => setDrawerOpen(false)} />
-          </>
-        )}
-
-        <View style={styles.chatContent}>
-          {messages.length === 0 ? (
-            <View style={styles.emptyStateContainer}>
-              <Image
-                source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
-                style={styles.logo}
+          {drawerOpen && (
+            <>
+              <View
+                style={styles.backdrop}
+                onTouchStart={() => setDrawerOpen(false)}
               />
-              <View style={styles.suggestions}>
-                {!loadingSuggestions &&
-                  suggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[styles.suggestion, theme === "dark" && { 
-                        backgroundColor: "#0D0D0D", 
-                        borderColor: "#2E3033",
-                        borderWidth: 1
-                      }]}
-                      onPress={() => handleSuggestionPress(suggestion)}
-                    >
-                      <Text style={[styles.suggestionText, theme === "dark" && { color: "#E0E0E0" }]}>
-                        {suggestion}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                }
-              </View>
-            </View>
-          ) : (
-            <View style={styles.messagesContainer}>
-              <ScrollView
-                ref={scrollViewRef}
-                style={styles.messagesScroll}
-                contentContainerStyle={styles.messagesScrollContent}
-                onScroll={handleScroll}
-                scrollEventThrottle={400}
-                showsVerticalScrollIndicator={false}
-              >
-                {messages.map((message) => (
-                  <MessageItem key={message.id} message={message} />
-                ))}
-
-                {isGenerating && <ThinkingMessage />}
-              </ScrollView>
-
-              {showScrollButton && (
-                <TouchableOpacity
-                  style={styles.scrollToBottomButton}
-                  onPress={scrollToBottom}
-                  activeOpacity={0.7}
-                >
-                  <Image
-                    source={require("@/assets/images/icons/CaretDown.png")}
-                    style={styles.scrollToBottomIcon}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
+              <ChatDrawer onClose={() => setDrawerOpen(false)} />
+            </>
           )}
-        </View>
 
-        <View style={[styles.inputContainer, theme === "dark" && { 
-          borderTopColor: "#2E3033", 
-          backgroundColor: "#131313" 
-        }]}>
-          <View style={[styles.inputWrapper, theme === "dark" && { 
-            backgroundColor: "#0D0D0D" 
-          }]}>
-            <TouchableOpacity style={styles.attachmentButton}>
-              <Image
-                source={theme === "dark" 
-                  ? require("@/assets/images/icons/dark/attachement.png")
-                  : require("@/assets/images/icons/attachement.png")
-                }
-                style={{ width: 24, height: 24 }}
-              />
-            </TouchableOpacity>
-            <TextInput
-              placeholder="Type a message..."
-              placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-              style={[styles.textInput, theme === "dark" && { color: "#E0E0E0" }]}
-              value={inputText}
-              onChangeText={setInputText}
-              returnKeyType="send"
-              onSubmitEditing={() => handleSendMessage()}
-              onFocus={() => {
-                setTimeout(() => scrollToBottom(), 100);
-              }}
-              multiline={true}
-              editable={!isGenerating && !isTransitioning}
-              textAlignVertical="center"
-            />
-            <TouchableOpacity
-              style={styles.sendButton}
-              onPress={() => handleSendMessage()}
-              disabled={inputText.trim() === "" || isGenerating || isTransitioning}
-            >
-              <Image
-                source={theme === "dark" 
-                  ? require("@/assets/images/icons/dark/send-2.png")
-                  : require("@/assets/images/icons/send-2.png")
-                }
-                style={[
-                  { width: 24, height: 24 },
-                  (inputText.trim() === "" || isGenerating || isTransitioning) && styles.disabledSend,
-                ]}
-              />
-            </TouchableOpacity>
+          <View style={styles.chatContent}>
+            {messages.length === 0 ? (
+              <View style={styles.emptyStateContainer}>
+                <Image
+                  source={
+                    theme === "dark"
+                      ? require("@/assets/images/logo.png")
+                      : require("@/assets/images/LOGO-1.png")
+                  }
+                  style={styles.logo}
+                />
+                <View style={styles.suggestions}>
+                  {!loadingSuggestions &&
+                    suggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.suggestion,
+                          theme === "dark" && {
+                            backgroundColor: "#0D0D0D",
+                            borderColor: "#2E3033",
+                            borderWidth: 1,
+                          },
+                        ]}
+                        onPress={() => handleSuggestionPress(suggestion)}
+                      >
+                        <Text
+                          style={[
+                            styles.suggestionText,
+                            theme === "dark" && { color: "#E0E0E0" },
+                          ]}
+                        >
+                          {suggestion}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                </View>
+              </View>
+            ) : (
+              <View style={styles.messagesContainer}>
+                <ScrollView
+                  ref={scrollViewRef}
+                  style={styles.messagesScroll}
+                  contentContainerStyle={styles.messagesScrollContent}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={400}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {messages.map((message) => (
+                    <MessageItem key={message.id} message={message} />
+                  ))}
+
+                  {isGenerating && <ThinkingMessage />}
+                </ScrollView>
+
+                {showScrollButton && (
+                  <TouchableOpacity
+                    style={styles.scrollToBottomButton}
+                    onPress={scrollToBottom}
+                    activeOpacity={0.7}
+                  >
+                    <Image
+                      source={require("@/assets/images/icons/CaretDown.png")}
+                      style={styles.scrollToBottomIcon}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
-        </View>
+
+          <View
+            style={[
+              styles.inputContainer,
+              theme === "dark" && {
+                borderTopColor: "#2E3033",
+                backgroundColor: "#131313",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.inputWrapper,
+                theme === "dark" && {
+                  backgroundColor: "#0D0D0D",
+                },
+              ]}
+            >
+              <TouchableOpacity 
+                style={[
+                  styles.attachmentButton,
+                  (recorderState.isRecording || isTranscribing) && styles.recordingButton
+                ]}
+                onPress={recorderState.isRecording ? stopRecording : startRecording}
+                disabled={isGenerating || isTransitioning || isTranscribing}
+              >
+                <FontAwesome 
+                  name={recorderState.isRecording ? "stop" : "microphone"} 
+                  size={24} 
+                  color={recorderState.isRecording ? "#FF4444" : (theme === "dark" ? "#E0E0E0" : "black")} 
+                />
+              </TouchableOpacity>
+              {(recorderState.isRecording || isTranscribing) && (
+                <Text style={[
+                  styles.recordingText,
+                  theme === "dark" && { color: "#FF4444" }
+                ]}>
+                  {recorderState.isRecording ? "Recording..." : "Transcribing..."}
+                </Text>
+              )}
+              <TextInput
+                placeholder="Type a message..."
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+                style={[
+                  styles.textInput,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+                value={inputText}
+                onChangeText={setInputText}
+                returnKeyType="send"
+                onSubmitEditing={() => handleSendMessage()}
+                onFocus={() => {
+                  setTimeout(() => scrollToBottom(), 100);
+                }}
+                multiline={true}
+                editable={!isGenerating && !isTransitioning}
+                textAlignVertical="center"
+              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={() => handleSendMessage()}
+                disabled={
+                  inputText.trim() === "" || isGenerating || isTransitioning
+                }
+              >
+                <Image
+                  source={
+                    theme === "dark"
+                      ? require("@/assets/images/icons/dark/send-2.png")
+                      : require("@/assets/images/icons/send-2.png")
+                  }
+                  style={[
+                    { width: 24, height: 24 },
+                    (inputText.trim() === "" ||
+                      isGenerating ||
+                      isTransitioning) &&
+                      styles.disabledSend,
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -544,6 +723,17 @@ const styles = StyleSheet.create({
   },
   attachmentButton: {
     marginRight: 10,
+  },
+  recordingButton: {
+    backgroundColor: "#FFE6E6",
+    borderRadius: 20,
+    padding: 8,
+  },
+  recordingText: {
+    color: "#FF4444",
+    fontSize: 12,
+    fontFamily: "Urbanist",
+    marginLeft: 5,
   },
   textInput: {
     flex: 1,

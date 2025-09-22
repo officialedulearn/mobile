@@ -14,12 +14,15 @@ export default {
       package: "com.edulearnv2.app",
       adaptiveIcon: {
         foregroundImage: "./assets/images/mainlogo.png",
-        backgroundColor: "#000"
+        backgroundColor: "#000",
       },
-      
     },
     ios: {
-      icon: "./assets/images/icon.png"
+      icon: "./assets/images/mainlogo.png",
+      bundleIdentifier: "com.edulearnv2.app",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -28,7 +31,7 @@ export default {
       twitterClientId: process.env.EXPO_PUBLIC_TWITTER_CLIENT_ID,
       eas: {
         projectId: "139b580b-67d2-4458-b709-7c9575f0d7a1",
-      }
+      },
     },
     web: {
       bundler: "metro",
@@ -38,5 +41,18 @@ export default {
     experiments: {
       typedRoutes: true,
     },
+    plugins: [
+      "expo-build-properties",
+      "expo-font",
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+        }
+      ]
+    ],
   },
 };
