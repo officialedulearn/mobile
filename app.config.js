@@ -18,7 +18,10 @@ export default {
       },
     },
     ios: {
-      icon: "./assets/images/mainlogo.png",
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/mainlogo.png",
+        backgroundColor: "#000",
+      }
       bundleIdentifier: "com.edulearnv2.app",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -50,7 +53,7 @@ export default {
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+          "microphonePermission": "Allow EduLearn to access your microphone."
         }
       ]
     ],
