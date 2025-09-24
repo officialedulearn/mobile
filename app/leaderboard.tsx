@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 const Leaderboard = () => {
   const [page, setPage] = useState<number>(0);
   const theme = useUserStore(s => s.theme);
+  const user = useUserStore(s => s.user);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
   const [itemsPerPage, onItemsPerPageChange] = useState(
     numberOfItemsPerPageList[0]
@@ -71,12 +72,35 @@ const Leaderboard = () => {
   };
 
   const getRemainingUsers = () => {
-    return users.slice(3).map((user, index) => ({
+    const remainingUsers = users.slice(3).map((userData, index) => ({
       key: index + 4,
       rank: index + 4,
-      name: user.name,
-      xp: user.xp,
+      name: userData.name,
+      xp: userData.xp,
+      id: userData.id,
+      isCurrentUser: user?.id === userData.id,
     }));
+
+    const currentUserInTop3 = users.slice(0, 3).some(userData => userData.id === user?.id);
+    const currentUserInRemaining = remainingUsers.some(userData => userData.isCurrentUser);
+    
+    if (user && !currentUserInTop3 && !currentUserInRemaining) {
+     
+      const currentUserRank = users.findIndex(userData => userData.id === user.id) + 1;
+      
+      if (currentUserRank > 0) {
+        remainingUsers.push({
+          key: remainingUsers.length + 1000,
+          rank: currentUserRank,
+          name: user.name,
+          xp: user.xp,
+          id: user.id,
+          isCurrentUser: true,
+        });
+      }
+    }
+
+    return remainingUsers;
   };
 
   const { first, second, third } = getTopThreeUsers();
@@ -126,24 +150,49 @@ const Leaderboard = () => {
       <View style={styles.board}>
         <View style={styles.topthree}>
           {second && (
-            <View style={[styles.second, theme === "dark" && { backgroundColor: "#2E3033" }]}>
+            <View style={[
+              styles.second, 
+              user?.id === second.id 
+                ? (theme === "dark" ? {backgroundColor: "#00FF66"} : {backgroundColor: "#000"})
+                : (theme === "dark" ? {backgroundColor: "#2E3033"} : {backgroundColor: "#EDF3FC"})
+            ]}>
               <Image source={require("@/assets/images/silver.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
-              <Text style={[styles.name, theme === "dark" && {color: "#E0E0E0"}]}>{second.name}</Text>
-              <Text style={[styles.level, { color: getLevelColor(second.level) }]}>
+              <Text style={[
+                styles.name, 
+                user?.id === second.id 
+                  ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                  : (theme === "dark" ? {color: "#E0E0E0"} : {color: "#2D3C52"})
+              ]}>{second.name}</Text>
+              <Text style={[
+                styles.level, 
+                user?.id === second.id 
+                  ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                  : { color: getLevelColor(second.level) }
+              ]}>
                 {second.level || 'Novice'}
               </Text>
               <View style={styles.xpContainer}>
                 <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-                <Text style={[styles.xp, theme === "dark" && { color: "#A0A0A0" }]}>{second.xp} XP</Text>
+                <Text style={[
+                  styles.xp, 
+                  user?.id === second.id 
+                    ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                    : (theme === "dark" ? {color: "#A0A0A0"} : {color: "#61728C"})
+                ]}>{second.xp} XP</Text>
               </View>
             </View>
           )}
 
           {first && (
-            <View style={[styles.first, theme === "dark" && {backgroundColor: "#00FF80"}]}>
+            <View style={[
+              styles.first, 
+              user?.id === first.id 
+                ? (theme === "dark" ? {backgroundColor: "#00FF66"} : {backgroundColor: "#000"})
+                : (theme === "dark" ? {backgroundColor: "#00FF80"} : {backgroundColor: "#000"})
+            ]}>
               <Image source={require("@/assets/images/gold.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
@@ -160,18 +209,38 @@ const Leaderboard = () => {
           )}
 
           {third && (
-          <View style={[styles.third, theme === "dark" && { backgroundColor: "#2E3033" }]}>
+          <View style={[
+            styles.third, 
+            user?.id === third.id 
+              ? (theme === "dark" ? {backgroundColor: "#00FF66"} : {backgroundColor: "#000"})
+              : (theme === "dark" ? {backgroundColor: "#2E3033"} : {backgroundColor: "#F5F3FF"})
+          ]}>
               <Image source={require("@/assets/images/bronze.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
                 <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
-              <Text style={[styles.name, theme === "dark" && {color: "#E0E0E0"}]}>{third.name}</Text>
-              <Text style={[styles.level, { color: getLevelColor(third.level) }]}>
+              <Text style={[
+                styles.name, 
+                user?.id === third.id 
+                  ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                  : (theme === "dark" ? {color: "#E0E0E0"} : {color: "#2D3C52"})
+              ]}>{third.name}</Text>
+              <Text style={[
+                styles.level, 
+                user?.id === third.id 
+                  ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                  : { color: getLevelColor(third.level) }
+              ]}>
                 {third.level || 'Novice'}
               </Text>
               <View style={styles.xpContainer}>
                 <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.badgeIcon} />
-                <Text style={[styles.xp, theme === "dark" && {color: "#A0A0A0"}]}>{third.xp} XP</Text>
+                <Text style={[
+                  styles.xp, 
+                  user?.id === third.id 
+                    ? (theme === "dark" ? {color: "#000"} : {color: "#fff"})
+                    : (theme === "dark" ? {color: "#A0A0A0"} : {color: "#61728C"})
+                ]}>{third.xp} XP</Text>
               </View>
             </View>
           )}
@@ -180,13 +249,30 @@ const Leaderboard = () => {
         {remainingUsers.length > 0 && (
           <View style={[styles.tableContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
             <DataTable style={[styles.table, theme === "dark" && { backgroundColor: "#131313" }]}>
-              {remainingUsers.slice(from, to).map((user) => (
-                <DataTable.Row key={user.key} style={[styles.tableRow, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
+              {remainingUsers.slice(from, to).map((userData) => (
+                <DataTable.Row 
+                  key={userData.key} 
+                  style={[
+                    styles.tableRow, 
+                    userData.isCurrentUser && (theme === "dark" ? styles.currentUserRowDark : styles.currentUserRowLight),
+                    theme === "dark" && { borderBottomColor: "#2E3033" }
+                  ]}
+                >
                   <DataTable.Cell style={styles.rankColumn}>
-                    <Text style={[styles.rankText, theme === "dark" && { color: "#E0E0E0" }]}>{user.rank}</Text>
+                    <Text style={[
+                      styles.rankText, 
+                      userData.isCurrentUser 
+                        ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                        : (theme === "dark" ? { color: "#E0E0E0" } : { color: "#2D3C52" })
+                    ]}>{userData.rank}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.nameColumn}>
-                    <Text style={[styles.nameText, theme === "dark" && { color: "#E0E0E0" }]}>{user.name}</Text>
+                    <Text style={[
+                      styles.nameText, 
+                      userData.isCurrentUser 
+                        ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                        : (theme === "dark" ? { color: "#E0E0E0" } : { color: "#2D3C52" })
+                    ]}>{userData.name}</Text>
                   </DataTable.Cell>
                   <DataTable.Cell style={styles.xpColumn}>
                     <View style={styles.xpColumnContent}>
@@ -194,7 +280,12 @@ const Leaderboard = () => {
                         source={require("@/assets/images/icons/medal-05.png")} 
                         style={styles.tableIcon} 
                       />
-                      <Text style={[styles.xpText, theme === "dark" && { color: "#A0A0A0" }]}>{user.xp} XP</Text>
+                      <Text style={[
+                        styles.xpText, 
+                        userData.isCurrentUser 
+                          ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                          : (theme === "dark" ? { color: "#A0A0A0" } : { color: "#61728C" })
+                      ]}>{userData.xp} XP</Text>
                     </View>
                   </DataTable.Cell>
                 </DataTable.Row>
@@ -208,7 +299,15 @@ const Leaderboard = () => {
                     onPageChange={(page) => setPage(page)}
                     onItemsPerPageChange={onItemsPerPageChange}
                     showFastPaginationControls
-                    style={styles.pagination}
+                    style={[styles.pagination]}
+                    theme={{
+                      colors: {
+                        primary: theme === "dark" ? "#00FF66" : "#000",
+                        onSurface: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+                        surface: theme === "dark" ? "#131313" : "#fff",
+                        onSurfaceVariant: theme === "dark" ? "#A0A0A0" : "#61728C",
+                      }
+                    }}
                   />
                 </View>
               )}
@@ -426,6 +525,12 @@ const styles = StyleSheet.create({
     color: "#FF6B6B",
     textAlign: 'center',
     marginTop: 100,
+  },
+  currentUserRowDark: {
+    backgroundColor: "#00FF66",
+  },
+  currentUserRowLight: {
+    backgroundColor: "#000",
   },
 });
 

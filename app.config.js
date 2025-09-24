@@ -21,7 +21,7 @@ export default {
       adaptiveIcon: {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000",
-      }
+      },
       bundleIdentifier: "com.edulearnv2.app",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,

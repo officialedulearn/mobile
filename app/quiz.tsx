@@ -4,7 +4,7 @@ import useUserStore from "@/core/userState";
 import { AIService } from "@/services/ai.service";
 import { ChatService } from "@/services/chat.service";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Image,
   ScrollView,
@@ -71,7 +71,7 @@ const Quiz = (props: Props) => {
 
       const lastReviewRequest = await AsyncStorage.getItem('lastReviewRequest');
       const now = Date.now();
-      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+      const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
       if (lastReviewRequest) {
         const lastRequestTime = parseInt(lastReviewRequest);
@@ -89,22 +89,6 @@ const Quiz = (props: Props) => {
     }
   };
 
-  useEffect(() => {
-    if (quizCompleted) return; // Don't run timer if quiz is already completed
-    
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          handleFinishQuiz(); 
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [quizCompleted]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -156,7 +140,9 @@ const Quiz = (props: Props) => {
       }
     };
 
-    fetchQuestions();
+    if (chatId && user?.id) {
+      fetchQuestions();
+    }
   }, [chatId, user?.id, retryCount]);
 
   const handleRetry = () => {
@@ -188,7 +174,7 @@ const Quiz = (props: Props) => {
     }
   };
 
-  const handleFinishQuiz = async () => {
+  const handleFinishQuiz = useCallback(async () => {
     if (!questions.length) return;
 
     const userAnswersList: UserAnswer[] = [];
@@ -228,11 +214,28 @@ const Quiz = (props: Props) => {
       console.error("Error saving quiz result:", error);
     }
 
-    // Request review if appropriate (after a short delay to let the UI settle)
     setTimeout(() => {
       requestReviewIfAppropriate(correctCount);
     }, 2000);
-  };
+  }, [questions, questionAnswers, user?.id, chatTitle, addActivity]);
+
+  // Timer effect - must be after handleFinishQuiz definition
+  useEffect(() => {
+    if (quizCompleted) return;
+    
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(timer);
+          handleFinishQuiz(); 
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [quizCompleted, handleFinishQuiz]);
 
   const renderQuizContent = () => {
     if (loading) {
@@ -695,7 +698,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
-    color: "#000", // Default color
+    color: "#000",
   },
   nextButtonText: {
     color: "#00FF80",

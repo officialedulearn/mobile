@@ -2,12 +2,14 @@ import useUserStore from "@/core/userState";
 import { Tabs } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Keyboard, Platform } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {};
 
 const TabLayout = (props: Props) => {
   const theme = useUserStore(s => s.theme);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -34,8 +36,8 @@ const TabLayout = (props: Props) => {
           {
             borderTopWidth: 0,
             elevation: 0,
-            height: 70,
-            paddingBottom: 15,
+            height: 70 + insets.bottom,
+            paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 15,
             backgroundColor: theme === 'dark' ? '#131313' : "#FFF",
             borderColor: theme === 'dark' ? '#131313' : "#FFF",

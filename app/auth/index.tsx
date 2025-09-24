@@ -258,7 +258,7 @@ const Auth = () => {
               <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
                 <TextInput
                   style={[styles.input, styles.usernameInput, theme === "dark" && styles.inputDark]}
-                  placeholder="X username (optional)"
+                  placeholder="X username"
                   placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
                   value={formData.username}
                   onChangeText={(text) => handleChange("username", text)}
