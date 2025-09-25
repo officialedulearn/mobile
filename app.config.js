@@ -22,6 +22,7 @@ export default {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000",
       },
+      supportsTablet: false,
       bundleIdentifier: "com.edulearnv2.app",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,

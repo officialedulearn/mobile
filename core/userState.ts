@@ -37,14 +37,21 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
     const lastActive = new Date(lastSignInAt);
     const now = new Date();
     
-    const hoursDiff = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
+    const lastActiveDate = lastActive.toISOString().split('T')[0];
+    const todayDate = now.toISOString().split('T')[0];
+    
+    const lastActiveDateObj = new Date(lastActiveDate);
+    const todayDateObj = new Date(todayDate);
+    const daysDiff = Math.floor((todayDateObj.getTime() - lastActiveDateObj.getTime()) / (1000 * 60 * 60 * 24));
     
     let newStreak: number;
     
-    if (hoursDiff > 24) {
-      newStreak = 1;
-    } else {
+    if (daysDiff === 0) {
       newStreak = user.streak || 1;
+    } else if (daysDiff === 1) {
+      newStreak = (user.streak || 0) + 1;
+    } else {
+      newStreak = 1;
     }
     
     await userService.updateUserStreak(user.id, newStreak);
@@ -122,14 +129,13 @@ const useUserStore = create<UserState>((set, get) => ({
       };
       
       set({ user: userData });
-      
-      // Fetch wallet balance after setting user
+
       await get().fetchWalletBalance();
       
       console.log("User data loaded successfully:", userData.email);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
-      throw error; // Re-throw to handle in calling component
+      throw error; 
     } finally {
       set({ isLoading: false });
     }
