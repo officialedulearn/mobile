@@ -18,10 +18,7 @@ export default {
       },
     },
     ios: {
-      adaptiveIcon: {
-        foregroundImage: "./assets/images/mainlogo.png",
-        backgroundColor: "#000",
-      },
+      icon: "./assets/images/mainlogo.png",
       supportsTablet: false,
       bundleIdentifier: "com.edulearnv2.app",
       infoPlist: {
