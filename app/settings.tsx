@@ -2,22 +2,25 @@ import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicat
 import React, { useState } from "react";
 import BackButton from "@/components/backButton";
 import useUserStore from "@/core/userState";
+import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { UserService } from "@/services/auth.service";
 import { WalletService } from "@/services/wallet.service";
 import Modal from "react-native-modal";
 import * as Clipboard from "expo-clipboard";
+import { supabase } from "@/utils/supabase";
 
 type Props = {};
 
 const settings = (props: Props) => {
-    const {user, logout, theme} = useUserStore();
+    const {user, logout, clearAllUserData, theme} = useUserStore();
+    const {resetState: resetActivityState} = useActivityStore();
     const [loading, setLoading] = useState(false);
     const [privateKeyModalVisible, setPrivateKeyModalVisible] = useState(false);
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [privateKey, setPrivateKey] = useState<string | null>(null);
-
+    const userService = new UserService();
     const payPro = async (userId: string) => {
       // if (!userId) {
       //   Alert.alert("Error", "User information not available");
@@ -87,6 +90,35 @@ const settings = (props: Props) => {
       }
     }
 
+    const deleteAccount = async () => {
+      Alert.alert("Delete Account", "Are you sure you want to delete your account? This action is irreversible.", [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await userService.deleteUser(user?.id as unknown as string, (await supabase.auth.getUser()).data.user?.id as string);
+
+              await clearAllUserData();
+              resetActivityState();
+              router.push("/onboarding");
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              Alert.alert("Error", "Failed to delete account. Please try again.");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]);
+
+    }
+
   return (
     <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
@@ -131,7 +163,7 @@ const settings = (props: Props) => {
                 user?.isPremium ? styles.disabledText : {},
                 theme === "dark" && { color: "#E0E0E0" }
               ]}>
-                {loading ? "Processing..." : user?.isPremium ? "Premium Active" : "Upgrade to pro"}
+                {user?.isPremium ? "Premium Active" : "Upgrade to pro"}
               </Text>
             </View>
 
@@ -152,6 +184,25 @@ const settings = (props: Props) => {
                 style={{ width: 24, height: 24 }} 
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Theme</Text>
+            </View>
+
+            <Image 
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
+              style={{ width: 24, height: 24 }}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+            onPress={() => deleteAccount()}
+            disabled={loading}
+          >
+            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+              <Image
+                source={theme === "dark" ? require("@/assets/images/icons/dark/delete.png") : require("@/assets/images/icons/delete.png")}
+                style={{ width: 24, height: 24 }} 
+              />
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Delete Account</Text>
             </View>
 
             <Image 
@@ -230,6 +281,7 @@ const settings = (props: Props) => {
           />
         </View>
       </TouchableOpacity>
+
 
       <Modal isVisible={privateKeyModalVisible} style={styles.modal}>
         <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>

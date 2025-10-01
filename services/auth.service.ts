@@ -167,4 +167,14 @@ export class UserService {
             throw error;
         }
     }
+
+    async deleteUser(userId: string, supabaseUserId: string): Promise<{ message: string; deletionStarted: boolean }> {
+        try {
+            const response = await httpClient.delete(`/auth/user/${userId}?supabaseUserId=${supabaseUserId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            throw error;
+        }
+    }
 }

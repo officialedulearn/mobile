@@ -211,7 +211,8 @@ const Subscription = () => {
           <Text style={[
             styles.pillText, 
             theme === "dark" && styles.pillTextDark,
-            !isAnnual && styles.pillTextActive,
+            !isAnnual && theme === "dark" && styles.pillTextActiveDark,
+            !isAnnual && theme === "light" && styles.pillTextActive,
           ]}>
             Monthly
           </Text>
@@ -228,7 +229,8 @@ const Subscription = () => {
             <Text style={[
               styles.pillText, 
               theme === "dark" && styles.pillTextDark,
-              isAnnual && styles.pillTextActive,
+              isAnnual && theme === "dark" && styles.pillTextActiveDark,
+              isAnnual && theme === "light" && styles.pillTextActive,
             ]}>
               Annually
             </Text>
@@ -378,7 +380,7 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
   },
   pillTextActive: {
-    color: "#000",
+    color: "#00FF80",
     fontFamily: "Satoshi",
   },
   pillTextActiveDark: {

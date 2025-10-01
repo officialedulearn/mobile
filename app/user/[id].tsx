@@ -168,7 +168,7 @@ const User = (props: Props) => {
         />
 
         <AchievementCard
-          title="NFT collected"
+          title="Badges collected"
           imageKey="nft"
           metric={userMetrics.nfts.toString()}
         />
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 24,
     textAlign: "center",
-    color: "#00FF80",
+    color: "#000",
   },
   achievements: {
     borderWidth: 0.5,

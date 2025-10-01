@@ -361,7 +361,7 @@ const Profile = (props: Props) => {
             />
 
             <AchievementCard
-              title="NFT collected"
+              title="Badges collected"
               imageKey="nft"
               metric={userMetrics.nfts.toString()}
             />

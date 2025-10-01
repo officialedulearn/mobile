@@ -14,6 +14,7 @@ interface UserState {
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => Promise<void>;
+  clearAllUserData: () => Promise<void>;
   updateUserPoints: ({userId, title, type, xpEarned}: {userId: string, title: string, type: "quiz" | "chat" | "streak", xpEarned: number}) => void;
   updateLevel: (
     level: "novice" | "beginner" | "intermediate" | "advanced" | "expert"
@@ -44,6 +45,7 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
     const todayDateObj = new Date(todayDate);
     const daysDiff = Math.floor((todayDateObj.getTime() - lastActiveDateObj.getTime()) / (1000 * 60 * 60 * 24));
     
+    const previousStreak = user.streak || 0;
     let newStreak: number;
     
     if (daysDiff === 0) {
@@ -56,13 +58,12 @@ const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undef
     
     await userService.updateUserStreak(user.id, newStreak);
     
-  
-    if (newStreak >= 3) {
+    if (newStreak > previousStreak && newStreak >= 3) {
       await activityService.createActivity({
         userId: user.id, 
         type: "streak", 
         title: `${newStreak}-day XP Streak Bonus`, 
-        xpEarned: 5
+        xpEarned: 1
       });
     }
     
@@ -193,11 +194,33 @@ const useUserStore = create<UserState>((set, get) => ({
   logout: async () => {
     try {
       await supabase.auth.signOut();
-      // Clear reviewer flag when logging out
       await AsyncStorage.removeItem('isReviewer');
-      set({ user: null, walletBalance: null, isLoading: false });
+      set({ user: null, walletBalance: null, isLoading: false, walletBalanceLoading: false });
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  },
+
+  clearAllUserData: async () => {
+    try {
+      await supabase.auth.signOut();
+      await AsyncStorage.multiRemove([
+        'isReviewer',
+        'avatar',
+        'lastReviewRequest',
+        'theme'
+      ]);
+      
+      set({ 
+        user: null, 
+        walletBalance: null, 
+        isLoading: false, 
+        walletBalanceLoading: false,
+        theme: 'light' 
+      });
+    } catch (error) {
+      console.error("Clear all user data failed:", error);
+      throw error;
     }
   },
 
