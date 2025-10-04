@@ -7,24 +7,23 @@ import {
   Dimensions,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import BackButton from "@/components/backButton";
-import { WalletService } from "@/services/wallet.service";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
+import Purchases from "react-native-purchases";
+import { router } from "expo-router";
 const { width } = Dimensions.get("window");
-
-const walletService = new WalletService();
 
 const planData = [
   {
-    name: "Free",
+    name: "Basic",
     price: 0,
     features: [
-      "Basic AI models (Gemini 1.5 Flash)",
+      "Basic AI models (Gemini 2.5 Flash)",
       "5 quiz attempts per day",
       "5 chat credits per day",
       "Daily credit renewal",
@@ -33,10 +32,10 @@ const planData = [
     ],
   },
   {
-    name: "Pro",
+    name: "Premium",
     price: 5,
     features: [
-      "Advanced AI models (Gemini 2.0 Flash)",
+      "Advanced AI models (Gemini 2.5 Pro)",
       "10 quiz attempts per day",
       "10 chat credits per day",
       "Credit rollovers & priority support",
@@ -122,62 +121,70 @@ const Subscription = () => {
       return;
     }
 
-    const planAmount = isAnnual ? 80 : 8; 
-
-    Alert.alert(
-      'Confirm Upgrade',
-      `Are you sure you want to upgrade to ${currentPlan.name} plan for $${planAmount} USDC${isAnnual ? ' (Annual)' : ' (Monthly)'}?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Confirm',
-          onPress: () => processPremiumPayment(planAmount),
-        },
-      ]
-    );
-  };
-
-  const processPremiumPayment = async (amount: number) => {
-    if (!user?.id) return;
-
     setIsLoading(true);
     try {
-      const result = await walletService.upgradeToPremium(user.id, amount);
+      await Purchases.logIn(user.id);
+      console.log('📢 Logged in user:', user.id);
+
+      let productIdentifier: string;
+      
+      if (Platform.OS === 'android') {
+        productIdentifier = isAnnual 
+          ? 'premium_yearly' 
+          : 'premium_monthly';
+      } else {
+        productIdentifier = isAnnual 
+          ? 'rc_4999_edulearn'
+          : 'rc_499_edulearn';
+      }
+      
+      const products = await Purchases.getProducts([productIdentifier]);
+      
+      if (products.length === 0) {
+        Alert.alert('Error', 'Product not found. Please check your product identifiers.');
+        setIsLoading(false);
+        return;
+      }
+
+      const product = products[0];
+      const { customerInfo } = await Purchases.purchaseStoreProduct(product);
+      
+      console.log('📢 Purchase successful, customer info:', customerInfo);
+      console.log('📢 Active entitlements:', customerInfo.entitlements.active);
+
+      const isPremium = Object.keys(customerInfo.entitlements.active).length > 0;
+      console.log('📢 User is premium:', isPremium);
       
       Alert.alert(
         'Success!',
-        `Premium upgrade successful! Transaction: ${result.signature}`,
+        'Premium upgrade successful! The app will now reload.',
         [
-          {
-            text: 'View Transaction',
-            onPress: () => {
-              console.log(`Transaction link: https://solscan.io/tx/${result.signature}`);
-            },
-          },
           {
             text: 'OK',
             style: 'default',
+            onPress: async () => {
+              try {
+                router.reload()
+              } catch (error) {
+                console.log('📢 Error reloading app:', error);
+              }
+            },
           },
         ]
       );
-    } catch (error: any) {
-      console.error('Premium upgrade error:', error);
+    } catch (e: any) {
+      console.log('📢 Purchase error:', e);
       
       let errorMessage = 'Failed to process premium upgrade. Please try again.';
       
-      if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      } else if (error.response?.data?.data?.error) {
-        errorMessage = error.response.data.data.error;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (e.userCancelled) {
+        errorMessage = 'Purchase cancelled.';
+      } else if (e.message) {
+        errorMessage = e.message;
       }
       
       Alert.alert(
-        'Upgrade Failed', 
+        'Purchase Failed', 
         errorMessage,
         [
           {
@@ -190,6 +197,45 @@ const Subscription = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchCustomerInfo = async () => {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log("📢 Customer info:", customerInfo.originalAppUserId.toString());
+      } catch (error) {
+        console.log('📢 Error fetching customer info:', error);
+      }
+    };
+    fetchCustomerInfo();
+  }, []);
+
+  useEffect(() => {
+    const testProductFetch = async () => {
+      try {
+        console.log('📢 Testing product fetch with your IDs...');
+        console.log(`📢 Platform: ${Platform.OS}`);
+        
+        const productIds = Platform.OS === 'android' 
+          ? ['premium_monthly', 'premium_annual']
+          : ['rc_499_edulearn', 'rc_4999_edulearn'];
+        
+        console.log('📢 Looking for:', productIds);
+        const products = await Purchases.getProducts(productIds);
+        console.log('📢 Products found count:', products.length);
+        console.log('📢 Products found:', products);
+        
+        products.forEach((product) => {
+          console.log('📢 Product identifier:', product.identifier);
+          console.log('📢 Product price:', product.priceString);
+          console.log('📢 Product currency:', product.currencyCode);
+        });
+      } catch (error) {
+        console.log('📢 Error fetching products:', error);
+      }
+    };
+    testProductFetch();
+  }, []);
 
   return (
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>

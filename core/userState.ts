@@ -27,15 +27,15 @@ interface UserState {
 const userService = new UserService();
 const activityService = new ActivityService();
 
-const calculateAndUpdateStreak = async (user: User, lastSignInAt: string | undefined): Promise<number> => {
-  if (!lastSignInAt) {
+const calculateAndUpdateStreak = async (user: User, lastLoggedIn: string | Date | undefined): Promise<number> => {
+  if (!lastLoggedIn) {
     const newStreak = 1;
     await userService.updateUserStreak(user.id, newStreak);
     return newStreak;
   }
   
   try {
-    const lastActive = new Date(lastSignInAt);
+    const lastActive = new Date(lastLoggedIn);
     const now = new Date();
     
     const lastActiveDate = lastActive.toISOString().split('T')[0];
@@ -105,11 +105,11 @@ const useUserStore = create<UserState>((set, get) => ({
       }
 
       console.log("Loading user data for:", authUser.email);
-      console.log("Last sign in:", authUser.last_sign_in_at);
+      console.log("Last logged in from DB:", userFromDB.lastLoggedIn);
 
       const updatedStreak = await calculateAndUpdateStreak(
         userFromDB,
-        authUser.last_sign_in_at
+        userFromDB.lastLoggedIn
       );
       
       const userData = {

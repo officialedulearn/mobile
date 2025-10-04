@@ -14,4 +14,5 @@ export interface User {
     quizCompleted: number;
     isPremium: boolean;
     learning?: string;
+    lastLoggedIn?: string | Date;
 }

@@ -12,6 +12,8 @@ import { WalletService } from "@/services/wallet.service";
 import Auth from "../auth";
 import { UserService } from "@/services/auth.service";
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { RoadmapService } from "@/services/roadmap.service";
+import { Roadmap } from "@/interface/Roadmap";
 
 type Props = {};
 
@@ -70,9 +72,12 @@ const Profile = (props: Props) => {
   const popoverOpacity = useRef(new Animated.Value(0)).current;
   const popoverTranslateY = useRef(new Animated.Value(-20)).current;
   const { width } = useWindowDimensions();
+  const [roadmaps, setRoadmaps] = React.useState<Roadmap[]>([]);
+  const [isLoadingRoadmaps, setIsLoadingRoadmaps] = React.useState(false);
 
   const walletService = new WalletService()
   const authService = new UserService()
+  const roadmapService = new RoadmapService()
   useEffect(() => {
     async function fetchMetrics() {
       const userId = user?.id || "";
@@ -90,6 +95,23 @@ const Profile = (props: Props) => {
     }
     fetchMetrics();
   }, [user?.id, fetchWalletBalance]);
+
+  useEffect(() => {
+    async function fetchRoadmaps() {
+      if (!user?.id) return;
+      
+      setIsLoadingRoadmaps(true);
+      try {
+        const userRoadmaps = await roadmapService.getUserRoadmaps(user.id);
+        setRoadmaps(userRoadmaps);
+      } catch (error) {
+        console.error("Failed to fetch roadmaps:", error);
+      } finally {
+        setIsLoadingRoadmaps(false);
+      }
+    }
+    fetchRoadmaps();
+  }, [user?.id]);
 
   useEffect(() => {
     if (
@@ -400,6 +422,77 @@ const Profile = (props: Props) => {
               </TouchableOpacity>
             </View>
           </View>
+          {roadmaps.length > 0 && (
+            <View style={styles.roadmapsSection}>
+              <Text style={[styles.sectionTitle, theme === "dark" && {color: "#E0E0E0"}]}>
+                Your Learning Paths
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.roadmapsScrollContainer}
+              >
+                {roadmaps.map((roadmap) => (
+                  <TouchableOpacity
+                    key={roadmap.id}
+                    style={[styles.roadmapCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}
+                    onPress={() => router.push(`/roadmaps/${roadmap.id}` as any)}
+                  >
+                    <View style={styles.roadmapCardHeader}>
+                      <Image
+                        source={require("@/assets/images/icons/roadmap.png")}
+                        style={styles.roadmapIcon}
+                      />
+                      <Text style={[styles.roadmapTitle, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={2}>
+                        {roadmap.title}
+                      </Text>
+                    </View>
+
+                    <View style={styles.roadmapStats}>
+                      <View style={{flexDirection: "row", gap: 8}}>
+                      <View style={styles.roadmapStat}>
+                        <Image
+                          source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")}
+                          style={styles.roadmapStatIcon}
+                        />
+                        <Text style={[styles.roadmapStatText, theme === "dark" && {color: "#B3B3B3"}]}>
+                          ~45 mins
+                        </Text>
+                      </View>
+                      <View style={styles.roadmapStat}>
+                        <Image
+                          source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
+                          style={styles.roadmapStatIcon}
+                        />
+                        <Text style={[styles.roadmapStatText, theme === "dark" && {color: "#B3B3B3"}]}>
+                          5 Steps
+                        </Text>
+                      </View>
+                      </View>
+                      <View style={styles.roadmapStat}>
+                        <Image
+                          source={require("@/assets/images/icons/medal-05.png")}
+                          style={styles.roadmapStatIcon}
+                        />
+                        <Text style={[styles.roadmapStatText, theme === "dark" && {color: "#B3B3B3"}]}>
+                          Earn up to 16 XP
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.viewRoadmapButton, theme === "dark" && {backgroundColor: "#00FF80"}]}
+                      onPress={() => router.push(`/roadmaps/${roadmap.id}` as any)}
+                    >
+                      <Text style={[styles.viewRoadmapButtonText, theme === "dark" && {color: "#000"}]}>
+                        View Learning Path
+                      </Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
           {/* <View style={styles.tokenUtilities}>
             <ScrollView
@@ -1152,5 +1245,81 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 16,
+  },
+  roadmapsSection: {
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3C52",
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  roadmapsScrollContainer: {
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  roadmapCard: {
+    width: 300,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    padding: 16,
+    gap: 16,
+  },
+  roadmapCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  roadmapIcon: {
+    width: 32,
+    height: 32,
+  },
+  roadmapTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2D3C52",
+    lineHeight: 22,
+    flex: 1,
+  },
+  roadmapStats: {
+    flexDirection: "column",
+    gap: 8,
+  },
+  roadmapStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  roadmapStatIcon: {
+    width: 16,
+    height: 16,
+  },
+  roadmapStatText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#61728C",
+    lineHeight: 18,
+  },
+  viewRoadmapButton: {
+    backgroundColor: "#000",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewRoadmapButtonText: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#00FF80",
+    lineHeight: 20,
   },
 });

@@ -87,7 +87,12 @@ const Auth = () => {
         return false;
       }
 
-      if (formData.username && formData.username.length > 0 && formData.username.length < 3) {
+      if (!formData.username.trim()) {
+        Alert.alert("Username Required", "Please enter your X username");
+        return false;
+      }
+
+      if (formData.username.length < 3) {
         Alert.alert("Invalid Username", "Username must be at least 3 characters long");
         return false;
       }
@@ -150,7 +155,7 @@ const Auth = () => {
             isSignUp: "1",
             name: formData.name,
             referralCode: formData.referralCode || "",
-            username: formData.username || ""
+            username: formData.username
           },
         });
       } else {
@@ -267,6 +272,7 @@ const Auth = () => {
                   autoCorrect={false}
                   returnKeyType="done"
                   textContentType="username"
+                  
                 />
               </View>
             </>
