@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Linking,
 } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import BackButton from "@/components/backButton";
@@ -33,14 +34,14 @@ const planData = [
   },
   {
     name: "Premium",
-    price: 5,
+    price: Platform.OS === 'android' ? 5 : 4.99,
     features: [
       "Advanced AI models (Gemini 2.5 Pro)",
       "10 quiz attempts per day",
       "10 chat credits per day",
       "Credit rollovers & priority support",
       "Exclusive premium badges",
-      "Enhanced earning opportunities"
+      "Unlimited Chat Messages"
     ],
   },
 ];
@@ -57,7 +58,15 @@ const PlanCard = ({
   features: string[];
 }) => {
   const { theme } = useUserStore();
-  const isFree = price === 0;
+  const isFree = name === "Basic" || price === 0;
+  let displayPrice: number;
+  if (isFree) {
+    displayPrice = 0;
+  } else if (isAnnual) {
+    displayPrice = Platform.OS === 'android' ? 50 : 49.99;
+  } else {
+    displayPrice = Platform.OS === 'android' ? 5 : 4.99;
+  }
   return (
     <View style={[styles.planCard, theme === "dark" && styles.planCardDark]}>
       <Text style={[styles.billingLabel, theme === "dark" && styles.billingLabelDark]}>
@@ -66,12 +75,18 @@ const PlanCard = ({
 
       <View style={styles.priceContainer}>
         <Text style={[styles.numberPriceText, theme === "dark" && styles.numberPriceTextDark]}>
-          ${isAnnual ? price * 10 : price}
+          ${displayPrice}
         </Text>
         <Text style={[styles.littlePriceText, theme === "dark" && styles.littlePriceTextDark]}>/{isAnnual ? "year" : "month"}</Text>
       </View>
+      
 
-      <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>{isFree ? "Free" : name}</Text>
+
+      <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>{isFree ? "Free" : isAnnual ? "EduLearn Premium Annually" : "EduLearn Premium Monthly"}</Text>
+
+      <Text style={[styles.renewalText, theme === "dark" && styles.renewalTextDark]}>
+        {!isFree ? "Auto-renews until cancelled" : " "}
+      </Text>
 
       <Text style={[styles.planDescription, theme === "dark" && styles.planDescriptionDark]}>
         Upgrade your edulearn Plan to get access to more features that aren't
@@ -107,6 +122,22 @@ const Subscription = () => {
     const cardWidth = event.nativeEvent.layoutMeasurement.width;
     const index = Math.round(scrollPosition / cardWidth);
     setCurrentPlanIndex(index);
+  };
+
+  const openPrivacyPolicy = () => {
+    const url = 'https://support.edulearn.fun/privacy-policy';
+    Linking.openURL(url).catch(err => {
+      Alert.alert('Error', 'Unable to open Privacy Policy');
+      console.error('Failed to open URL:', err);
+    });
+  };
+
+  const openTermsOfUse = () => {
+    const url = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+    Linking.openURL(url).catch(err => {
+      Alert.alert('Error', 'Unable to open Terms of Use');
+      console.error('Failed to open URL:', err);
+    });
   };
 
   const handleUpgrade = async () => {
@@ -390,6 +421,20 @@ const Subscription = () => {
         )}
       </TouchableOpacity>
 
+      <View style={styles.legalLinksContainer}>
+        <TouchableOpacity onPress={openPrivacyPolicy}>
+          <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+            Privacy Policy
+          </Text>
+        </TouchableOpacity>
+        <Text style={[styles.legalSeparator, theme === "dark" && styles.legalSeparatorDark]}>•</Text>
+        <TouchableOpacity onPress={openTermsOfUse}>
+          <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+            Terms of Use (EULA)
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity 
         onPress={restorePurchases}
         disabled={isLoading}
@@ -584,6 +629,16 @@ const styles = StyleSheet.create({
   planNameDark: {
     color: "#E0E0E0",
   },
+  renewalText: {
+    fontSize: 12,
+    color: "#007AFF",
+    fontFamily: "Satoshi",
+    marginTop: -8,
+    fontWeight: "500",
+  },
+  renewalTextDark: {
+    color: "#00FF80",
+  },
   planDescription: {
     fontSize: 14,
     color: "#2D3C52",
@@ -692,6 +747,32 @@ const styles = StyleSheet.create({
     color: "#61728C",
   },
   upgradeButtonTextDisabledDark: {
+    color: "#B3B3B3",
+  },
+  legalLinksContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginBottom: 12,
+    gap: 8,
+    paddingTop: 8,
+  },
+  legalLinkText: {
+    color: "#007AFF",
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "Satoshi",
+    textDecorationLine: "underline",
+  },
+  legalLinkTextDark: {
+    color: "#00FF80",
+  },
+  legalSeparator: {
+    color: "#61728C",
+    fontSize: 12,
+  },
+  legalSeparatorDark: {
     color: "#B3B3B3",
   },
   restoreButton: {
