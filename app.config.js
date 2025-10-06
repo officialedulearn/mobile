@@ -19,8 +19,8 @@ export default {
     },
     ios: {
       icon: "./assets/images/mainlogo.png",
-      supportsTablet: false,
       bundleIdentifier: "com.edulearnv2.app",
+      supportsTablet: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },

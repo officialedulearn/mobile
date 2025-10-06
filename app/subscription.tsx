@@ -198,6 +198,43 @@ const Subscription = () => {
     }
   };
 
+  const restorePurchases = async () => {
+    try {
+      setIsLoading(true);
+      const customerInfo = await Purchases.restorePurchases();
+      console.log('Restored purchases:', customerInfo);
+      
+      const isPremium = Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      if (isPremium) {
+        Alert.alert(
+          'Success!',
+          'Purchases restored successfully! The app will now reload.',
+          [
+            {
+              text: 'OK',
+              style: 'default',
+              onPress: async () => {
+                try {
+                  router.reload()
+                } catch (error) {
+                  console.log('📢 Error reloading app:', error);
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('No Purchases Found', 'No previous purchases were found to restore.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Unable to restore purchases. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchCustomerInfo = async () => {
       try {
@@ -351,6 +388,20 @@ const Subscription = () => {
             {planData[currentPlanIndex].price === 0 ? 'Current Plan' : 'Upgrade'}
           </Text>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        onPress={restorePurchases}
+        disabled={isLoading}
+        style={styles.restoreButton}
+      >
+        <Text style={[
+          styles.restoreButtonText,
+          theme === "dark" && styles.restoreButtonTextDark,
+          isLoading && styles.restoreButtonTextDisabled
+        ]}>
+          Restore Purchases
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -642,5 +693,24 @@ const styles = StyleSheet.create({
   },
   upgradeButtonTextDisabledDark: {
     color: "#B3B3B3",
+  },
+  restoreButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 32,
+  },
+  restoreButtonText: {
+    color: "#61728C",
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "Satoshi",
+  },
+  restoreButtonTextDark: {
+    color: "#B3B3B3",
+  },
+  restoreButtonTextDisabled: {
+    opacity: 0.5,
   },
 });
