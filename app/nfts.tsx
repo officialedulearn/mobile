@@ -236,10 +236,12 @@ const NFT = (props: Props) => {
                   params: { id: item.id }
                 })}
               >
-                <Image
-                  style={styles.rewardImage}
-                  source={getImageSource(item.imageUrl as unknown as string)}
-                />
+                <View style={styles.rewardImageCard}>
+                  <Image
+                    style={styles.rewardImage}
+                    source={getImageSource(item.imageUrl as unknown as string)}
+                  />
+                </View>
                 <View style={styles.dateContainer}>
                   <Image
                     source={require("@/assets/images/icons/dark/calendar.png")}
@@ -268,10 +270,12 @@ const NFT = (props: Props) => {
             numColumns={2}
             renderItem={({ item }: { item: UserRewardWithDetails }) => (
               <View style={[styles.rewardCard, theme === "dark" && styles.darkRewardCard]}>
-                <Image
-                  style={styles.rewardImage}
-                  source={getImageSource(item.imageUrl as unknown as string)}
-                />
+                <View style={styles.rewardImageCard}>
+                  <Image
+                    style={styles.rewardImage}
+                    source={getImageSource(item.imageUrl as unknown as string)}
+                  />
+                </View>
                
                 <TouchableOpacity
                   style={[styles.claimButton, theme === "dark" && {backgroundColor: "#00FF80"}]}
@@ -462,10 +466,14 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 20,
   },
-  rewardCard: {
-    borderRadius: 12,
+  rewardImageCard: {
+
     borderWidth: 1,
     borderColor: "#EDF3FC",
+  },
+  rewardCard: {
+    borderRadius: 12,
+
     backgroundColor: "#FFFFFF",
     display: "flex",
     padding: 4,

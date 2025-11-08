@@ -22,6 +22,14 @@ const Leaderboard = () => {
 
   const userService = new UserService();
 
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
@@ -72,7 +80,7 @@ const Leaderboard = () => {
   };
 
   const getRemainingUsers = () => {
-    const remainingUsers = users.slice(3).map((userData, index) => ({
+    const remainingUsers = users.slice(3, 10).map((userData, index) => ({
       key: index + 4,
       rank: index + 4,
       name: userData.name,
@@ -82,15 +90,14 @@ const Leaderboard = () => {
     }));
 
     const currentUserInTop3 = users.slice(0, 3).some(userData => userData.id === user?.id);
-    const currentUserInRemaining = remainingUsers.some(userData => userData.isCurrentUser);
+    const currentUserInTop10 = users.slice(0, 10).some(userData => userData.id === user?.id);
     
-    if (user && !currentUserInTop3 && !currentUserInRemaining) {
-     
+    if (user && !currentUserInTop3 && !currentUserInTop10) {
       const currentUserRank = users.findIndex(userData => userData.id === user.id) + 1;
       
-      if (currentUserRank > 0) {
+      if (currentUserRank > 10) {
         remainingUsers.push({
-          key: remainingUsers.length + 1000,
+          key: currentUserRank + 1000,
           rank: currentUserRank,
           name: user.name,
           xp: user.xp,
@@ -114,8 +121,8 @@ const Leaderboard = () => {
           <Text style={styles.heading}>Leaderboard</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00FF66" />
-          <Text style={styles.loadingText}>Loading leaderboard...</Text>
+          <ActivityIndicator size="large" color={theme === "dark" ? "#00FF66" : "#000"} />
+          <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Loading leaderboard...</Text>
         </View>
       </View>
     );
@@ -129,7 +136,7 @@ const Leaderboard = () => {
           <Text style={styles.heading}>Leaderboard</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, theme === "dark" && { color: "#E0E0E0" }]}>{error}</Text>
         </View>
       </View>
     );
@@ -158,7 +165,7 @@ const Leaderboard = () => {
             ]}>
               <Image source={require("@/assets/images/silver.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
-                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+                <Image source={getHighQualityImageUrl(second?.profilePictureURL) ? { uri: getHighQualityImageUrl(second?.profilePictureURL) } : require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
               <Text style={[
                 styles.name, 
@@ -195,7 +202,7 @@ const Leaderboard = () => {
             ]}>
               <Image source={require("@/assets/images/gold.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
-                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+                <Image source={getHighQualityImageUrl(first?.profilePictureURL) ? { uri: getHighQualityImageUrl(first?.profilePictureURL) } : require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
               <Text style={[styles.name, theme === "dark" ? { color: "#000" } : {color: "#00FF66"}]}>{first.name}</Text>
               <Text style={[styles.level, theme === "dark" ? { color: "#000" } : {color: "#00FF66"}]}>
@@ -217,7 +224,7 @@ const Leaderboard = () => {
           ]}>
               <Image source={require("@/assets/images/bronze.png")} style={styles.medal} />
               <View style={styles.avatarWrapper}>
-                <Image source={require("@/assets/images/memoji.png")} style={styles.avatar} />
+                <Image source={getHighQualityImageUrl(third?.profilePictureURL) ? { uri: getHighQualityImageUrl(third?.profilePictureURL) } : require("@/assets/images/memoji.png")} style={styles.avatar} />
               </View>
               <Text style={[
                 styles.name, 
@@ -262,7 +269,7 @@ const Leaderboard = () => {
                     <Text style={[
                       styles.rankText, 
                       userData.isCurrentUser 
-                        ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                        ? { color: "#000" }
                         : (theme === "dark" ? { color: "#E0E0E0" } : { color: "#2D3C52" })
                     ]}>{userData.rank}</Text>
                   </DataTable.Cell>
@@ -270,7 +277,7 @@ const Leaderboard = () => {
                     <Text style={[
                       styles.nameText, 
                       userData.isCurrentUser 
-                        ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                        ? { color: "#000" }
                         : (theme === "dark" ? { color: "#E0E0E0" } : { color: "#2D3C52" })
                     ]}>{userData.name}</Text>
                   </DataTable.Cell>
@@ -283,7 +290,7 @@ const Leaderboard = () => {
                       <Text style={[
                         styles.xpText, 
                         userData.isCurrentUser 
-                          ? (theme === "dark" ? { color: "#000" } : { color: "#fff" })
+                          ? { color: "#000" }
                           : (theme === "dark" ? { color: "#A0A0A0" } : { color: "#61728C" })
                       ]}>{userData.xp} XP</Text>
                     </View>
@@ -356,36 +363,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
     borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    width: 130,
-    height: 180, 
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    width: 140,
+    height: 195, 
     zIndex: 2,
     gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 15,
   },
   second: {
     backgroundColor: "#EDF3FC",
     borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    width: 110,
-    height: 160, 
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    width: 125,
+    height: 175, 
     zIndex: 1,
     alignSelf: "flex-end",
-    gap: 8
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   third: {
     backgroundColor: "#F5F3FF",
     borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    width: 100,
-    height: 140, 
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    width: 120,
+    height: 170, 
     zIndex: 1,
     alignSelf: "flex-end",
-    gap: 6,
+    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
   },
   medal: {
     position: "absolute",
@@ -393,12 +424,28 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     zIndex: 3,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   avatarWrapper: {
     backgroundColor: "#fff",
     borderRadius: 999,
     padding: 3,
-    marginTop: 5, 
+    marginTop: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   avatar: {
     width: 40,
@@ -406,19 +453,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   name: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     marginTop: 3,
     color: "#2D3C52",
     fontFamily: "Satoshi",
     textAlign: "center",
+    flexShrink: 1,
+    paddingHorizontal: 4,
+    width: '100%',
+    flexWrap: 'wrap',
   },
   level: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: "Satoshi",
     fontWeight: "500",
     marginTop: 1,
     textAlign: "center",
+    flexShrink: 1,
+    paddingHorizontal: 4,
+    width: '100%',
   },
   xpContainer: {
     flexDirection: "row",
@@ -443,6 +497,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     marginTop: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   tableTitle: {
     fontSize: 16,
@@ -527,10 +589,26 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   currentUserRowDark: {
-    backgroundColor: "#00FF66",
+    backgroundColor: "#00FF80",
+    shadowColor: "#00FF80",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
   currentUserRowLight: {
-    backgroundColor: "#000",
+    backgroundColor: "#00FF80",
+    shadowColor: "#00FF80",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
 

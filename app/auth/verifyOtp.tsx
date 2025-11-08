@@ -5,6 +5,7 @@ import { supabase } from "@/utils/supabase";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
+import { NotificationService } from "@/services/notification.service";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -38,7 +39,7 @@ const verifyOtp = (props: Props) => {
   }>();
   
   const [otp, setOtp] = useState("");
-  const [timeLeft, setTimeLeft] = useState(30 * 60);
+  const [timeLeft, setTimeLeft] = useState(2 * 60);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [canResend, setCanResend] = useState(false);
@@ -164,10 +165,13 @@ const verifyOtp = (props: Props) => {
         return;
       }
 
-      setTimeLeft(30 * 60);
+      setTimeLeft(2 * 60);
       setCanResend(false);
       Alert.alert("Code Sent", "A new verification code has been sent to your email");
-      
+      NotificationService.scheduleNotification("New Verification Code", "A new verification code has been sent to your email", {
+        screen: "verifyOtp",
+        email: email,
+      });
     } catch (error) {
       console.error("Resend OTP error:", error);
       Alert.alert("Network Error", "Unable to resend code. Please check your connection.");
@@ -241,6 +245,10 @@ const verifyOtp = (props: Props) => {
           try {
             const userData = await userService.getUser(data.user.email || "");
             setUser(userData);
+            NotificationService.scheduleNotification("Welcome to EduLearn!", "Welcome to EduLearn! You're all set up and ready to start learning.", {
+              screen: "welcome",
+              email: email,
+            });
             router.push("/auth/welcome");
           } catch (getUserError) {
             console.error("Get user failed:", getUserError);
@@ -303,19 +311,26 @@ const verifyOtp = (props: Props) => {
               Code expires in <Text style={[styles.timerText, theme === "dark" && { color: "#E0E0E0" }]}>{formatTime()}</Text>
             </Text>
 
-            <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
-              Didn't receive a code? {" "}
-              <Text 
-                style={[
-                  styles.timerText, 
-                  theme === "dark" && { color: "#00FF80" },
-                  (!canResend || resendLoading) && { opacity: 0.5 }
-                ]}
-                onPress={canResend && !resendLoading ? handleResendOtp : undefined}
-              >
-                {resendLoading ? "Resending..." : "Resend Code"}
+            <View style={styles.resendContainer}>
+              <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
+                Didn't receive a code?{" "}
               </Text>
-            </Text>
+              <TouchableOpacity 
+                onPress={handleResendOtp}
+                disabled={!canResend || resendLoading}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text 
+                  style={[
+                    styles.resendText, 
+                    theme === "dark" && { color: "#00FF80" },
+                    (!canResend || resendLoading) && { opacity: 0.5 }
+                  ]}
+                >
+                  {resendLoading ? "Resending..." : "Resend Code"}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={[
@@ -414,6 +429,18 @@ const styles = StyleSheet.create({
   timerText: {
     fontWeight: "700",
     color: "#2D3C52",
+  },
+  resendContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  resendText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2D3C52",
+    textDecorationLine: "underline",
   },
   signInButton: {
     backgroundColor: "#000",

@@ -53,9 +53,9 @@ const nftPage = (props: Props) => {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#00FF80" />
-        <Text style={styles.loadingText}>Loading NFT details...</Text>
+      <View style={[styles.container, styles.loadingContainer, theme === "dark" && {backgroundColor: "#0D0D0D"}]}>
+        <ActivityIndicator size="large" color={theme === "dark" ? "#00FF80" : "#000"} />
+        <Text style={[styles.loadingText, theme === "dark" && {color: "#E0E0E0"}]}>Loading NFT details...</Text>
       </View>
     );
   }
@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    marginTop: 50,
     backgroundColor: "#F9FBFC",
   },
   contentContainer: {

@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
+import { useNotifications } from "@/hooks/useNotifications";
+import { RoadmapService } from "@/services/roadmap.service";
 
 type Props = {};
 
@@ -14,8 +16,9 @@ const identity = (props: Props) => {
   const [learningGoal, setLearningGoal] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const { user, setUser, theme } = useUserStore();
+  const { scheduleNotification } = useNotifications();
   const userService = new UserService();
-
+  const roadmapService = new RoadmapService();
   const avatarImages = {
     1: require('@/assets/images/avatars/1.png'),
     2: require('@/assets/images/avatars/2.png'),
@@ -66,6 +69,11 @@ const identity = (props: Props) => {
         learning: learningGoal.trim()
       });
 
+      const roadmap = await roadmapService.getUserRoadmaps(user.id);
+
+      await scheduleNotification("Your roadmap has been generated", "You are now ready to start your learning journey", {
+        screen: `roadmaps/${roadmap[0].id}`
+      });
       router.push("/auth/welcome");
     } catch (error) {
       console.error("Error updating learning preference:", error);

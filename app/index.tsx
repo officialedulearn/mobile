@@ -5,11 +5,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Image, View, useColorScheme, ActivityIndicator, Text } from "react-native";
+import { Image, View, useColorScheme } from "react-native";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function Index() {
   const { setTheme, setUserAsync} = useUserStore();
   const colorScheme = useColorScheme();
+  
+  const { expoPushToken } = useNotifications();
   
   useEffect(() => {
     const initializeApp = async () => {

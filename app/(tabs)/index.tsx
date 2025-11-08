@@ -22,6 +22,14 @@ const index = (props: Props) => {
   const { activities, fetchActivities, isLoading } = useActivityStore();
   const theme = useUserStore(s => s.theme);
   
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
+  
   useEffect(() => {
     if (user?.id) {
       fetchActivities(user.id);
@@ -96,8 +104,9 @@ const index = (props: Props) => {
         <View style={styles.topNav}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Image
-              source={require("@/assets/images/memoji.png")}
-              style={{ width: 40, height: 40 }}
+              source={getHighQualityImageUrl(user?.profilePictureURL as string) ? { uri: getHighQualityImageUrl(user?.profilePictureURL as string)! } : require("@/assets/images/memoji.png")}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
+              resizeMode="cover"
             />
             <View style={{ flexDirection: "column" }}>
               <Text style={[styles.headerText, theme == "dark" && styles.headerTextDark ]}>Hi {user?.name}👋</Text>
@@ -279,11 +288,12 @@ const styles = StyleSheet.create({
   },
   content: {
     width: "100%",
+    flexDirection: "column",
+    alignItems: "center",
   },
   topNav: {
     width: "100%",
     marginTop: 20,
-    padding: 20,
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row",

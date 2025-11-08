@@ -8,6 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import useUserStore from "@/core/userState";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
+import { ChatProvider } from "@/contexts/ChatContext";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -87,32 +88,34 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/index" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/verifyOtp" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/welcome" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/identity" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="leaderboard" options={{ headerShown: false }} />
-        <Stack.Screen name="quiz" options={{ headerShown: false }} />
-        <Stack.Screen name="settings" options={{ headerShown: false }} />
-        <Stack.Screen name="nfts" options={{ headerShown: false }} />
-        <Stack.Screen name="nftClaimed" options={{ headerShown: false }} />
-        <Stack.Screen name="connectX" options={{ headerShown: false }} />
-        <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="nft/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="search" options={{ headerShown: false }} />
-        <Stack.Screen name="editProfile" options={{ headerShown: false }} />
-        <Stack.Screen name="subscription" options={{ headerShown: false }} />
-        <Stack.Screen name="theme" options={{ headerShown: false }} />
-        <Stack.Screen name="community" options={{ headerShown: false }} />
-        <Stack.Screen name="roadmaps/[id]" options={{ headerShown: false }} />
-      </Stack>
-    </GestureHandlerRootView>
+    <ChatProvider>
+      <GestureHandlerRootView style={styles.container}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/index" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/verifyOtp" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/identity" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="leaderboard" options={{ headerShown: false }} />
+          <Stack.Screen name="quiz" options={{ headerShown: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="nfts" options={{ headerShown: false }} />
+          <Stack.Screen name="nftClaimed" options={{ headerShown: false }} />
+          <Stack.Screen name="connectX" options={{ headerShown: false }} />
+          <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="nft/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
+          <Stack.Screen name="editProfile" options={{ headerShown: false }} />
+          <Stack.Screen name="subscription" options={{ headerShown: false }} />
+          <Stack.Screen name="theme" options={{ headerShown: false }} />
+          <Stack.Screen name="community" options={{ headerShown: false }} />
+          <Stack.Screen name="roadmaps/[id]" options={{ headerShown: false }} />
+        </Stack>
+      </GestureHandlerRootView>
+    </ChatProvider>
   );
 }
 

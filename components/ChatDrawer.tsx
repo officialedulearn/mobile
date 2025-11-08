@@ -1,9 +1,8 @@
 import useUserStore from "@/core/userState";
 import { Chat } from "@/interface/Chat";
 import { ChatService } from "@/services/chat.service";
-import { generateUUID } from "@/utils/constants";
+import { useChatNavigation } from "@/contexts/ChatContext";
 import { BlurView } from "expo-blur";
-import { router } from "expo-router";
 import * as React from "react";
 import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
 
@@ -33,10 +32,10 @@ const groupChatsByRecency = (chats: Chat[]) => {
 const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
   const user = useUserStore((s) => s.user);
   const theme = useUserStore((s) => s.theme);
+  const { isNavigating, navigateToChat, createNewChat, chatListVersion } = useChatNavigation();
   const chatService = new ChatService();
   const [chats, setChats] = React.useState<Array<Chat>>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [isNavigating, setIsNavigating] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const filteredChats = React.useMemo(() => {
@@ -52,42 +51,17 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
     return groupChatsByRecency(filteredChats);
   }, [filteredChats]);
   
-  const goToChat = React.useCallback(async (id: string) => {
+  const goToChat = React.useCallback((id: string) => {
     if (isNavigating) return;
-    
-    setIsNavigating(true);
     onClose();
-    setTimeout(() => {
-      router.replace({
-        pathname: "/(tabs)/chat",
-        params: { 
-          chatIdFromNav: id, 
-          refresh: Date.now().toString() 
-        },
-      });
-      setIsNavigating(false);
-    }, 150);
-  }, [onClose, isNavigating]);
+    navigateToChat(id);
+  }, [isNavigating, onClose, navigateToChat]);
 
-  const handleCreateNewChat = React.useCallback(async () => {
+  const handleCreateNewChat = React.useCallback(() => {
     if (isNavigating) return;
-    
-    setIsNavigating(true);
     onClose();
-    
-    const newChatId = generateUUID();
-    
-    setTimeout(() => {
-      router.replace({
-        pathname: "/(tabs)/chat",
-        params: { 
-          chatIdFromNav: newChatId,
-          refresh: Date.now().toString() 
-        },
-      });
-      setIsNavigating(false);
-    }, 150);
-  }, [onClose, isNavigating]);
+    createNewChat();
+  }, [isNavigating, onClose, createNewChat]);
 
   React.useEffect(() => {
     const fetchChats = async () => {
@@ -110,7 +84,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
     if (user?.id) {
       fetchChats();
     }
-  }, [user?.id]);
+  }, [user?.id, chatListVersion]);
 
   const renderChatSection = (title: string, sectionChats: Chat[]) => {
     if (sectionChats.length === 0) return null;

@@ -49,6 +49,14 @@ const User = (props: Props) => {
     nfts: 0,
     xp: 0,
   });
+
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
   const [quizStats, setQuizStats] = React.useState({
     totalQuestionsAnswered: 0,
     accuracyRate: 0,
@@ -144,8 +152,9 @@ const User = (props: Props) => {
 
       <View style={[styles.profileCard, theme === "dark" && {backgroundColor: '#00FF80'}]}>
         <Image
-          source={require("@/assets/images/memoji.png")}
+          source={getHighQualityImageUrl(user?.profilePictureURL) ? { uri: getHighQualityImageUrl(user?.profilePictureURL)! } : require("@/assets/images/memoji.png")}
           style={styles.userImage}
+          resizeMode="cover"
         />
         <Text style={[styles.userName, theme === "dark" && {color: "#000"}]}>{user?.name}</Text>
         
@@ -181,7 +190,7 @@ const User = (props: Props) => {
       </View>
       
       <View style={styles.streakContainer}>
-        <DailyCheckInStreak lastSignIn={joinedAt || ""} />
+        <DailyCheckInStreak streak={user?.streak} />
       </View>
 
       <View style={[styles.learningStats, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>

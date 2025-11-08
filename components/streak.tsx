@@ -1,51 +1,17 @@
 import useUserStore from '@/core/userState';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 interface StreakProps {
-  lastSignIn: string; 
+  streak?: number; 
 }
 
-const DailyCheckInStreak: React.FC<StreakProps> = ({ lastSignIn }) => {
+const DailyCheckInStreak: React.FC<StreakProps> = ({ streak }) => {
   const { user, theme } = useUserStore();
-  const [currentStreak, setCurrentStreak] = useState( user?.streak || 0);
-  
-  useEffect(() => {
-    if (user) {
-      checkAndUpdateStreak(lastSignIn);
-    }
-  }, [user, lastSignIn]);
-
-  const parseLastSignInDate = (lastSignInText?: string): Date => {
-    if (!lastSignInText) return new Date();
-    
-    try {
-      return new Date(lastSignInText);
-    } catch (error) {
-      console.error('Error parsing last sign-in date:', error);
-      return new Date();
-    }
-  };
-
-  const checkAndUpdateStreak = (lastSignInText?: string) => {
-    if (!user?.streak) {
-      setCurrentStreak(1);
-      return;
-    }
-    const lastActive = parseLastSignInDate(lastSignInText);
-    const now = new Date();
-    
-    const hoursDiff = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursDiff > 24) {
-      setCurrentStreak(1);
-    } else {
-      setCurrentStreak(user.streak);
-    }
-  };
+  const currentStreak = streak !== undefined ? streak : (user?.streak || 0);
 
   const getActiveDays = (streak: number) => {
     const todayIndex = new Date().getDay(); 

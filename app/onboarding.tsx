@@ -9,9 +9,7 @@ import {
   TouchableOpacity,
   View,
   Platform,
-  Dimensions,
   Animated,
-  PanResponder,
 } from "react-native";
 import useUserStore from "@/core/userState";
 
@@ -22,26 +20,11 @@ type OnBoardingSteps = {
   buttonTexts: string[];
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = SCREEN_WIDTH / 6; 
-const VELOCITY_THRESHOLD = 0.2; 
-
 const OnBoarding = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const theme = useUserStore((state) => state.theme);
-  const pan = useRef(new Animated.ValueXY()).current;
-  const isAnimating = useRef(false); 
-  const currentPanValue = useRef({ x: 0, y: 0 });
-
-  React.useEffect(() => {
-    const listenerId = pan.addListener((value) => {
-      currentPanValue.current = value;
-    });
-
-    return () => {
-      pan.removeListener(listenerId);
-    };
-  }, [pan]);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const isAnimating = useRef(false);
 
   const onBoardingSteps: OnBoardingSteps[] = [
     {
@@ -67,114 +50,36 @@ const OnBoarding = () => {
     },
   ];
 
-  const resetPosition = () => {
-    if (isAnimating.current) return;
+  const animateToStep = (newIndex: number) => {
+    if (isAnimating.current || newIndex === stepIndex) return;
     
     isAnimating.current = true;
-    Animated.spring(pan, {
-      toValue: { x: 0, y: 0 },
-      useNativeDriver: false,
-      tension: 100,
-      friction: 8,
-    }).start(() => {
+    
+    Animated.sequence([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       isAnimating.current = false;
     });
-  };
-
-  const animateToStep = (direction: 'next' | 'prev') => {
-    if (isAnimating.current) return;
     
-    isAnimating.current = true;
-    let newStepIndex = stepIndex;
-    if (direction === 'next') {
-      newStepIndex = Math.min(stepIndex + 1, onBoardingSteps.length - 1);
-    } else {
-      newStepIndex = Math.max(stepIndex - 1, 0);
-    }
-    
-    console.log(`Animating ${direction}: from step ${stepIndex} to step ${newStepIndex}`);
-    setStepIndex(newStepIndex);
-    
-    const targetX = direction === 'next' ? -SCREEN_WIDTH : SCREEN_WIDTH;
-    
-    Animated.timing(pan, {
-      toValue: { x: targetX, y: 0 },
-      duration: 250,
-      useNativeDriver: false,
-    }).start(() => {
-      pan.setValue({ x: 0, y: 0 });
-      isAnimating.current = false;
-      console.log(`Animation complete, now at step ${newStepIndex}`);
-    });
+    setTimeout(() => {
+      setStepIndex(newIndex);
+    }, 150);
   };
 
   const goToNextStep = () => {
     if (stepIndex < onBoardingSteps.length - 1) {
-      animateToStep('next');
+      animateToStep(stepIndex + 1);
     }
   };
-
-  const goToPrevStep = () => {
-    if (stepIndex > 0) {
-      animateToStep('prev');
-    }
-  };
-
-  const handleSkip = () => {
-    goToNextStep();
-  };
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !isAnimating.current,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return !isAnimating.current && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
-      },
-      onPanResponderGrant: () => {
-        pan.setOffset({ x: 0, y: 0 });
-        pan.setValue({ x: 0, y: 0 });
-      },
-      onPanResponderMove: (_, gestureState) => {
-        let dx = gestureState.dx;
-      
-        if (stepIndex === 0 && dx > 0) {
-          dx = dx * 0.2; 
-        } else if (stepIndex === onBoardingSteps.length - 1 && dx < 0) {
-          dx = dx * 0.2;
-        }
-        
-        pan.setValue({ x: dx, y: 0 });
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        pan.flattenOffset();
-        
-        const { dx, vx } = gestureState;
-        const absVx = Math.abs(vx);
-        const absDx = Math.abs(dx);
-        
-        console.log(`Swipe: dx=${dx}, vx=${vx}, stepIndex=${stepIndex}, absDx=${absDx}, absVx=${absVx}, canGoNext=${stepIndex < onBoardingSteps.length - 1}, canGoPrev=${stepIndex > 0}`);
-        
-        const shouldChangeStep = absDx > SWIPE_THRESHOLD || absVx > VELOCITY_THRESHOLD;
-        
-        if (shouldChangeStep) {
-          if (dx < 0 && stepIndex < onBoardingSteps.length - 1) {
-            goToNextStep();
-          } else if (dx > 0 && stepIndex > 0) {
-            goToPrevStep();
-          } else {
-            resetPosition();
-          }
-        } else {
-          console.log(`Not enough distance/velocity (threshold: ${SWIPE_THRESHOLD}, velocity: ${VELOCITY_THRESHOLD}), resetting position`);
-          resetPosition();
-        }
-      },
-      onPanResponderTerminate: () => {
-        pan.flattenOffset();
-        resetPosition();
-      },
-    })
-  ).current;
 
   const currentStep = onBoardingSteps[stepIndex];
 
@@ -191,7 +96,7 @@ const OnBoarding = () => {
         {stepIndex < onBoardingSteps.length - 1 && (
           <TouchableOpacity 
             style={[styles.skipButton, theme === "dark" && styles.skipButtonDark]} 
-            onPress={handleSkip}
+            onPress={() => router.push("/auth?signUp=1")}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -208,9 +113,10 @@ const OnBoarding = () => {
       <Animated.View 
         style={[
           styles.contentContainer, 
-          { transform: [{ translateX: pan.x }] }
+          { 
+            opacity: fadeAnim,
+          }
         ]}
-        {...panResponder.panHandlers}
       >
         <View style={styles.content}>
           <Image
@@ -227,10 +133,8 @@ const OnBoarding = () => {
         {onBoardingSteps.map((_, index) => (
           <TouchableOpacity 
             key={index} 
-            onPress={() => {
-              setStepIndex(index);
-              resetPosition();
-            }}
+            onPress={() => animateToStep(index)}
+            disabled={isAnimating.current}
           >
             <View
               style={[

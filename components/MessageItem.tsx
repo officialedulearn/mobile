@@ -17,10 +17,18 @@ import useUserStore from "@/core/userState";
 
 type Props = {
   message: Message;
+  isStreaming?: boolean;
 };
 
-const MessageItem = ({ message }: Props) => {
+const MessageItem = ({ message, isStreaming = false }: Props) => {
+
   const theme = useUserStore((s) => s.theme);
+  
+  if (!message) {
+    console.error('MessageItem received undefined message');
+    return null;
+  }
+  
   const isUser = message.role === "user";
   const isLoading = false;
 
@@ -67,8 +75,21 @@ const MessageItem = ({ message }: Props) => {
   };
 
   const getMessageContent = () => {
+    if (!message || !message.content) {
+      return "";
+    }
+    
     if (typeof message.content === "string") {
       return message.content;
+    } else if (Array.isArray(message.content)) {
+      return message.content
+        .map((item: any) => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object' && item.text) return item.text;
+          if (item && typeof item === 'object' && item.type === 'text' && item.text) return item.text;
+          return '';
+        })
+        .join('');
     } else if (
       message.content &&
       typeof message.content === "object" &&
@@ -162,7 +183,8 @@ const MessageItem = ({ message }: Props) => {
         </View>
       )}
 
-      <View
+
+    <View
         style={[
           styles.messageBubble,
           isUser
@@ -198,7 +220,52 @@ const MessageItem = ({ message }: Props) => {
           </View>
         ) : (
           <View>
-            <Markdown style={markdownStyles}>{getMessageContent()}</Markdown>
+            {(() => {
+              try {
+                const content = getMessageContent();
+                
+                if (!content || content.trim().length === 0) {
+                  if (isStreaming && !isUser) {
+                    return (
+                      <Text style={[
+                        markdownStyles.body,
+                        theme === "dark" && { color: "#E0E0E0" }
+                      ]}>
+                        ▊
+                      </Text>
+                    );
+                  }
+                  return (
+                    <Text style={[
+                      markdownStyles.body,
+                      { opacity: 0.5 },
+                      theme === "dark" && { color: "#E0E0E0" }
+                    ]}>
+                      ...
+                    </Text>
+                  );
+                }
+                
+                const withCursor = content + (isStreaming && !isUser ? ' ▊' : '');
+                
+                return (
+                  <Markdown style={markdownStyles}>
+                    {withCursor}
+                  </Markdown>
+                );
+              } catch (error) {
+                console.error('Error rendering markdown:', error);
+                const content = getMessageContent() || '';
+                return (
+                  <Text style={[
+                    markdownStyles.body,
+                    theme === "dark" && { color: "#E0E0E0" }
+                  ]}>
+                    {content}{isStreaming && !isUser ? ' ▊' : ''}
+                  </Text>
+                );
+              }
+            })()}
             {!isUser && (
               <View style={styles.messageActionContainer}>
                 <TouchableOpacity onPress={handleCopyMessage} style={styles.actionButton}>
@@ -224,6 +291,7 @@ const MessageItem = ({ message }: Props) => {
           </View>
         )}
       </View>
+   
 
       {/* {isUser && (
         <TouchableOpacity style={styles.editButton}>

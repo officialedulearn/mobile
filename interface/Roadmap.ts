@@ -5,6 +5,7 @@ export type Roadmap = {
     topic: string;
     title: string;
     description: string;
+    claimableNFT?: string | null;
     createdAt: Date;
 }
 
@@ -15,6 +16,7 @@ export type RoadmapStep = {
     title: string;
     description: string;
     time: number;
+    done?: boolean;
     createdAt: Date;
 }
 
@@ -48,6 +50,7 @@ export type StartRoadmapStepResponse = {
         createdAt: Date;
         chatId: string;
     };
+    nftAwarded?: boolean;
 }
 
 

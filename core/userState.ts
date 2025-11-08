@@ -127,6 +127,7 @@ const useUserStore = create<UserState>((set, get) => ({
         referredBy: userFromDB.referredBy || null,
         quizCompleted: userFromDB.quizCompleted,
         isPremium: userFromDB.isPremium || false,
+        profilePictureURL: userFromDB.profilePictureURL || null,
       };
       
       set({ user: userData });

@@ -3,7 +3,7 @@ import useUserStore from "@/core/userState";
 import { Chat as chatInterface, Message } from "@/interface/Chat";
 import { ChatService } from "@/services/chat.service";
 import { generateUUID } from "@/utils/constants";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
@@ -15,14 +15,11 @@ import {
 type Props = {};
 
 const ChatScreen = (props: Props) => {
-  const { chatIdFromNav, refresh } = useLocalSearchParams<{
+  const { chatIdFromNav } = useLocalSearchParams<{
     chatIdFromNav: string;
-    refresh: string;
   }>();
-  const router = useRouter();
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const theme = useUserStore((state) => state.theme);
 
   const [currentChatId, setCurrentChatId] = useState<string>(() => 
@@ -37,47 +34,37 @@ const ChatScreen = (props: Props) => {
 
   useEffect(() => {
     const fetchChatAndMessages = async () => {
-      if (!chatIdFromNav) {
-        setIsLoading(false);
+      if (!currentChatId) {
         setChat(undefined);
         setInitialMessages([]);
         return;
       }
 
-      setIsLoading(true);
-      setChat(undefined);
-      setInitialMessages([]);
-
       try {
         const chatService = new ChatService();
-        
-        try {
-          const chatData = await chatService.getChatById(currentChatId);
-          const messages = await chatService.getMessagesInChat(currentChatId);
           
-          if (chatData) {
+        const messages = await chatService.getMessagesInChat(currentChatId);
+        setInitialMessages(messages || []);
+        
+        if (messages && messages.length > 0) {
+          try {
+            const chatData = await chatService.getChatById(currentChatId);
             setChat(chatData);
-            setInitialMessages(messages || []);
-          } else {
+          } catch {
             setChat(undefined);
-            setInitialMessages([]);
           }
-        } catch (chatError) {
-          console.log("Chat not found, preparing for new chat:", currentChatId);
+        } else {
           setChat(undefined);
-          setInitialMessages([]);
         }
       } catch (error) {
-        console.error("Error in chat setup:", error);
+        console.error("Error loading chat:", error);
         setChat(undefined);
         setInitialMessages([]);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchChatAndMessages();
-  }, [currentChatId, chatIdFromNav, refresh]);
+  }, [currentChatId]);
 
   return (
     <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
@@ -87,7 +74,7 @@ const ChatScreen = (props: Props) => {
           title={chat?.title || "AI Tutor Chat"}
           initialMessages={initialMessages}
           chatId={currentChatId}
-          key={`${currentChatId}-${refresh || 'new'}`} 
+          key={currentChatId}
         />
       </View>
     </SafeAreaView>

@@ -190,6 +190,28 @@ const Auth = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+
+        <View style={{ marginTop: 20, marginBottom: -10 }}>
+          <TouchableOpacity
+            style={[
+              styles.backButton,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
+            onPress={() => router.back()}
+          >
+            <Image 
+              source={
+                theme === "dark"
+                  ? require("@/assets/images/icons/dark/CaretLeft.png")
+                  : require("@/assets/images/icons/CaretLeft.png")
+              } 
+              style={styles.backButtonIcon} 
+            />
+          </TouchableOpacity>
+        </View>
         <View style={styles.topNavigation}>
           <Image
             source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
@@ -299,7 +321,7 @@ const Auth = () => {
                 <Text
                   style={[styles.privacyLink, theme === "dark" && styles.privacyLinkDark]}
                   onPress={() => {
-                    Linking.openURL("https://support.edulearn.com/privacy-policy");
+                    Linking.openURL("https://support.edulearn.fun/privacy-policy");
                   }}
                 >
                   Privacy Policy
@@ -309,12 +331,12 @@ const Auth = () => {
           )}
         </View>
 
-        <View style={{ marginTop: 30, alignItems: "flex-start" }}>
+        <View style={{ marginTop: 30, alignItems: "center", justifyContent: "center" }}>
           <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
             {isSignUp ? "Already have an account? " : "Don't have an account? "}
             <Text
               onPress={() => setIsSignUp(!isSignUp)}
-              style={[{ fontWeight: "700" }, theme === "dark" ? { color: "#00FF80" } : { color: "#000" }]}
+              style={[{ fontWeight: "700", textDecorationLine: "underline", lineHeight: 24 }, theme === "dark" ? { color: "#00FF80" } : { color: "#000" }]}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </Text>
@@ -446,6 +468,22 @@ const styles = StyleSheet.create({
   },
   privacyLinkDark: {
     color: "#00FF80",
+  },
+  backButton: {
+    padding: 10,
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 50,
+    backgroundColor: "#fff",
+    borderWidth: 0.5,
+    borderColor: "#EDF3FC",
+  },
+  backButtonIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: "contain",
   },
 });
 

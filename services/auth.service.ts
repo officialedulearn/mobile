@@ -177,4 +177,18 @@ export class UserService {
             throw error;
         }
     }
+
+    async updateUserExpoPushToken(expoPushToken: string, userId: string): Promise<User> {
+        try {
+            const response = await httpClient.put('/auth/expo-push-token', { expoPushToken, userId });
+            if (response.status === 200) {
+                return response.data;
+            } else {
+                throw new Error('Failed to update user expo push token');
+            }
+        } catch (error) {
+            console.error("Error updating user expo push token:", error);
+            throw error;
+        }
+    }
 }

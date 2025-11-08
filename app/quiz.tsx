@@ -5,6 +5,7 @@ import { AIService } from "@/services/ai.service";
 import { ChatService } from "@/services/chat.service";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
+import * as Haptics from 'expo-haptics';
 import {
   Image,
   ScrollView,
@@ -51,6 +52,7 @@ const Quiz = (props: Props) => {
   const [retryCount, setRetryCount] = useState(0);
 
   const [questionAnswers, setQuestionAnswers] = useState<(string | null)[]>([]);
+  const [timerStarted, setTimerStarted] = useState(false);
 
   const aiService = new AIService();
   const chatService = new ChatService();
@@ -149,15 +151,26 @@ const Quiz = (props: Props) => {
     setRetryCount(prev => prev + 1);
   };
 
-  const handleSelectOption = (option: string) => {
-    setSelectedOption(option);
+  useEffect(() => {
+    if (questions.length > 0 && !loading && !error && !timerStarted && !quizCompleted) {
+      const delayTimer = setTimeout(() => {
+        setTimerStarted(true);
+      }, 2000);
 
+      return () => clearTimeout(delayTimer);
+    }
+  }, [questions.length, loading, error, timerStarted, quizCompleted]);
+
+  const handleSelectOption = (option: string) => {
+  Haptics.selectionAsync();
+    setSelectedOption(option);
     const updatedAnswers = [...questionAnswers];
     updatedAnswers[currentQuestionIndex] = option;
     setQuestionAnswers(updatedAnswers);
   };
 
   const handlePreviousQuestion = () => {
+    Haptics.selectionAsync();
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prevIndex) => prevIndex - 1);
       setSelectedOption(questionAnswers[currentQuestionIndex - 1]);
@@ -165,6 +178,7 @@ const Quiz = (props: Props) => {
   };
 
   const handleNextQuestion = () => {
+    Haptics.selectionAsync();
     if (!selectedOption) return;
 
     if (currentQuestionIndex < questions.length - 1) {
@@ -195,8 +209,16 @@ const Quiz = (props: Props) => {
       });
     });
 
+    
+
     setUserAnswers(userAnswersList);
     setScore(correctCount);
+
+    if(correctCount > 2) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
     setQuizCompleted(true);
 
     try {
@@ -219,9 +241,8 @@ const Quiz = (props: Props) => {
     }, 2000);
   }, [questions, questionAnswers, user?.id, chatTitle, addActivity]);
 
-  // Timer effect - must be after handleFinishQuiz definition
   useEffect(() => {
-    if (quizCompleted) return;
+    if (quizCompleted || !timerStarted) return;
     
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
@@ -235,7 +256,7 @@ const Quiz = (props: Props) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [quizCompleted, handleFinishQuiz]);
+  }, [quizCompleted, timerStarted, handleFinishQuiz]);
 
   const renderQuizContent = () => {
     if (loading) {

@@ -26,7 +26,7 @@ const planData = [
     features: [
       "Basic AI models (Gemini 2.5 Flash)",
       "5 quiz attempts per day",
-      "5 chat credits per day",
+      "10 chat credits per day",
       "Daily credit renewal",
       "Basic Badge rewards",
       "Community access"
@@ -37,8 +37,8 @@ const planData = [
     price: Platform.OS === 'android' ? 5 : 4.99,
     features: [
       "Advanced AI models (Gemini 2.5 Pro)",
-      "10 quiz attempts per day",
-      "10 chat credits per day",
+      "15 quiz attempts per day",
+      "20 chat credits per day",
       "Credit rollovers & priority support",
       "Exclusive premium badges",
       "Unlimited Chat Messages"
@@ -79,8 +79,7 @@ const PlanCard = ({
         </Text>
         <Text style={[styles.littlePriceText, theme === "dark" && styles.littlePriceTextDark]}>/{isAnnual ? "year" : "month"}</Text>
       </View>
-      
-
+    
 
       <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>{isFree ? "Free" : isAnnual ? "EduLearn Premium Annually" : "EduLearn Premium Monthly"}</Text>
 

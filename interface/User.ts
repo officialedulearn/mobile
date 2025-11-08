@@ -15,4 +15,5 @@ export interface User {
     isPremium: boolean;
     learning?: string;
     lastLoggedIn?: string | Date;
+    profilePictureURL: string | null;
 }

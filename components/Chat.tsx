@@ -1,6 +1,7 @@
 import useUserStore from "@/core/userState";
 import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
+import { useChatNavigation } from "@/contexts/ChatContext";
 import { generateUUID } from "@/utils/constants";
 import { StatusBar } from "expo-status-bar";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -20,6 +21,7 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
+import * as Haptics from 'expo-haptics';
 import {
   useAudioRecorder,
   AudioModule,
@@ -28,8 +30,14 @@ import {
   useAudioRecorderState,
 } from 'expo-audio';
 import ChatDrawer from "./ChatDrawer";
-import { MessageItem, ThinkingMessage } from "./MessageItem";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { MessageItem } from "./MessageItem";
+import { useRouter } from "expo-router";
+import Animated, { 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  withSequence 
+} from 'react-native-reanimated';
 
 type Props = {
   title: string;
@@ -39,7 +47,8 @@ type Props = {
 
 const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const aiService = new AIService();
-  const [messages, setMessages] = useState<Array<Message>>([]);
+  const { isNavigating, createNewChat, refreshChatList } = useChatNavigation();
+  const [messages, setMessages] = useState<Array<Message>>(initialMessages || []);
   const [isGenerating, setIsGenerating] = useState(false);
   const user = useUserStore((s) => s.user);
   const theme = useUserStore((s) => s.theme);
@@ -49,10 +58,13 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  const [activeChatId, setActiveChatId] = useState(chatId);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [waitingForStream, setWaitingForStream] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+
+  const tokenQueueRef = useRef<string[]>([]);
+  const processingTokensRef = useRef(false);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
@@ -60,7 +72,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
 
   const router = useRouter();
-  const searchParams = useLocalSearchParams();
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -82,7 +93,17 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     };
   }, []);
 
-  // Audio permissions and setup
+  const safeSetMessages = useCallback((updater: Array<Message> | ((prev: Array<Message>) => Array<Message>)) => {
+    setMessages((prev) => {
+      const prevMessages = prev || [];
+      if (typeof updater === 'function') {
+        const result = updater(prevMessages);
+        return Array.isArray(result) ? result : [];
+      }
+      return Array.isArray(updater) ? updater : [];
+    });
+  }, []);
+
   useEffect(() => {
     (async () => {
       const status = await AudioModule.requestRecordingPermissionsAsync();
@@ -97,49 +118,17 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     })();
   }, []);
 
-  const resetChatState = useCallback(() => {
-    setMessages([]);
-    setIsGenerating(false);
-    setInputText("");
-    setShowScrollButton(false);
-    setDrawerOpen(false);
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0, animated: false });
+  useEffect(() => {
+    if (initialMessages && Array.isArray(initialMessages)) {
+      safeSetMessages(initialMessages);
     }
-  }, []);
+  }, [initialMessages, safeSetMessages]);
 
   useEffect(() => {
-    const newChatId = Array.isArray(searchParams.chatIdFromNav)
-      ? searchParams.chatIdFromNav[0]
-      : searchParams.chatIdFromNav || chatId;
-
-    if (newChatId && newChatId !== activeChatId) {
-      setIsTransitioning(true);
-      resetChatState();
-      setActiveChatId(newChatId);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 100);
-    }
-  }, [searchParams.chatIdFromNav, chatId, activeChatId, resetChatState]);
-
-  useEffect(() => {
-    if (!isTransitioning && activeChatId && initialMessages.length > 0) {
-      const relevantMessages = initialMessages.filter(
-        (msg) => msg.chatId === activeChatId,
-      );
-      setMessages(relevantMessages);
-    } else if (!isTransitioning && initialMessages.length === 0) {
-      setMessages([]);
-    }
-  }, [activeChatId, initialMessages, isTransitioning]);
-
-  useEffect(() => {
-    if (messages.length > 0 && !isTransitioning) {
+    if (messages && messages.length > 0) {
       scrollToBottom();
     }
-  }, [messages, isTransitioning, keyboardHeight]);
+  }, [messages, keyboardHeight]);
 
   const fetchSuggestions = useCallback(async () => {
     if (!user?.id) return;
@@ -163,18 +152,55 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   }, [user?.id]);
 
   useEffect(() => {
-    if (user?.id && messages.length === 0) {
+    if (user?.id && messages && messages.length === 0) {
       fetchSuggestions();
     }
-  }, [user?.id, fetchSuggestions, messages.length]);
+  }, [user?.id, fetchSuggestions, messages]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
-      if (scrollViewRef.current && !isTransitioning) {
+      if (scrollViewRef.current) {
         scrollViewRef.current.scrollToEnd({ animated: true });
       }
     }, 100);
-  }, [isTransitioning]);
+  }, []);
+
+  const processTokenQueue = useCallback((assistantMessageId: string) => {
+    if (processingTokensRef.current || tokenQueueRef.current.length === 0) {
+      return;
+    }
+
+    processingTokensRef.current = true;
+
+    const processChunk = () => {
+      if (tokenQueueRef.current.length === 0) {
+        processingTokensRef.current = false;
+        return;
+      }
+
+      const allTokens = tokenQueueRef.current.splice(0, tokenQueueRef.current.length).join('');
+      
+      safeSetMessages((currentMessages) => {
+        const messagesCopy = [...currentMessages];
+        const messageIndex = messagesCopy.findIndex(msg => msg && msg.id === assistantMessageId);
+        
+        if (messageIndex !== -1) {
+          const message = messagesCopy[messageIndex];
+          const currentContent = typeof message.content === 'string' 
+            ? message.content 
+            : (message.content || '');
+          message.content = currentContent + allTokens;
+        }
+        
+        return messagesCopy;
+      });
+
+      scrollToBottom();
+      processingTokensRef.current = false;
+    };
+
+    processChunk();
+  }, [scrollToBottom, safeSetMessages]);
 
   const handleScroll = useCallback(
     (event: {
@@ -190,14 +216,16 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       const isCloseToBottom =
         layoutMeasurement.height + contentOffset.y >=
         contentSize.height - paddingToBottom;
-      setShowScrollButton(!isCloseToBottom && messages.length > 2);
+      setShowScrollButton(!isCloseToBottom && messages && messages.length > 2);
     },
-    [messages.length],
+    [messages],
   );
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || inputText.trim();
-    if (textToSend === "" || isGenerating || isTransitioning) return;
+    if (textToSend === "" || isGenerating || isNavigating) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     setInputText("");
 
@@ -206,61 +234,111 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       role: "user",
       content: textToSend,
       createdAt: new Date(),
-      chatId: activeChatId,
+      chatId: chatId,
     };
 
-    const updatedMessages = [...messages, newMessage];
-    setMessages(updatedMessages);
+    const updatedMessages = [...(messages || []), newMessage];
+    safeSetMessages(updatedMessages);
     setIsGenerating(true);
+    setWaitingForStream(true);
+
+    const assistantMessageId = generateUUID();
+    let messageCreated = false;
 
     try {
-      const response = await aiService.generateMessages({
-        messages: updatedMessages,
-        chatId: activeChatId,
-        userId: user?.id as unknown as string,
-      });
+      const cleanup = await aiService.generateMessagesStream(
+        {
+          messages: updatedMessages,
+          chatId: chatId,
+          userId: user?.id as unknown as string,
+        },
+        (token: string, type?: string) => {
+          if (!messageCreated) {
+            setWaitingForStream(false);
+            setStreamingMessageId(assistantMessageId);
+            safeSetMessages((currentMessages) => {
+              const messagesCopy = [...currentMessages];
+              const assistantMessage: Message = {
+                id: assistantMessageId,
+                role: "assistant",
+                content: "",
+                createdAt: new Date(),
+                chatId: chatId,
+              };
+              messagesCopy.push(assistantMessage);
+              return messagesCopy;
+            });
+            messageCreated = true;
+          }
+          
+          tokenQueueRef.current.push(token);
+          processTokenQueue(assistantMessageId);
+        },
+        (fullMessage: Message) => {
+          const checkQueueComplete = () => {
+            if (tokenQueueRef.current.length === 0 && !processingTokensRef.current) {
+              setIsGenerating(false);
+              setStreamingMessageId(null);
+              refreshChatList();
+              scrollToBottom();
+            } else {
+              setTimeout(checkQueueComplete, 50);
+            }
+          };
+          checkQueueComplete();
+        },
+        (error: Error) => {
+          console.error("Error generating message:", error);
+          setInputText(textToSend);
+          
+          tokenQueueRef.current = [];
+          processingTokensRef.current = false;
+          
+          if (messageCreated) {
+            safeSetMessages((currentMessages) => 
+              currentMessages.filter(msg => msg.id !== assistantMessageId)
+            );
+          }
+          
+          setIsGenerating(false);
+          setWaitingForStream(false);
+          setStreamingMessageId(null);
+          Alert.alert('Error', error.message || 'Failed to generate response. Please try again.');
+        }
+      );
 
-      const assistantMessage: Message = {
-        id: response.id,
-        role: "assistant",
-        content:
-          typeof response.content === "string"
-            ? response.content
-            : response.content,
-        createdAt: response.createdAt,
-        chatId: response.chatId || activeChatId,
-      };
 
-      setMessages((currentMessages) => [...currentMessages, assistantMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating message:", error);
       setInputText(textToSend);
-    } finally {
       setIsGenerating(false);
-      scrollToBottom();
+      setWaitingForStream(false);
+      setStreamingMessageId(null);
+      
+      tokenQueueRef.current = [];
+      processingTokensRef.current = false;
+      
+      if (messageCreated) {
+        safeSetMessages((currentMessages) => 
+          currentMessages.filter(msg => msg.id !== assistantMessageId)
+        );
+      }
+      
+      Alert.alert('Error', error.message || 'Failed to start streaming. Please try again.');
     }
   };
 
   const handleCreateNewChat = useCallback(() => {
-    const newChatId = generateUUID();
-
     setDrawerOpen(false);
-
-    router.replace({
-      pathname: "/(tabs)/chat",
-      params: {
-        chatIdFromNav: newChatId,
-        refresh: Date.now().toString(),
-      },
-    });
-  }, [router]);
+    createNewChat();
+  }, [createNewChat]);
 
   const handleSuggestionPress = useCallback(
     (suggestion: string) => {
-      if (isGenerating || isTransitioning) return;
+      if (isGenerating || isNavigating) return;
       handleSendMessage(suggestion);
     },
-    [isGenerating, isTransitioning, handleSendMessage],
+    [isGenerating, isNavigating, handleSendMessage],
   );
 
   const startRecording = async () => {
@@ -305,35 +383,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     }
   };
 
-  if (isTransitioning) {
-    return (
-      <SafeAreaView
-        style={[
-          styles.safeArea,
-          theme === "dark" && { backgroundColor: "#131313" },
-        ]}
-      >
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <View
-          style={[
-            styles.container,
-            theme === "dark" && { backgroundColor: "#131313" },
-          ]}
-        >
-          <View style={styles.loadingContainer}>
-            <Text
-              style={[
-                styles.loadingText,
-                theme === "dark" && { color: "#E0E0E0" },
-              ]}
-            >
-              Loading chat...
-            </Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <View
@@ -428,7 +477,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           )}
 
           <View style={styles.chatContent}>
-            {messages.length === 0 ? (
+            {!messages || messages.length === 0 ? (
               <View style={styles.emptyStateContainer}>
                 <Image
                   source={
@@ -439,7 +488,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                   style={styles.logo}
                 />
                 <View style={styles.suggestions}>
-                  {!loadingSuggestions &&
+                  {!loadingSuggestions && suggestions && Array.isArray(suggestions) &&
                     suggestions.map((suggestion, index) => (
                       <TouchableOpacity
                         key={index}
@@ -475,11 +524,33 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                   scrollEventThrottle={400}
                   showsVerticalScrollIndicator={false}
                 >
-                  {messages.map((message) => (
-                    <MessageItem key={message.id} message={message} />
-                  ))}
+                  {messages && Array.isArray(messages) && messages
+                    .filter(message => {
+                      if (!message || !message.id) return false;
+                      
+                      if (message.role === 'user') return true;
+                      
+                      let content = '';
+                      if (typeof message.content === 'string') {
+                        content = message.content;
+                      } else if (message.content && typeof message.content === 'object' && 'text' in message.content) {
+                        content = (message.content as any).text || '';
+                      }
+                        
+                      return content.length > 0 || message.id === streamingMessageId;
+                    })
+                    .map((message) => {
+                      const isStreaming = message.id === streamingMessageId;
+                      return (
+                        <MessageItem 
+                          key={message.id} 
+                          message={message}
+                          isStreaming={isStreaming}
+                        />
+                      );
+                    })}
 
-                  {isGenerating && <ThinkingMessage />}
+                  {waitingForStream && <AITypingIndicator />}
                 </ScrollView>
 
                 {showScrollButton && (
@@ -515,13 +586,13 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 },
               ]}
             >
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
                   styles.attachmentButton,
                   (recorderState.isRecording || isTranscribing) && styles.recordingButton
                 ]}
                 onPress={recorderState.isRecording ? stopRecording : startRecording}
-                disabled={isGenerating || isTransitioning || isTranscribing}
+                disabled={isGenerating || isNavigating || isTranscribing}
               >
                 <FontAwesome 
                   name={recorderState.isRecording ? "stop" : "microphone"} 
@@ -552,14 +623,14 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                   setTimeout(() => scrollToBottom(), 100);
                 }}
                 multiline={true}
-                editable={!isGenerating && !isTransitioning}
+                editable={!isGenerating && !isNavigating}
                 textAlignVertical="center"
               />
               <TouchableOpacity
                 style={styles.sendButton}
                 onPress={() => handleSendMessage()}
                 disabled={
-                  inputText.trim() === "" || isGenerating || isTransitioning
+                  inputText.trim() === "" || isGenerating || isNavigating
                 }
               >
                 <Image
@@ -572,7 +643,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     { width: 24, height: 24 },
                     (inputText.trim() === "" ||
                       isGenerating ||
-                      isTransitioning) &&
+                      isNavigating) &&
                       styles.disabledSend,
                   ]}
                 />
@@ -581,6 +652,53 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
+    </View>
+  );
+};
+
+const AITypingIndicator = () => {
+  const theme = useUserStore((s) => s.theme);
+
+  const cursorStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withRepeat(
+        withSequence(
+          withTiming(1, { duration: 500 }),
+          withTiming(0, { duration: 500 })
+        ),
+        -1,
+        false
+      ),
+    };
+  });
+
+  return (
+    <View style={styles.messageContainer}>
+      <View style={styles.avatarContainer}>
+        <Image
+          source={
+            theme === "dark"
+              ? require("@/assets/images/icons/dark/LOGO.png")
+              : require("@/assets/images/chatbotlogo.png")
+          }
+          style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
+        />
+      </View>
+
+      <View
+        style={[
+          styles.messageBubble,
+          styles.botBubble,
+          theme === "dark" && {
+            backgroundColor: "#131313",
+          },
+          { paddingVertical: 8 }
+        ]}
+      >
+        <Animated.View style={[styles.cursorContainer, cursorStyle]}>
+          <Text style={[styles.cursor, theme === "dark" && { color: "#E0E0E0" }]}>|</Text>
+        </Animated.View>
+      </View>
     </View>
   );
 };
@@ -628,7 +746,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EDF3FC",
     borderRadius: 10,
     marginHorizontal: 10,
-    marginTop: 30,
   },
   leftNavContainer: {
     flexDirection: "row",
@@ -790,5 +907,44 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     fontSize: 16,
     color: "#2D3C52",
+  },
+  cursorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cursor: {
+    fontSize: 18,
+    color: "#2D3C52",
+    fontFamily: "Urbanist",
+    fontWeight: "400" as const,
+  },
+  messageContainer: {
+    flexDirection: "row",
+    marginVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: "flex-start",
+  },
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 7,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    resizeMode: "contain",
+  },
+  messageBubble: {
+    maxWidth: "75%",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 4,
+  },
+  botBubble: {
+    backgroundColor: "#F0F4FF",
+    borderTopLeftRadius: 4,
   },
 });

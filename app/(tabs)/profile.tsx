@@ -9,7 +9,6 @@ import * as Clipboard from 'expo-clipboard';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
 import { WalletService } from "@/services/wallet.service";
-import Auth from "../auth";
 import { UserService } from "@/services/auth.service";
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { RoadmapService } from "@/services/roadmap.service";
@@ -51,6 +50,14 @@ const Profile = (props: Props) => {
   const walletBalance = useUserStore((state) => state.walletBalance);
   const walletBalanceLoading = useUserStore((state) => state.walletBalanceLoading);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);
+
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
   const [userMetrics, setUserMetrics] = React.useState({
     quizCompleted: 0,
     nfts: 0,
@@ -279,8 +286,9 @@ const Profile = (props: Props) => {
             <View style={styles.cardHeader}>
               <View style={[styles.identity, { marginRight: 10 }]}>
                 <Image
-                  source={require("@/assets/images/memoji.png")}
+                  source={getHighQualityImageUrl(user?.profilePictureURL as string) ? { uri: getHighQualityImageUrl(user?.profilePictureURL as string)! } : require("@/assets/images/memoji.png")}
                   style={styles.profileAvatar}
+                  resizeMode="cover"
                 />
                 <Text style={[styles.cardText, { flex: 1 }, theme === "dark" && {color: "#000"}]} numberOfLines={1} ellipsizeMode="tail">
                   {user?.name}
@@ -393,7 +401,7 @@ const Profile = (props: Props) => {
               metric={userMetrics.quizCompleted.toString()}
             />
           </View>
-          <DailyCheckInStreak lastSignIn={lastSignIn} />
+          <DailyCheckInStreak />
           <View style={[styles.refCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
             <View style={styles.invitePush}>
               <Image

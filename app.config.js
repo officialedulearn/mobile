@@ -16,6 +16,10 @@ export default {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000",
       },
+      permissions: [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+      ],
     },
     ios: {
       icon: "./assets/images/mainlogo.png",
@@ -24,6 +28,15 @@ export default {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
+      permissions: {
+        NSUserNotificationsUsageDescription: "Allow EduLearn to send you notifications about quizzes, achievements, and learning reminders.",
+      },
+    },
+    updates: {
+      url: "https://u.expo.dev/139b580b-67d2-4458-b709-7c9575f0d7a1"
+    },
+    runtimeVersion: {
+      "policy": "appVersion"
     },
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -48,6 +61,15 @@ export default {
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/mainlogo.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification.mp3"],
+          "iosDisplayInForeground": true
+        }
+      ],
       [
         "expo-audio",
         {

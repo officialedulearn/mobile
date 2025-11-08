@@ -1,5 +1,8 @@
 import { Message } from "@/interface/Chat";
+import { generateUUID } from "@/utils/constants";
 import httpClient from "@/utils/httpClient";
+import { supabase } from "@/utils/supabase";
+import EventSource from "react-native-sse";
 
 export class AIService {
     async getTitle(message: Message) {
@@ -109,6 +112,113 @@ export class AIService {
             const processedError = new Error(errorMessage);
             processedError.name = 'SuggestionsGenerationError';
             throw processedError;
+        }
+    }
+
+    async generateMessagesStream(
+        dto: {
+          messages: Array<Message>;
+          chatId: string;
+          userId: string;
+        },
+        onToken: (token: string, type?: string) => void,
+        onComplete: (fullMessage: Message) => void,
+        onError: (error: Error) => void
+      ) {
+        try {
+          const initResponse = await httpClient.post('/ai/message-stream/init', dto);
+          const { streamId } = initResponse.data;
+            
+          const API_URL = httpClient.defaults.baseURL;
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session?.access_token) {
+            throw new Error('No access token found. Please log in again.');
+          }
+          
+          const eventSource = new EventSource(
+            `${API_URL}/ai/message-stream/${streamId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+            }
+          );
+      
+          let fullResponse = '';
+          let responseId = '';
+          let streamCompleted = false;
+      
+          eventSource.addEventListener('message', (event: any) => {
+            try {
+              const data = JSON.parse(event.data);
+              
+              if (data.complete || data.id) {
+                if (data.id) {
+                  responseId = data.id;
+                }
+                
+                if (data.complete) {
+                  streamCompleted = true;
+                  eventSource.close();
+                  
+                  onComplete({
+                    id: data.id || responseId || generateUUID(),
+                    role: 'assistant',
+                    content: fullResponse,
+                    createdAt: new Date(),
+                    chatId: dto.chatId,
+                  });
+                  return;
+                }
+              }
+              
+              if (data.token) {
+                fullResponse += data.token;
+                onToken(data.token, data.type);
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+            }
+          });
+      
+          eventSource.addEventListener('error', (error: any) => {
+            console.error('SSE error:', error);
+            eventSource.close();
+            
+            if (streamCompleted) {
+              return;
+            }
+            
+            if (fullResponse) {
+              onComplete({
+                id: responseId || generateUUID(),
+                role: 'assistant',
+                content: fullResponse,
+                createdAt: new Date(),
+                chatId: dto.chatId,
+              });
+            } else {
+              onError(new Error('Connection error during streaming. Please try again.'));
+            }
+          });
+      
+          return () => {
+            eventSource.close();
+          };
+      
+        } catch (error: any) {
+          console.error("Error in streaming messages:", error);
+          
+          let errorMessage = "Failed to generate response. Please try again.";
+          
+          if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          onError(new Error(errorMessage));
         }
     }
 

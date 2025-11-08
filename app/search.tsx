@@ -37,6 +37,20 @@ const SearchResult = ({
 }: SearchResultProps) => {
   const theme = useUserStore((state) => state.theme);
 
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+  
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
+
+  const profileImageUrl = getHighQualityImageUrl(imageSource);
+  const imageSourceProp = profileImageUrl 
+    ? { uri: profileImageUrl } 
+    : require("@/assets/images/memoji.png");
+
   return (
     <TouchableOpacity
       style={[
@@ -59,14 +73,15 @@ const SearchResult = ({
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Image
-            source={imageSource || require("@/assets/images/memoji.png")}
+            source={imageSourceProp}
             style={{
               width: 32,
               height: 32,
-              borderRadius: 9.1,
+              borderRadius: 16,
               borderWidth: 0.66,
               borderColor: theme === "dark" ? "#2E3033" : "#EDF3FC",
             }}
+            resizeMode="cover"
           />
           <View style={{ flexDirection: "column", alignItems: "flex-start" }}>
             <Text
@@ -166,7 +181,7 @@ const Search = (props: Props) => {
       username={item.username || ""}
       xp={item.xp || 0}
       streak={item.streak || 0}
-      imageSource={require("@/assets/images/memoji.png")}
+      imageSource={item.profilePictureURL}
     />
   );
 
@@ -246,7 +261,7 @@ const Search = (props: Props) => {
             username="ahmed"
             xp={700}
             streak={29}
-            imageSource={require("@/assets/images/memoji.png")}
+            imageSource={undefined}
           />
         )}
       </View>
