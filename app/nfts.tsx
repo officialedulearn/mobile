@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   lockedOverlay: {
     position: "relative",
     width: "100%",
-    aspectRatio: 1, // Instagram-like square aspect ratio
+    aspectRatio: 1, 
     borderRadius: 8,
     marginBottom: 8,
     overflow: "hidden",
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
   lockedImage: {
     width: "100%",
-    height: "100%", // Fill the container
+    height: "100%", 
     borderRadius: 8,
     opacity: 0.5,
   },

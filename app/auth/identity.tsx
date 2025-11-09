@@ -1,8 +1,6 @@
 import { StyleSheet, Text, TextInput, View, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
 import BackButton from "@/components/backButton";
-import { Image } from "expo-image";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
@@ -12,38 +10,14 @@ import { RoadmapService } from "@/services/roadmap.service";
 type Props = {};
 
 const identity = (props: Props) => {
-  const [selectedAvatar, setSelectedAvatar] = useState<number | null>(null);
   const [learningGoal, setLearningGoal] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const { user, setUser, theme } = useUserStore();
   const { scheduleNotification } = useNotifications();
   const userService = new UserService();
   const roadmapService = new RoadmapService();
-  const avatarImages = {
-    1: require('@/assets/images/avatars/1.png'),
-    2: require('@/assets/images/avatars/2.png'),
-    3: require('@/assets/images/avatars/3.png'),
-    4: require('@/assets/images/avatars/4.png'),
-    5: require('@/assets/images/avatars/8.png'),
-    6: require('@/assets/images/avatars/6.png'),
-    7: require('@/assets/images/avatars/7.png'),
-  };
-
-  const handleAvatarSelect = async (avatarNumber: number) => {
-    setSelectedAvatar(avatarNumber);
-    try {
-      await AsyncStorage.setItem('avatar', avatarNumber.toString());
-    } catch (error) {
-      console.error('Error saving avatar:', error);
-    }
-  };
 
   const handleFinishSetup = async () => {
-    if (!selectedAvatar) {
-      Alert.alert("Please select an avatar", "Choose an avatar to continue");
-      return;
-    }
-
     if (!learningGoal.trim()) {
       Alert.alert("Please enter your learning goal", "Tell us what you want to learn");
       return;
@@ -69,11 +43,18 @@ const identity = (props: Props) => {
         learning: learningGoal.trim()
       });
 
-      const roadmap = await roadmapService.getUserRoadmaps(user.id);
+      try {
+        const roadmap = await roadmapService.getUserRoadmaps(user.id);
 
-      await scheduleNotification("Your roadmap has been generated", "You are now ready to start your learning journey", {
-        screen: `roadmaps/${roadmap[0].id}`
-      });
+        if (roadmap && roadmap.length > 0) {
+          await scheduleNotification("Your roadmap has been generated", "You are now ready to start your learning journey", {
+            screen: `roadmaps/${roadmap[0].id}`
+          });
+        }
+      } catch (roadmapError) {
+        console.error("Error fetching roadmap:", roadmapError);
+      }
+
       router.push("/auth/welcome");
     } catch (error) {
       console.error("Error updating learning preference:", error);
@@ -83,8 +64,6 @@ const identity = (props: Props) => {
     }
   };
 
-  const avatars = [1, 2, 3, 4, 5, 6, 7];
-
   return (
     <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <View style={styles.topNav}>
@@ -93,16 +72,15 @@ const identity = (props: Props) => {
 
       <View style={styles.content}>
         <View style={{ gap: 8 }}>
-          <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Choose your identity</Text>
+          <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>What do you want to learn?</Text>
           <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
-            This name and avatar will be visible on leaderboards and in your
-            profile.
+            Tell us your learning goal so we can create a personalized roadmap for you.
           </Text>
         </View>
 
         <View style={styles.inputs}>
           <View>
-            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>What do you want to learn?</Text>
+            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>Your learning goal</Text>
             <TextInput 
               placeholder="blockchain basics, web3 design, smart contracts..." 
               placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
@@ -112,46 +90,24 @@ const identity = (props: Props) => {
               maxLength={100}
             />
           </View>
-
-          <View>
-            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>Select Avatar</Text>
-            <View style={styles.avatarGrid}>
-              {avatars.map((avatarNumber) => (
-                <TouchableOpacity
-                  key={avatarNumber}
-                  onPress={() => handleAvatarSelect(avatarNumber)}
-                  style={[
-                    styles.avatarContainer,
-                    selectedAvatar === avatarNumber && styles.selectedAvatar
-                  ]}
-                >
-                  <Image 
-                    source={avatarImages[avatarNumber as keyof typeof avatarImages]} 
-                    style={styles.avatarImage} 
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
         </View>
 
         <TouchableOpacity 
           style={[
             {
               marginTop: 32,
-              backgroundColor: selectedAvatar && learningGoal.trim() ? "#00FF80" : (theme === "dark" ? "#2E3033" : "#EDF3FC"),
+              backgroundColor: learningGoal.trim() ? "#00FF80" : (theme === "dark" ? "#2E3033" : "#EDF3FC"),
               paddingVertical: 16,
               borderRadius: 32,
               alignItems: "center",
             },
-            (!selectedAvatar || !learningGoal.trim() || isLoading) && { opacity: 0.5 }
+            (!learningGoal.trim() || isLoading) && { opacity: 0.5 }
           ]}
-          disabled={!selectedAvatar || !learningGoal.trim() || isLoading}
+          disabled={!learningGoal.trim() || isLoading}
           onPress={handleFinishSetup}
         >
           <Text style={{ 
-            color: selectedAvatar && learningGoal.trim() ? "#2D3C52" : (theme === "dark" ? "#B3B3B3" : "#61728C"),
+            color: learningGoal.trim() ? "#2D3C52" : (theme === "dark" ? "#B3B3B3" : "#61728C"),
             fontWeight: "600",
             fontSize: 16,
             fontFamily: "Satoshi",
@@ -217,28 +173,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     fontFamily: "Satoshi",
-  },
-  avatarGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 16,
-    flexWrap: "wrap",
-  },
-  avatarContainer: {
-    width: "22%",
-    aspectRatio: 1,
-    borderRadius: 30,
-    overflow: "hidden",
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  selectedAvatar: {
-    borderColor: "#00FF80",
-  },
-  avatarImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 30,
   },
 });

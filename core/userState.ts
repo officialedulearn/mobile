@@ -22,6 +22,7 @@ interface UserState {
   fetchWalletBalance: () => Promise<void>;
   setTheme: (theme: 'light' | 'dark') => Promise<void>;
   loadTheme: () => Promise<void>;
+  updateUserPointsFromQuiz: (xpEarned: number) => void;
 }
 
 const userService = new UserService();
@@ -158,6 +159,15 @@ const useUserStore = create<UserState>((set, get) => ({
     );
   },
   
+  updateUserPointsFromQuiz: (xpEarned: number) => {
+    const currentUser = get().user;
+    if (!currentUser || !currentUser.email) return;
+    
+    set((state) => ({
+      user: state.user ? { ...state.user, xp: (state.user.xp || 0) + xpEarned } : null,
+    }));
+  },
+
   updateLevel: (
     level: "novice" | "beginner" | "intermediate" | "advanced" | "expert"
   ) => {

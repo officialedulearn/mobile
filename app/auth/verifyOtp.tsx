@@ -221,6 +221,14 @@ const verifyOtp = (props: Props) => {
           
           try {
             const userId = generateUUID();
+            console.log("📤 Calling createUser API with data:", {
+              id: userId,
+              name: name || "",
+              email: email,
+              username: username || "",
+              referralCode: referralCode || ""
+            });
+            
             const newUser = await userService.createUser({
               id: userId,
               name: name || "",
@@ -229,13 +237,20 @@ const verifyOtp = (props: Props) => {
               username: username || "",
             });
             
+            console.log("✅ User created successfully:", newUser);
+            
             setUser(newUser);
             router.push("/auth/identity");
-          } catch (createError) {
+          } catch (createError: any) {
             console.error("User creation failed:", createError);
+            console.error("Error response:", createError?.response?.data);
+            console.error("Error message:", createError?.message);
+            
+            const errorMessage = createError?.response?.data?.message || createError?.message || "Unknown error";
+            
             Alert.alert(
               "Account Creation Failed", 
-              "Your email was verified successfully, but we couldn't complete your account setup. Please contact support or try again."
+              `Error: ${errorMessage}\n\nYour email was verified successfully, but we couldn't complete your account setup. Please contact support or try again.`
             );
             return;
           }

@@ -17,6 +17,25 @@ export class ActivityService {
     }
   }
 
+  async submitQuiz(data: {
+    userId: string;
+    chatId?: string;
+    title: string;
+    answers: Array<{
+      question: string;
+      selectedAnswer: string;
+      correctAnswer: string;
+    }>;
+  }) {
+    try {
+      const response = await httpClient.post('/activity/submit-quiz', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      throw error;
+    }
+  }
+
   async getActivitiesByUser(userId: string) {
     try {
       const response = await httpClient.get(`/activity/user/${userId}`);

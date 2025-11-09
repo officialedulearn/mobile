@@ -41,7 +41,6 @@ const rewards = (props: Props) => {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'USDC', amount: string} | null>(null);
   
-  // Pagination state for activities
   const [page, setPage] = useState<number>(0);
   const [numberOfItemsPerPageList] = useState([10, 15, 20]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);

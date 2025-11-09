@@ -1,8 +1,9 @@
 import useUserStore from "@/core/userState";
 import { Tabs } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Keyboard, Platform } from "react-native";
+import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 type Props = {};
 
@@ -56,11 +57,21 @@ const TabLayout = (props: Props) => {
         tabBarShowLabel: true,
         tabBarItemStyle: {
           backgroundColor: "transparent",
-        }
+        },
+        tabBarButton: ({ onPress, ...props }: any) => (
+          <TouchableOpacity
+            {...props}
+            onPress={(e: any) => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onPress?.(e);
+            }}
+          />
+        ),
       }}
     >
       <Tabs.Screen
         name="index"
+        
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (

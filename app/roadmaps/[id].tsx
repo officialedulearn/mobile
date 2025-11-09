@@ -181,10 +181,18 @@ const Roadmap = () => {
             </View>
 
             <View style={styles.roadmapStepContent}>
-              <Text style={[styles.roadmapStepTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+              <Text style={[
+                styles.roadmapStepTitle, 
+                theme === "dark" && { color: "#E0E0E0" },
+                step.done && { textDecorationLine: 'line-through' }
+              ]}>
                 {step.title}
               </Text>
-              <Text style={[styles.roadmapStepDescription, theme === "dark" && { color: "#B3B3B3" }]}>
+              <Text style={[
+                styles.roadmapStepDescription, 
+                theme === "dark" && { color: "#B3B3B3" },
+                step.done && { textDecorationLine: 'line-through' }
+              ]}>
                 {step.description}
               </Text>
               <View style={styles.roadmapStepFooter}>
@@ -194,7 +202,7 @@ const Roadmap = () => {
                     theme === "dark" && { backgroundColor: "transparent", borderColor: "#00FF80" }
                   ]}
                   onPress={() => handleStartStep(step)}
-                  disabled={startingStep === step.id}
+                  disabled={startingStep === step.id || step.done}
                 >
                   {startingStep === step.id ? (
                     <ActivityIndicator size="small" color={theme === "dark" ? "#00FF80" : "#000"} />

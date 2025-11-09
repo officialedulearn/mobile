@@ -1,8 +1,8 @@
 import BackButton from "@/components/backButton";
-import useActivityStore from "@/core/activityState";
 import useUserStore from "@/core/userState";
 import { AIService } from "@/services/ai.service";
 import { ChatService } from "@/services/chat.service";
+import { ActivityService } from "@/services/activity.service";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useCallback } from "react";
 import * as Haptics from 'expo-haptics';
@@ -53,18 +53,17 @@ const Quiz = (props: Props) => {
 
   const [questionAnswers, setQuestionAnswers] = useState<(string | null)[]>([]);
   const [timerStarted, setTimerStarted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const aiService = new AIService();
   const chatService = new ChatService();
+  const activityService = new ActivityService();
 
-  const { user, updateUserPoints, theme } = useUserStore();
-  const { addActivity } = useActivityStore();
-
+  const { user, updateUserPointsFromQuiz, theme } = useUserStore();
+  
   const requestReviewIfAppropriate = async (score: number) => {
     try {
     
-      if (score < 3) return;
-
       const isAvailable = await StoreReview.isAvailableAsync();
       if (!isAvailable) return;
 
@@ -189,57 +188,53 @@ const Quiz = (props: Props) => {
   };
 
   const handleFinishQuiz = useCallback(async () => {
-    if (!questions.length) return;
+    if (!questions.length || isSubmitting) return;
 
-    const userAnswersList: UserAnswer[] = [];
-    let correctCount = 0;
+    setIsSubmitting(true);
 
-    questions.forEach((question, index) => {
-      const selectedAnswer = questionAnswers[index];
-      if (!selectedAnswer) return;
-
-      const isCorrect = selectedAnswer === question.correctAnswer;
-      if (isCorrect) correctCount++;
-
-      userAnswersList.push({
-        question: question.question,
-        selectedAnswer,
-        correctAnswer: question.correctAnswer,
-        isCorrect,
-      });
-    });
-
-    
-
-    setUserAnswers(userAnswersList);
-    setScore(correctCount);
-
-    if(correctCount > 2) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    }
-    setQuizCompleted(true);
+    const quizAnswers = questions.map((question, index) => ({
+      question: question.question,
+      selectedAnswer: questionAnswers[index] || '',
+      correctAnswer: question.correctAnswer,
+    })).filter(answer => answer.selectedAnswer);
 
     try {
-      const activityData = {
+      const result = await activityService.submitQuiz({
         userId: user?.id as string,
-        xpEarned: correctCount,
+        chatId: chatId,
         title: chatTitle || "Quiz",
-        type: "quiz" as const,
-      };
+        answers: quizAnswers,
+      });
 
-      // updateUserPoints(activityData);
+      const userAnswersList: UserAnswer[] = result.validatedAnswers.map((answer: any) => ({
+        question: answer.question,
+        selectedAnswer: answer.selectedAnswer,
+        correctAnswer: answer.correctAnswer,
+        isCorrect: answer.isCorrect,
+      }));
 
-      await addActivity(activityData);
+      setUserAnswers(userAnswersList);
+      setScore(result.score);
+
+      updateUserPointsFromQuiz(result.xpEarned);
+
+      if(result.score > 2) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      setQuizCompleted(true);
+
+      setTimeout(() => {
+        requestReviewIfAppropriate(result.score);
+      }, 2000);
     } catch (error) {
-      console.error("Error saving quiz result:", error);
+      console.error("Error submitting quiz:", error);
+      setQuizCompleted(true);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setTimeout(() => {
-      requestReviewIfAppropriate(correctCount);
-    }, 2000);
-  }, [questions, questionAnswers, user?.id, chatTitle, addActivity]);
+  }, [questions, questionAnswers, user?.id, chatId, chatTitle, activityService, isSubmitting]);
 
   useEffect(() => {
     if (quizCompleted || !timerStarted) return;
@@ -493,9 +488,9 @@ const Quiz = (props: Props) => {
                 styles.navButton,
                 styles.nextButton,
                 theme === "dark" && { backgroundColor: "#00FF80" },
-                !selectedOption ? styles.disabledButton : {},
+                (!selectedOption || isSubmitting) ? styles.disabledButton : {},
               ]}
-              disabled={!selectedOption}
+              disabled={!selectedOption || isSubmitting}
               onPress={
                 currentQuestionIndex < questions.length - 1
                   ? handleNextQuestion
@@ -503,9 +498,11 @@ const Quiz = (props: Props) => {
               }
             >
               <Text style={[styles.navButtonText, styles.nextButtonText, theme === "dark" && { color: "#000" }]}>
-                {currentQuestionIndex < questions.length - 1
-                  ? "Next"
-                  : "Finish Quiz"}
+                {isSubmitting 
+                  ? "Submitting..." 
+                  : currentQuestionIndex < questions.length - 1
+                    ? "Next"
+                    : "Finish Quiz"}
               </Text>
             </TouchableOpacity>
           </View>
