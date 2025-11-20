@@ -38,6 +38,7 @@ import Animated, {
   withTiming, 
   withSequence 
 } from 'react-native-reanimated';
+import { ChatService } from "@/services/chat.service";
 
 type Props = {
   title: string;
@@ -47,6 +48,7 @@ type Props = {
 
 const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const aiService = new AIService();
+  const chatService = new ChatService();
   const { isNavigating, createNewChat, refreshChatList } = useChatNavigation();
   const [messages, setMessages] = useState<Array<Message>>(initialMessages || []);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -401,7 +403,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         >
           <View
             style={[
@@ -444,7 +446,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 {title || "AI Tutor Chat"}
               </Text>
             </View>
-            <TouchableOpacity
+           {
+            messages.length === 0 && (
+              <TouchableOpacity
               style={[
                 styles.button,
                 theme === "dark" && {
@@ -453,7 +457,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 },
               ]}
               activeOpacity={0.8}
-              onPress={handleCreateNewChat}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleCreateNewChat();
+              }}
             >
               <Image
                 source={
@@ -464,6 +471,88 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 style={{ width: 20, height: 20 }}
               />
             </TouchableOpacity>
+            )
+           }
+            
+            {messages.length > 0 && (
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  theme === "dark" && {
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.navigate({
+                    pathname: "/quiz",
+                    params: {
+                      chatId: chatId,
+                    },
+                  });
+                }}
+              >
+                <Image
+                  source={theme === "dark"
+                    ? require("@/assets/images/icons/dark/BrainChat.png")
+                    : require("@/assets/images/icons/BrainChat.png")
+                  }
+                  style={{ width: 20, height: 20 }}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  theme === "dark" && {
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  Alert.alert(
+                    "Delete Chat",
+                    "Are you sure you want to delete this chat? This action cannot be undone.",
+                    [
+                      {
+                        text: "Cancel",
+                        style: "cancel",
+                        onPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+                      },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: async () => {
+                          try {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            await chatService.deleteChat(chatId);
+                            await refreshChatList();
+                            Alert.alert("Success", "Chat deleted successfully");
+                            createNewChat();
+                          } catch (error) {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                            Alert.alert("Error", "Failed to delete chat. Please try again.");
+                          }
+                        }
+                      }
+                    ]
+                  );
+                }}
+              >
+                <Image
+                  source={theme === "dark"
+                    ? require("@/assets/images/icons/dark/delete.png")
+                    : require("@/assets/images/icons/delete.png")
+                  }
+                  style={{ width: 20, height: 20 }}
+                />
+              </TouchableOpacity>
+            </View>
+            )}
           </View>
 
           {drawerOpen && (

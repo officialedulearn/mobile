@@ -16,8 +16,8 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import { generateUUID } from "@/utils/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { generateUUID } from "@/utils/constants";
 
 type Props = {};
 
@@ -28,7 +28,8 @@ const verifyOtp = (props: Props) => {
     name, 
     referralCode, 
     username,
-    isReviewer
+    isReviewer,
+    isLogin
   } = useLocalSearchParams<{ 
     email: string;
     isSignUp?: string;
@@ -36,6 +37,7 @@ const verifyOtp = (props: Props) => {
     referralCode?: string;
     username?: string;
     isReviewer?: string;
+    isLogin?: string;
   }>();
   
   const [otp, setOtp] = useState("");
@@ -215,64 +217,52 @@ const verifyOtp = (props: Props) => {
       }
 
       if (data && data.user) {
-        const userService = new UserService();
-        if (isSignUp === "1") {
-          setLoadingText("Creating your account...");
+        setLoadingText("Loading your profile...");
+        
+        try {
+          const userService = new UserService();
+          const userData = await userService.getUser(data.user.email || "");
           
-          try {
-            const userId = generateUUID();
-            console.log("📤 Calling createUser API with data:", {
-              id: userId,
-              name: name || "",
-              email: email,
-              username: username || "",
-              referralCode: referralCode || ""
-            });
-            
-            const newUser = await userService.createUser({
-              id: userId,
-              name: name || "",
-              email: email,
-              referralCode: referralCode || "",
-              username: username || "",
-            });
-            
-            console.log("✅ User created successfully:", newUser);
-            
-            setUser(newUser);
+          if (!userData) {
+            console.error("❌ User not found in database");
+            Alert.alert(
+              "User Not Found",
+              "Unable to find your account. Please contact support."
+            );
+            return;
+          }
+          
+          console.log("✅ User loaded successfully:", userData);
+          setUser(userData);
+          
+          if (isLogin === "0") {
+            NotificationService.scheduleNotification(
+              "Welcome to EduLearn!", 
+              "Account verified successfully! Let's set up your profile.", 
+              {
+                screen: "identity",
+                email: email,
+              }
+            );
             router.push("/auth/identity");
-          } catch (createError: any) {
-            console.error("User creation failed:", createError);
-            console.error("Error response:", createError?.response?.data);
-            console.error("Error message:", createError?.message);
-            
-            const errorMessage = createError?.response?.data?.message || createError?.message || "Unknown error";
-            
-            Alert.alert(
-              "Account Creation Failed", 
-              `Error: ${errorMessage}\n\nYour email was verified successfully, but we couldn't complete your account setup. Please contact support or try again.`
+          } else {
+            NotificationService.scheduleNotification(
+              "Welcome Back!", 
+              "You're all set up and ready to continue learning.", 
+              {
+                screen: "welcome",
+                email: email,
+              }
             );
-            return;
-          }
-        } else {
-          setLoadingText("Loading your profile...");
-          
-          try {
-            const userData = await userService.getUser(data.user.email || "");
-            setUser(userData);
-            NotificationService.scheduleNotification("Welcome to EduLearn!", "Welcome to EduLearn! You're all set up and ready to start learning.", {
-              screen: "welcome",
-              email: email,
-            });
             router.push("/auth/welcome");
-          } catch (getUserError) {
-            console.error("Get user failed:", getUserError);
-            Alert.alert(
-              "Profile Load Failed",
-              "Unable to load your profile. Please try signing in again."
-            );
-            return;
           }
+        } catch (getUserError: any) {
+          console.error("❌ Error fetching user:", getUserError);
+          const errorMessage = getUserError?.response?.data?.message || getUserError?.message || "Unknown error";
+          Alert.alert(
+            "Login Failed",
+            `Error: ${errorMessage}\n\nPlease try again or contact support.`
+          );
         }
       }
     } catch (error) {

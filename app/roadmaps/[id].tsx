@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from "react-native";
 import React, { useState, useEffect } from "react";
 import BackButton from "@/components/backButton";
-import { useLocalSearchParams, router } from "expo-router";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { RoadmapWithSteps, RoadmapStep } from "@/interface/Roadmap";
 import { RoadmapService } from "@/services/roadmap.service";
 import useUserStore from "@/core/userState";
@@ -16,25 +16,31 @@ const Roadmap = () => {
 
   const roadmapService = new RoadmapService();
 
-  useEffect(() => {
-    const fetchRoadmap = async () => {
-      if (!id) return;
-      
-      setIsLoading(true);
-      
-      try {
-        const data = await roadmapService.getRoadmapById(id as string);
-        setRoadmapData(data);
-      } catch (error: any) {
-        console.error("Failed to fetch roadmap:", error);
-        Alert.alert("Error", error.message || "Failed to load roadmap");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchRoadmap = async () => {
+    if (!id) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const data = await roadmapService.getRoadmapById(id as string);
+      setRoadmapData(data);
+    } catch (error: any) {
+      console.error("Failed to fetch roadmap:", error);
+      Alert.alert("Error", error.message || "Failed to load roadmap");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRoadmap();
   }, [id]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchRoadmap();
+    }, [id])
+  );
 
   const handleStartStep = async (step: RoadmapStep) => {
     if (!user?.id) {

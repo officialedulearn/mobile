@@ -469,7 +469,6 @@ const styles = StyleSheet.create({
   rewardImageCard: {
 
     borderWidth: 1,
-    borderColor: "#EDF3FC",
   },
   rewardCard: {
     borderRadius: 12,

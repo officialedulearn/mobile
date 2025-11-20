@@ -112,7 +112,7 @@ const useUserStore = create<UserState>((set, get) => ({
         userFromDB,
         userFromDB.lastLoggedIn
       );
-      
+      console.log("userFromDB.profilePictureURL:", userFromDB.profilePictureURL);
       const userData = {
         id: userFromDB.id,
         name: userFromDB.name || "User",

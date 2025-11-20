@@ -62,7 +62,9 @@ const nftPage = (props: Props) => {
 
   return (
     <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-      <BackButton />
+      <View style={styles.topNav}>
+        <BackButton />
+      </View>
 
       <View style={styles.contentContainer}>
         <View style={styles.rewardContainer}>
@@ -133,12 +135,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    marginTop: 50,
     backgroundColor: "#F9FBFC",
+  },
+  topNav: {
+    marginTop: 50,
+    marginBottom: 20,
   },
   contentContainer: {
     flex: 1,
-    marginTop: 50,
     justifyContent: "center",
     alignItems: "center",
   },

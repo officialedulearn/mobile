@@ -39,7 +39,8 @@ const useActivityStore = create<ActivityState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const activities = await activityService.getActivitiesByUser(userId);
-      set({ activities, isLoading: false });
+
+      set({ activities: activities.reverse(), isLoading: false });
     } catch (error) {
       console.error('Failed to fetch activities:', error);
       set({ 
@@ -53,7 +54,7 @@ const useActivityStore = create<ActivityState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       const quizActivities = await activityService.getQuizActivitiesByUser(userId);
-      set({ quizActivities, isLoading: false });
+      set({ quizActivities: quizActivities.reverse(), isLoading: false });
     } catch (error) {
       console.error('Failed to fetch quiz activities:', error);
       set({ 

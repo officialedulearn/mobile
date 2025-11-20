@@ -4,7 +4,7 @@ import { AIService } from "@/services/ai.service";
 import { ChatService } from "@/services/chat.service";
 import { ActivityService } from "@/services/activity.service";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import * as Haptics from 'expo-haptics';
 import {
   Image,
@@ -40,7 +40,7 @@ const Quiz = (props: Props) => {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const [questions, setQuestions] = React.useState<Array<Question>>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(80);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [chatTitle, setChatTitle] = useState("");
@@ -60,6 +60,8 @@ const Quiz = (props: Props) => {
   const activityService = new ActivityService();
 
   const { user, updateUserPointsFromQuiz, theme } = useUserStore();
+  
+  const handleFinishQuizRef = useRef<(() => Promise<void>) | undefined>(undefined);
   
   const requestReviewIfAppropriate = async (score: number) => {
     try {
@@ -196,7 +198,7 @@ const Quiz = (props: Props) => {
       question: question.question,
       selectedAnswer: questionAnswers[index] || '',
       correctAnswer: question.correctAnswer,
-    })).filter(answer => answer.selectedAnswer);
+    }));
 
     try {
       const result = await activityService.submitQuiz({
@@ -237,13 +239,17 @@ const Quiz = (props: Props) => {
   }, [questions, questionAnswers, user?.id, chatId, chatTitle, activityService, isSubmitting]);
 
   useEffect(() => {
+    handleFinishQuizRef.current = handleFinishQuiz;
+  }, [handleFinishQuiz]);
+
+  useEffect(() => {
     if (quizCompleted || !timerStarted) return;
     
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          handleFinishQuiz(); 
+          handleFinishQuizRef.current?.();
           return 0;
         }
         return prevTime - 1;
@@ -251,7 +257,7 @@ const Quiz = (props: Props) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [quizCompleted, timerStarted, handleFinishQuiz]);
+  }, [quizCompleted, timerStarted]);
 
   const renderQuizContent = () => {
     if (loading) {
@@ -309,38 +315,39 @@ const Quiz = (props: Props) => {
               </Text>
               <Image
                 source={
-                  score >= 3
+                  score >= questions.length / 2
                     ? require("@/assets/images/Trophy.png")
                     : require("@/assets/images/trophy-red.png")
                 }
                 style={styles.medalImage}
               />
-              {score >= 3 ? (
-                <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}></Text>
+              {score >= questions.length / 2 ? (
+                <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>Congratulations</Text>
               ) : (
                 <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>
                   Don't worry, learning is a journey.
                 </Text>
               )}
+
+<Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
+                {score >= questions.length / 2
+                  ? "You're one step closer to your next badge. Keep the momentum going! Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
+                  : "You got" +
+                    score +
+                    " out of 1o, which means there's room to grow. You still earned 2 XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!"}
+              </Text>
+
               <Text style={[styles.scoreText, { marginTop: 10 }, theme === "dark" && { color: "#E0E0E0" }]}>
                 Your Score
               </Text>
 
               <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
-                {score >= 3 ? (
-                  <Text style={{ color: "#" }}>{score}</Text>
+                {score >= questions.length / 2 ? (
+                  <Text style={{ color: "#00FF80" }}>{score}</Text>
                 ) : (
                   score
                 )}
-                /5
-              </Text>
-
-              <Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
-                {score >= 3
-                  ? "You're one step closer to your next badge. Keep the momentum going!Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
-                  : "You got" +
-                    score +
-                    " out of 5, which means there's room to grow. You still earned 2 XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!"}
+                /{questions.length}
               </Text>
 
               <Text style={[styles.scoreText, theme === "dark" && { color: "#E0E0E0" }]}>Earned XP</Text>
@@ -372,7 +379,7 @@ const Quiz = (props: Props) => {
                             : styles.wrongAnswer,
                         ]}
                       >
-                        Your answer: {answer.selectedAnswer}
+                        Your answer: {answer.selectedAnswer ? answer.selectedAnswer : <Text style={{ fontStyle: 'italic', opacity: 0.6 }}>Not answered</Text>}
                       </Text>
                       {!answer.isCorrect && (
                         <Text style={styles.correctAnswerText}>

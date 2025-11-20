@@ -107,6 +107,40 @@ const Auth = () => {
     try {
       setLoading(true);
 
+      if (isSignUp && formData.email !== "playreview@edulearn.com") {
+        try {
+          const { UserService } = await import('@/services/auth.service');
+          const userService = new UserService();
+          const availabilityResult = await userService.checkAvailability(
+            formData.email,
+            formData.username
+          );
+
+          if (!availabilityResult.emailAvailable) {
+            Alert.alert(
+              "Email Already Registered",
+              "This email is already registered. Please use a different email or try logging in."
+            );
+            return;
+          }
+
+          if (!availabilityResult.usernameAvailable) {
+            Alert.alert(
+              "Username Taken",
+              "This username is already taken. Please choose a different username."
+            );
+            return;
+          }
+        } catch (availabilityError) {
+          console.error("Availability check failed:", availabilityError);
+          Alert.alert(
+            "Connection Error",
+            "Failed to verify availability. Please try again."
+          );
+          return;
+        }
+      }
+
       if (formData.email === "playreview@edulearn.com") {
         if (isSignUp) {
           router.push({
@@ -132,6 +166,53 @@ const Auth = () => {
         return;
       }
 
+      if (isSignUp) {
+        try {
+          const { UserService } = await import('@/services/auth.service');
+          const { generateUUID } = await import('@/utils/constants');
+          const userService = new UserService();
+          const userId = generateUUID();
+          
+          console.log("📤 Creating database user first:", {
+            id: userId,
+            name: formData.name,
+            email: formData.email,
+            username: formData.username,
+            referralCode: formData.referralCode
+          });
+
+          const newUser = await userService.createUser({
+            id: userId,
+            name: formData.name,
+            email: formData.email,
+            referralCode: formData.referralCode || "",
+            username: formData.username,
+          });
+
+          if (!newUser) {
+            Alert.alert("Sign Up Failed", "Failed to create account. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          console.log("✅ Database user created successfully:", newUser);
+        } catch (dbError: any) {
+          console.error("❌ Database user creation error:", dbError);
+          const errorMessage = dbError?.response?.data?.message || dbError?.message || "Unknown error";
+          
+          if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
+            Alert.alert(
+              "Account Already Exists",
+              "This email is already registered. Please try logging in instead."
+            );
+          } else {
+            Alert.alert("Sign Up Failed", `Error: ${errorMessage}`);
+          }
+          setLoading(false);
+          return;
+        }
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email: formData.email,
       });
@@ -144,26 +225,24 @@ const Auth = () => {
         } else {
           Alert.alert("Authentication Error", error.message);
         }
+        
+        if (isSignUp) {
+          console.error("⚠️ Supabase Auth user creation failed after database user was created");
+          Alert.alert(
+            "Partial Account Created", 
+            "Database user created but email verification failed. Please contact support."
+          );
+        }
         return;
       }
 
-      if (isSignUp) {
-        router.push({
-          pathname: '/auth/verifyOtp',
-          params: {
-            email: formData.email,
-            isSignUp: "1",
-            name: formData.name,
-            referralCode: formData.referralCode || "",
-            username: formData.username
-          },
-        });
-      } else {
-        router.push({
-          pathname: '/auth/verifyOtp',
-          params: { email: formData.email },
-        });
-      }
+      router.push({
+        pathname: '/auth/verifyOtp',
+        params: { 
+          email: formData.email,
+          isLogin: isSignUp ? "0" : "1"
+        },
+      });
 
     } catch (err) {
       console.error("Authentication error:", err);

@@ -22,6 +22,16 @@ export class UserService {
         }
     }
 
+    async checkAvailability(email?: string, username?: string): Promise<{ emailAvailable: boolean; usernameAvailable: boolean; message?: string }> {
+        try {
+            const response = await httpClient.post('/auth/check-availability', { email, username });
+            return response.data;
+        } catch (error) {
+            console.error("Error checking availability:", error);
+            throw error;
+        }
+    }
+
     async createUser(userData: Partial<User>): Promise<User> {
         try {
             const response = await httpClient.post('/auth/signup', userData);

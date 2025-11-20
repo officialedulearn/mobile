@@ -38,7 +38,7 @@ const Community = (props: Props) => {
     {
       title: "Email Support",
       description: "Contact us directly for personalized assistance",
-      url: "mailto:valour@edulearn.com",
+      url: "mailto:dave@edulearn.fun",
       platform: "Email"
     }
   ];

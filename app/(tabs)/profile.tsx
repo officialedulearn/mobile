@@ -228,6 +228,8 @@ const Profile = (props: Props) => {
     }
   };
 
+  const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
+
   return (
     <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       {/* {showEDLNPopover && (
@@ -286,7 +288,7 @@ const Profile = (props: Props) => {
             <View style={styles.cardHeader}>
               <View style={[styles.identity, { marginRight: 10 }]}>
                 <Image
-                  source={getHighQualityImageUrl(user?.profilePictureURL as string) ? { uri: getHighQualityImageUrl(user?.profilePictureURL as string)! } : require("@/assets/images/memoji.png")}
+                  source={profileImageUrl ? { uri: profileImageUrl } : require("@/assets/images/memoji.png")}
                   style={styles.profileAvatar}
                   resizeMode="cover"
                 />

@@ -30,7 +30,7 @@ const OnBoarding = () => {
     {
       title: "Welcome to EduLearn",
       subtitle:
-        "Your personal tutor always ready to explain, quiz, and guide you.",
+        "Your personal tutor always ready to explain, quiz, and guide you on web3.",
       illustration: require("@/assets/images/bot.png"),
       buttonTexts: ["Get Started"],
     },
@@ -48,7 +48,7 @@ const OnBoarding = () => {
       illustration: require("@/assets/images/compete.png"),
       buttonTexts: ["Sign In", "Sign Up"],
     },
-  ];
+  ]; 
 
   const animateToStep = (newIndex: number) => {
     if (isAnimating.current || newIndex === stepIndex) return;

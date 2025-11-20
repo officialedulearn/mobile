@@ -4,7 +4,7 @@ export default {
     name: "EduLearn",
     displayName: "EduLearn",
     slug: "edulearn",
-    version: "1.0.0",
+    version: "2.0.0",
     owner: "edulearn",
     scheme: "edulearnv2",
     newArchEnabled: true,
@@ -31,12 +31,6 @@ export default {
       permissions: {
         NSUserNotificationsUsageDescription: "Allow EduLearn to send you notifications about quizzes, achievements, and learning reminders.",
       },
-    },
-    updates: {
-      url: "https://u.expo.dev/139b580b-67d2-4458-b709-7c9575f0d7a1"
-    },
-    runtimeVersion: {
-      "policy": "appVersion"
     },
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

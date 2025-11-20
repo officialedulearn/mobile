@@ -93,6 +93,8 @@ const index = (props: Props) => {
 
   const { progress, xpNeeded } = getMilestoneProgress();
 
+  const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
+console.log(user?.profilePictureURL)
   return (
     <ScrollView 
       style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]} 
@@ -104,7 +106,7 @@ const index = (props: Props) => {
         <View style={styles.topNav}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Image
-              source={getHighQualityImageUrl(user?.profilePictureURL as string) ? { uri: getHighQualityImageUrl(user?.profilePictureURL as string)! } : require("@/assets/images/memoji.png")}
+              source={profileImageUrl ? { uri: profileImageUrl } : require("@/assets/images/memoji.png")}
               style={{ width: 40, height: 40, borderRadius: 20 }}
               resizeMode="cover"
             />

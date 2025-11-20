@@ -124,12 +124,12 @@ const quizzes = (props: Props) => {
                       source={require("@/assets/images/icons/medal-05.png")}
                       style={styles.metadataIcon}
                     />
-                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>Earn up to 5 XP</Text>
+                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>Earn up to 10 XP</Text>
                   </View>
 
                   <View style={styles.metadataItem}>
                     <Image
-                      source={require("@/assets/images/icons/clock.png")}
+                      source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")}
                       style={styles.metadataIcon}
                     />
                     <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>~ 1 min</Text>
@@ -236,11 +236,21 @@ const quizzes = (props: Props) => {
                       </Text>
                     </View>
                     
-                    {activity.xpEarned >= 3 && (
-                      <View style={styles.passed}>
-                        <Text style={styles.passedText}>Passed</Text>
-                      </View>
-                    )}
+                    <View style={[
+                      styles.statusBadge,
+                      activity.xpEarned >= 3 ? styles.statusPassed : styles.statusFailed
+                    ]}>
+                      <View style={[
+                        styles.statusDot,
+                        activity.xpEarned >= 3 ? styles.statusDotPassed : styles.statusDotFailed
+                      ]} />
+                      <Text style={[
+                        styles.statusText,
+                        activity.xpEarned >= 3 ? styles.statusTextPassed : styles.statusTextFailed
+                      ]}>
+                        {activity.xpEarned >= 3 ? "Passed" : "Failed"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -422,20 +432,42 @@ const styles = StyleSheet.create({
     backgroundColor: "#00FF80",
     borderRadius: 6,
   },
-  passed: {
-    backgroundColor: "#F2FFF7",
-    padding: 10, 
-    textAlign: "center",
-    borderRadius: 33,
-    
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
-  passedText: {
-    color: "#0E7B33",
-    fontFamily: "Satoshi",
+  statusPassed: {
+    backgroundColor: "#F2FFF7",
+  },
+  statusFailed: {
+    backgroundColor: "#FBEAE9",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  statusDotPassed: {
+    backgroundColor: "#0E7B33",
+  },
+  statusDotFailed: {
+    backgroundColor: "#940803",
+  },
+  statusText: {
     fontSize: 14,
-    lineHeight: 24,
-    fontWeight: "400",
-
+    fontWeight: "500",
+    fontFamily: "Satoshi",
+  },
+  statusTextPassed: {
+    color: "#0E7B33",
+  },
+  statusTextFailed: {
+    color: "#940803",
   },
   historyHeader: {
     flexDirection: "row",

@@ -57,7 +57,13 @@ const nftClaimed = (props: Props) => {
     }
   
     try {
-      const fileUri = FileSystem.cacheDirectory + 'nft-image.png';
+      const nftName = (reward.title || reward.name || 'nft-image')
+        .replace(/[^a-z0-9]/gi, '-')
+        .toLowerCase()
+        .substring(0, 50);
+      const fileName = `${nftName}.png`;
+      const cacheDir = (FileSystem as any).cacheDirectory || (FileSystem as any).documentDirectory || '';
+      const fileUri = cacheDir + fileName;
       const downloadResult = await FileSystem.downloadAsync(
         reward.imageUrl,
         fileUri
@@ -76,7 +82,7 @@ const nftClaimed = (props: Props) => {
       await Sharing.shareAsync(fileUri, {
         mimeType: "image/png",
         dialogTitle: "Share Your NFT Achievement",
-        UTI: "public.png", // iOS
+        UTI: "public.png",
       });
   
     } catch (error) {
