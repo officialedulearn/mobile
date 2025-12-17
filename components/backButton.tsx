@@ -5,9 +5,9 @@ import {
   Image,
   ImageSourcePropType,
   StyleSheet,
-  TouchableOpacity,
   ViewStyle,
 } from "react-native";
+import AnimatedPressable from "./AnimatedPressable";
 
 type Props = {
   style?: ViewStyle;
@@ -23,7 +23,7 @@ const BackButton = ({ style, onPress = () => router.back() }: Props) => {
       ? require("@/assets/images/icons/dark/CaretLeft.png")
       : require("@/assets/images/icons/CaretLeft.png");
   return (
-    <TouchableOpacity
+    <AnimatedPressable
       style={[
         styles.button,
         style,
@@ -33,9 +33,12 @@ const BackButton = ({ style, onPress = () => router.back() }: Props) => {
         },
       ]}
       onPress={onPress}
+      scale={0.9}
+      hapticFeedback={true}
+      hapticStyle="light"
     >
       <Image source={iconSource} style={styles.icon} />
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 };
 

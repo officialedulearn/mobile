@@ -17,6 +17,7 @@ import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import Purchases from "react-native-purchases";
 import { router } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 const { width } = Dimensions.get("window");
 
 const planData = [
@@ -307,6 +308,17 @@ const Subscription = () => {
   return (
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />  
+      
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={theme === "dark" 
+          ? ['rgba(0, 255, 128, 0.25)', 'rgba(0, 255, 128, 0.15)', 'rgba(0, 255, 128, 0.08)', 'rgba(0, 255, 128, 0.03)', 'rgba(0, 255, 128, 0.01)', 'transparent'] 
+          : ['rgba(0, 255, 128, 0.3)', 'rgba(0, 255, 128, 0.2)', 'rgba(0, 255, 128, 0.12)', 'rgba(0, 255, 128, 0.06)', 'rgba(0, 255, 128, 0.02)', 'transparent']}
+        start={{ x: 0.5, y: 0.5 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.backgroundGradientCenter}
+      />
+      
       <View style={styles.topNav}>
         <BackButton />
         <Text style={[styles.headerText, theme === "dark" && styles.headerTextDark]}>Upgrade your Plan</Text>
@@ -461,6 +473,16 @@ const styles = StyleSheet.create({
   containerDark: {
     backgroundColor: "#0D0D0D",
   },
+  backgroundGradientCenter: {
+    position: "absolute",
+    top: "35%",
+    left: "50%",
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    transform: [{ translateX: -150 }, { translateY: -150 }],
+    zIndex: 0,
+  },
   topNav: {
     flexDirection: "row",
     gap: 16,
@@ -468,6 +490,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
     marginBottom: 16,
+    position: "relative",
+    zIndex: 1,
   },
   headerText: {
     fontSize: 20,
@@ -492,6 +516,8 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     marginHorizontal: 16,
     marginBottom: 16,
+    position: "relative",
+    zIndex: 1,
   },
   switchPillsDark: {
     backgroundColor: "#131313",
@@ -549,6 +575,8 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    position: "relative",
+    zIndex: 1,
   },
   scrollContent: {
     paddingHorizontal: 0,
@@ -570,6 +598,8 @@ const styles = StyleSheet.create({
     gap: 16,
     flexDirection: "column",
     minHeight: 450,
+    position: "relative",
+    overflow: "hidden",
   },
   planCardDark: {
     backgroundColor: "#131313",
@@ -693,6 +723,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 16,
     marginBottom: 16,
+    position: "relative",
+    zIndex: 1,
   },
   dot: {
     width: 8,
@@ -718,6 +750,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: 16,
     marginBottom: 40,
+    position: "relative",
+    zIndex: 1,
   },
   upgradeButtonDark: {
     backgroundColor: "#00FF80",
@@ -756,6 +790,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 8,
     paddingTop: 8,
+    position: "relative",
+    zIndex: 1,
   },
   legalLinkText: {
     color: "#007AFF",
@@ -780,6 +816,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginHorizontal: 16,
     marginBottom: 32,
+    position: "relative",
+    zIndex: 1,
   },
   restoreButtonText: {
     color: "#61728C",

@@ -6,10 +6,11 @@ import { StyleSheet, Text, View } from 'react-native';
 const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 interface StreakProps {
-  streak?: number; 
+  streak?: number;
+  noBorder?: boolean;
 }
 
-const DailyCheckInStreak: React.FC<StreakProps> = ({ streak }) => {
+const DailyCheckInStreak: React.FC<StreakProps> = ({ streak, noBorder = false }) => {
   const { user, theme } = useUserStore();
   const currentStreak = streak !== undefined ? streak : (user?.streak || 0);
 
@@ -28,9 +29,13 @@ const DailyCheckInStreak: React.FC<StreakProps> = ({ streak }) => {
   const activeIndexes = getActiveDays(currentStreak);
 
   return (
-    <View style={[styles.container, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
+    <View style={[
+      styles.container, 
+      theme === "dark" && {backgroundColor: 'transparent', borderColor: "transparent"},
+      noBorder && { borderWidth: 0, padding: 12, marginTop: 0, backgroundColor: 'transparent' }
+    ]}>
       <Text style={[styles.heading, theme === "dark" && {color: "#E0E0E0"}]}>Daily Check-in Streak</Text>
-      <View style={styles.row}>
+      <View style={[styles.row, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
         {days.map((day, index) => {
           const isActive = activeIndexes.includes(index);
           return (
@@ -39,12 +44,14 @@ const DailyCheckInStreak: React.FC<StreakProps> = ({ streak }) => {
               <View
                 style={[
                   styles.iconWrapper,
-                  { backgroundColor: isActive ? '#F0FFF9' : (theme === "dark" ? '#0D0D0D' : '#F9FBFC') },
+                  { backgroundColor: isActive ? '#00ff80' : (theme === "dark" ? '#0D0D0D' : '#F9FBFC') },
                   isActive ? styles.activeIconWrapper : {},
-                  theme === "dark" && !isActive && {borderColor: "#2E3033"}
+                  theme === "dark" && !isActive && {borderColor: "#2E3033"},
+                  noBorder && !isActive && { borderWidth: 0 },
+                  noBorder && isActive && { borderWidth: 1 }
                 ]}
               >
-                {isActive && <FontAwesome5 name="fire" size={18} color="#00FF80" />}
+                {isActive && <FontAwesome5 name="fire" size={18} color="#006131" />}
               </View>
             </View>
           );
@@ -77,6 +84,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 4,
     width: '100%',
+    backgroundColor: '#F9FBFC',
+    borderRadius: 20,
+    padding: 8,
   },
   dayContainer: {
     alignItems: 'center',
@@ -99,7 +109,7 @@ const styles = StyleSheet.create({
     borderColor: '#EDF3FC',
   },
   activeIconWrapper: {
-    borderColor: '#00FF80',
+   
   },
   streakText: {
     marginTop: 16,

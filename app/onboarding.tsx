@@ -12,6 +12,7 @@ import {
   Animated,
 } from "react-native";
 import useUserStore from "@/core/userState";
+import * as Haptics from "expo-haptics"
 
 type OnBoardingSteps = {
   title: string;
@@ -77,6 +78,7 @@ const OnBoarding = () => {
 
   const goToNextStep = () => {
     if (stepIndex < onBoardingSteps.length - 1) {
+      Haptics.selectionAsync();
       animateToStep(stepIndex + 1);
     }
   };
@@ -96,7 +98,10 @@ const OnBoarding = () => {
         {stepIndex < onBoardingSteps.length - 1 && (
           <TouchableOpacity 
             style={[styles.skipButton, theme === "dark" && styles.skipButtonDark]} 
-            onPress={() => router.push("/auth?signUp=1")}
+            onPress={() => {
+              Haptics.selectionAsync();
+              router.push("/auth?signUp=1");
+            }}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -133,7 +138,10 @@ const OnBoarding = () => {
         {onBoardingSteps.map((_, index) => (
           <TouchableOpacity 
             key={index} 
-            onPress={() => animateToStep(index)}
+            onPress={() => {
+              Haptics.selectionAsync();
+              animateToStep(index);
+            }}
             disabled={isAnimating.current}
           >
             <View

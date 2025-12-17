@@ -7,13 +7,13 @@ import {
   Share,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import Markdown from "react-native-markdown-display";
 import { Message } from "@/interface/Chat";
 import useUserStore from "@/core/userState";
+import AnimatedPressable from "./AnimatedPressable";
 
 type Props = {
   message: Message;
@@ -268,24 +268,24 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
             })()}
             {!isUser && (
               <View style={styles.messageActionContainer}>
-                <TouchableOpacity onPress={handleCopyMessage} style={styles.actionButton}>
+                <AnimatedPressable onPress={handleCopyMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
                   <Image
                     source={require("@/assets/images/icons/dark/copy.png")}
                     style={styles.editIcon}
                   />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleShareMessage} style={styles.actionButton}>
+                </AnimatedPressable>
+                <AnimatedPressable onPress={handleShareMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
                   <Image
                     source={require("@/assets/images/icons/dark/share.png")}
                     style={styles.editIcon}
                   />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleReportMessage} style={styles.actionButton}>
+                </AnimatedPressable>
+                <AnimatedPressable onPress={handleReportMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
                   <Image
                     source={require("@/assets/images/icons/dark/report.png")}
                     style={styles.editIcon}
                   />
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             )}
           </View>

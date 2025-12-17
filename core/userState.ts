@@ -11,6 +11,8 @@ interface UserState {
   walletBalance: {sol: number, tokenAccount: number} | null;
   walletBalanceLoading: boolean;
   theme: 'light' | 'dark';
+  streakModalVisible: boolean;
+  setStreakModalVisible: (visible: boolean) => void;
   setUserAsync: () => Promise<void>;
   setUser: (user: User) => void;
   logout: () => Promise<void>;
@@ -83,6 +85,8 @@ const useUserStore = create<UserState>((set, get) => ({
   walletBalance: {sol: 0, tokenAccount: 0},
   walletBalanceLoading: false,
   theme: 'light',
+  streakModalVisible: false,
+  setStreakModalVisible: (visible: boolean) => set({ streakModalVisible: visible }),
   setUserAsync: async () => {
     set({ isLoading: true });
     try {

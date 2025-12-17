@@ -67,7 +67,7 @@ export default {
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow EduLearn to access your microphone."
+          "microphonePermission": "EduLearn uses the microphone to capture your voice for AI transcription. For example, you can speak your questions instead of typing, and the AI will convert your speech to text."
         }
       ]
     ],

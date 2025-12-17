@@ -10,6 +10,8 @@ import { WalletService } from "@/services/wallet.service";
 import Modal from "react-native-modal";
 import * as Clipboard from "expo-clipboard";
 import { supabase } from "@/utils/supabase";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 type Props = {};
 
@@ -129,6 +131,70 @@ const settings = (props: Props) => {
         </View>
         
         <View style={styles.settings}>
+
+          <TouchableOpacity 
+            style={[styles.getPro, theme === "dark" && styles.getProDark]}
+            activeOpacity={0.8}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              router.push("/subscription");
+            }}
+          >
+            {theme === "dark" ? (
+              <LinearGradient
+                colors={['#131313', '#00FF80']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.getProGradient}
+              >
+                <View style={styles.getProContent}>
+                  <View style={{flexDirection: "row", alignItems: "center", gap: 12}}>
+                    <Image 
+                      source={require("@/assets/images/mainlogo.png")} 
+                      style={styles.getProLogo} 
+                    />
+                    <View>
+                      <Text style={styles.getProTitle}>Get Pro</Text>
+                      <Text style={styles.getProDescription}>Unlock all features</Text>
+                    </View>
+                  </View>
+                  <View style={styles.getProButtonDark}>
+                    <Image 
+                      source={require("@/assets/images/icons/dark/CaretRight.png")} 
+                      style={{ width: 20, height: 20 }} 
+                    />
+                  </View>
+                </View>
+              </LinearGradient>
+            ) : (
+              <LinearGradient
+                colors={['#000000', '#00FF80']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.getProGradient}
+              >
+                <View style={styles.getProContent}>
+                  <View style={{flexDirection: "row", alignItems: "center", gap: 12}}>
+                    <Image 
+                      source={require("@/assets/images/mainlogo.png")} 
+                      style={styles.getProLogo} 
+                    />
+                    <View>
+                      <Text style={styles.getProTitleLight}>Get Pro</Text>
+                      <Text style={styles.getProDescriptionLight}>Unlock all features</Text>
+                    </View>
+                  </View>
+                  <View style={styles.getProButtonLight}>
+                    <Image 
+                      source={require("@/assets/images/icons/CaretRight.png")} 
+                      style={{ width: 20, height: 20, tintColor: "#000" }} 
+                    />
+                  </View>
+                </View>
+              </LinearGradient>
+            )}
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={() => router.push('/editProfile')} style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
             <View  style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
@@ -144,34 +210,7 @@ const settings = (props: Props) => {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[
-              styles.settingItem, 
-              user?.isPremium ? styles.disabledButton : {},
-              theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }
-            ]} 
-            onPress={() => router.push('/subscription')}
-            disabled={loading || user?.isPremium}
-          >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
-              <Image
-                source={require("@/assets/images/icons/congrats.png")}
-                style={{ width: 24, height: 24 }} 
-              />
-              <Text style={[
-                styles.settingText, 
-                user?.isPremium ? styles.disabledText : {},
-                theme === "dark" && { color: "#E0E0E0" }
-              ]}>
-                {user?.isPremium ? "Premium Active" : "Upgrade to pro"}
-              </Text>
-            </View>
-
-            <Image 
-              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
-              style={{ width: 24, height: 24, opacity: user?.isPremium ? 0.5 : 1 }}
-            />
-          </TouchableOpacity>
+        
 
           <TouchableOpacity 
             style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
@@ -379,6 +418,7 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: "space-between",
   },
+
   headerNav: {
     marginTop: 50,
     flexDirection: "row",
@@ -564,5 +604,75 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: "#A0A0A0",
+  },
+  getPro: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 12,
+  },
+  getProDark: {
+    borderWidth: 0,
+  },
+  getProGradient: {
+    borderRadius: 16,
+  },
+  getProContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 14,
+  },
+  getProLogo: {
+    width: 36,
+    height: 36,
+  },
+  getProTitle: {
+    fontSize: 16,
+    fontFamily: "Satoshi",
+    fontWeight: "700",
+    color: "#E0E0E0",
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  getProTitleLight: {
+    fontSize: 16,
+    fontFamily: "Satoshi",
+    fontWeight: "700",
+    color: "#FFFFFF",
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  getProDescription: {
+    fontSize: 12,
+    fontFamily: "Satoshi",
+    fontWeight: "400",
+    color: "#B3B3B3",
+    lineHeight: 16,
+  },
+  getProDescriptionLight: {
+    fontSize: 12,
+    fontFamily: "Satoshi",
+    fontWeight: "400",
+    color: "rgba(255, 255, 255, 0.8)",
+    lineHeight: 16,
+  },
+  getProButtonDark: {
+    backgroundColor: "#0D0D0D",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#2E3033",
+  },
+  getProButtonLight: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

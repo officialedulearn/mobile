@@ -11,7 +11,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
-  StyleSheet,
+  StyleSheet, 
   Text,
   TouchableOpacity,
   View,
@@ -48,15 +48,16 @@ const quizzes = (props: Props) => {
       try {
         if (!user?.id) return;
         
-        const chatList = await chatService.getHistory(user.id);
+        const userId = user.id;
+        const chatList = await chatService.getHistory(userId);
         setChats(
           chatList.sort(
             (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
+          ).filter(chat => !chat.tested)
         );
 
-        fetchQuizActivities(user.id);
+        fetchQuizActivities(userId);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -70,7 +71,7 @@ const quizzes = (props: Props) => {
     const index = Math.round(contentOffsetX / (cardWidth + 20));
     setActiveIndex(index);
   };
-  const testedChats = chats.filter(chat => !chat.tested)
+  const testedChats = chats.filter(chat => !chat.tested);
   return (  
     <ScrollView 
       style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}

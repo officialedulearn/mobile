@@ -2,7 +2,7 @@ import useUserStore from "@/core/userState";
 import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   Image,
   StyleSheet,
@@ -14,6 +14,14 @@ import {
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
+import { BlurView } from "expo-blur";
+import DailyCheckInStreak from "@/components/streak";
+import * as StoreReview from "expo-store-review";
+import * as Haptics from "expo-haptics";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RoadmapService } from "@/services/roadmap.service";
+
 
 type Props = {};
 
@@ -21,7 +29,11 @@ const index = (props: Props) => {
   const { user } = useUserStore();
   const { activities, fetchActivities, isLoading } = useActivityStore();
   const theme = useUserStore(s => s.theme);
-  
+  const streakModalVisible = useUserStore(s => s.streakModalVisible);
+  const setStreakModalVisible = useUserStore(s => s.setStreakModalVisible);
+  const [latestRoadmap, setLatestRoadmap] = useState<any>(null);
+  const [roadmapProgress, setRoadmapProgress] = useState({ completed: 0, total: 0 });
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
     if (!url || typeof url !== 'string') return undefined;
     return url
@@ -29,12 +41,58 @@ const index = (props: Props) => {
       .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
       .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
   };
-  
+
   useEffect(() => {
     if (user?.id) {
       fetchActivities(user.id);
+      fetchLatestRoadmap();
     }
   }, [user?.id, fetchActivities]);
+
+  const fetchLatestRoadmap = async () => {
+    if (!user?.id) return;
+    try {
+      const roadmapService = new RoadmapService();
+      const roadmaps = await roadmapService.getUserRoadmaps(user.id);
+      
+      if (roadmaps && roadmaps.length > 0) {
+        const latest = roadmaps[0];
+        const roadmapWithSteps = await roadmapService.getRoadmapById(latest.id);
+        
+        const completedSteps = roadmapWithSteps.steps.filter(step => step.done).length;
+        const totalSteps = roadmapWithSteps.steps.length;
+        
+        setLatestRoadmap(roadmapWithSteps);
+        setRoadmapProgress({ completed: completedSteps, total: totalSteps });
+      }
+    } catch (error) {
+      console.log("Error fetching roadmap:", error);
+    }
+  };
+
+  useEffect(() => {
+    const checkAndShowModal = async () => {
+      try {
+        const today = new Date().toDateString();
+        const lastShownDate = await AsyncStorage.getItem('streakModalLastShown');
+        
+         if(lastShownDate !== today) {
+          setTimeout(() => {
+            if (bottomSheetRef.current) {
+              bottomSheetRef.current.snapToIndex(0);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              AsyncStorage.setItem('streakModalLastShown', today);
+              setStreakModalVisible(true);
+            }
+          }, 1000);
+         }
+      } catch (error) {
+        console.log("Error checking streak modal:", error);
+      }
+    };
+
+    checkAndShowModal();
+  }, [setStreakModalVisible]);
 
   const milestones = {
     novice: 0,
@@ -95,14 +153,38 @@ const index = (props: Props) => {
 
   const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
 console.log(user?.profilePictureURL)
-  return (
-    <ScrollView 
-      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]} 
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
-      <View style={styles.content}>
+  const handleShare = () => {
+    console.log("share");
+  };
+
+  const handleCloseModal = async () => {
+    try {
+      bottomSheetRef.current?.close();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      const isAvailable = await StoreReview.isAvailableAsync();
+      if (isAvailable) {
+        const hasAction = await StoreReview.hasAction();
+        if (hasAction) {
+          await StoreReview.requestReview();
+        }
+      }
+    } catch (error) {
+      console.log("Error requesting review:", error);
+    } finally {
+      setStreakModalVisible(false);
+    }
+  };
+
+    return (
+    <>
+      <View style={{ flex: 1, backgroundColor: theme === "dark" ? "#0D0D0D" : "#F9FBFC" }}>
+        <ScrollView 
+          style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
+        <View style={styles.content}>
         <View style={styles.topNav}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <Image
@@ -252,6 +334,55 @@ console.log(user?.profilePictureURL)
           )}
         </View>
 
+        {latestRoadmap && (
+          <TouchableOpacity 
+            style={[styles.roadmapCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+            activeOpacity={0.8}
+            onPress={() => router.push(`/roadmaps/${latestRoadmap.roadmap.id}`)}
+          >
+            <View style={styles.roadmapCardHeader}>
+              <View style={[styles.roadmapIcon, theme === "dark" && { backgroundColor: "#0D0D0D", borderColor: "#2E3033" }]}>
+                <Image
+                  source={require("@/assets/images/icons/roadmap.png")}
+                  style={{ width: 20, height: 20 }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.roadmapCardLabel, theme === "dark" && { color: "#B3B3B3" }]}>
+                  Continue Learning
+                </Text>
+                <Text style={[styles.roadmapCardTitle, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={1}>
+                  {latestRoadmap.roadmap.title}
+                </Text>
+              </View>
+              <Image
+                source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
+                style={{ width: 24, height: 24 }}
+              />
+            </View>
+            
+            <View style={styles.roadmapProgressContainer}>
+              <View style={styles.roadmapProgressInfo}>
+                <Text style={[styles.roadmapProgressText, theme === "dark" && { color: "#B3B3B3" }]}>
+                  {roadmapProgress.completed} of {roadmapProgress.total} steps completed
+                </Text>
+                <Text style={[styles.roadmapProgressPercentage, theme === "dark" && { color: "#00FF80" }]}>
+                  {Math.round((roadmapProgress.completed / roadmapProgress.total) * 100)}%
+                </Text>
+              </View>
+              <View style={[styles.roadmapProgressBar, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+                <View 
+                  style={[
+                    styles.roadmapProgressFill,
+                    theme !== "dark" && { backgroundColor: "#000" },
+                    { width: `${(roadmapProgress.completed / roadmapProgress.total) * 100}%` }
+                  ]}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
         <View style={[styles.bountyCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
           <View>
             <View style={[styles.bountyCardPill, theme === "dark" && { backgroundColor: "#0D0D0D", borderColor: "#2E3033" }]}>
@@ -269,8 +400,99 @@ console.log(user?.profilePictureURL)
             style={{ width: 66.6, height: 83, resizeMode: "contain" }}
           />
         </View>
+        </View>
+        </ScrollView>
       </View>
-    </ScrollView>
+
+      {streakModalVisible && (
+        <BlurView
+          intensity={30}
+          tint={theme === "dark" ? "dark" : "light"}
+          style={styles.blurOverlay}
+          experimentalBlurMethod="dimezisBlurView"
+        />
+      )}
+
+      <View style={styles.bottomSheetContainer} pointerEvents={streakModalVisible ? "auto" : "none"}>
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={['62%']}
+          enablePanDownToClose={true}
+          enableDynamicSizing={false}
+          onClose={() => setStreakModalVisible(false)}
+          backgroundStyle={[
+            styles.bottomSheetBackground,
+            theme === "dark" && styles.bottomSheetBackgroundDark
+          ]}
+          handleIndicatorStyle={[
+            styles.bottomSheetIndicator,
+            theme === "dark" && styles.bottomSheetIndicatorDark
+          ]}
+          style={styles.bottomSheetStyle}
+          bottomInset={20}
+          backdropComponent={() => null}
+        >
+        <View style={styles.bottomSheetContent}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={handleCloseModal}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.closeButtonText, theme === "dark" && { color: "#E0E0E0" }]}>✕</Text>
+          </TouchableOpacity>
+          
+          <Image 
+            source={require("@/assets/images/eddie/proud.png")} 
+            style={styles.modalImage} 
+            resizeMode="contain"
+          />
+          <Text style={[styles.modalTitle, theme === "dark" && styles.modalTitleDark]}>
+            Congratulations! You've achieved {user?.streak} days of streak!
+          </Text>
+          
+          <DailyCheckInStreak streak={user?.streak} noBorder />
+
+          <View style={styles.modalButtonsContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.modalButton, 
+                styles.modalButtonSecondary,
+                theme === "dark" && styles.modalButtonSecondaryDark
+              ]} 
+              onPress={handleCloseModal}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.modalButtonText, 
+                styles.modalButtonTextSecondary,
+                theme === "dark" && styles.modalButtonTextSecondaryDark,
+              ]}>
+                Close
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[
+                styles.modalButton, 
+                styles.modalButtonPrimary,
+                theme === "dark" && styles.modalButtonPrimaryDark
+              ]} 
+              onPress={() => handleShare()}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.modalButtonText, 
+                styles.modalButtonTextPrimary,
+                theme === "dark" && styles.modalButtonTextPrimaryDark
+              ]}>
+                Share
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        </BottomSheet>
+      </View>
+    </>
   );
 };
 
@@ -549,6 +771,77 @@ const styles = StyleSheet.create({
     borderBottomColor: "#EDF3FC",
   },
 
+  roadmapCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+  },
+  roadmapCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  roadmapIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#F9FBFC",
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  roadmapCardLabel: {
+    fontFamily: "Satoshi",
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#61728C",
+    marginBottom: 2,
+  },
+  roadmapCardTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2D3C52",
+    lineHeight: 20,
+  },
+  roadmapProgressContainer: {
+    gap: 8,
+  },
+  roadmapProgressInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  roadmapProgressText: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#61728C",
+  },
+  roadmapProgressPercentage: {
+    fontFamily: "Satoshi",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#000",
+  },
+  roadmapProgressBar: {
+    width: "100%",
+    height: 8,
+    backgroundColor: "#F9FBFC",
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  roadmapProgressFill: {
+    height: "100%",
+    backgroundColor: "#00FF80",
+    borderRadius: 4,
+  },
   bountyCard: {
     alignItems: "flex-start",
     justifyContent: "space-between",
@@ -588,5 +881,144 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     lineHeight: 20,
     textAlign: "center",
+  },
+  blurOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+    elevation: 999,
+  },
+  bottomSheetContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    elevation: 1000,
+  },
+  bottomSheetStyle: {
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  bottomSheetBackground: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 9999,
+  },
+  bottomSheetBackgroundDark: {
+    backgroundColor: "#131313",
+    borderWidth: 1,
+    borderColor: "#2E3033",
+  },
+  bottomSheetIndicator: {
+    backgroundColor: "#E0E0E0",
+    width: 40,
+  },
+  bottomSheetIndicatorDark: {
+    backgroundColor: "#2E3033",
+  },
+  bottomSheetContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    paddingTop: 8,
+    alignItems: "center",
+    position: "relative",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 0,
+    right: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
+    zIndex: 10,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#2D3C52",
+    fontWeight: "400",
+  },
+  modalImage: {
+    width: 130,
+    height: 130,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  modalTitle: {
+    fontFamily: "Satoshi",
+    fontSize: 18,
+    fontWeight: "700",
+    lineHeight: 24,
+    color: "#2D3C52",
+    textAlign: "center",
+    marginBottom: 16,
+    paddingHorizontal: 8,
+  },
+  modalTitleDark: {
+    color: "#E0E0E0",
+  },
+  modalButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+    marginTop: 20,
+    marginBottom: 0,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalButtonPrimary: {
+    backgroundColor: "#000",
+  },
+  modalButtonPrimaryDark: {
+    backgroundColor: "#00FF80",
+  },
+  modalButtonSecondary: {
+    backgroundColor: "#F9FBFC",
+    borderWidth: 1,
+    borderColor: "#000",
+  },
+  modalButtonSecondaryDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
+  },
+  modalButtonText: {
+    fontFamily: "Satoshi",
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 24,
+  },
+  modalButtonTextPrimary: {
+    color: "#00FF80",
+  },
+  modalButtonTextPrimaryDark: {
+    color: "#000000",
+  },
+  modalButtonTextSecondary: {
+    color: "#2D3C52",
+  },
+  modalButtonTextSecondaryDark: {
+    color: "#E0E0E0",
   },
 });

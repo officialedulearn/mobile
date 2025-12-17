@@ -40,7 +40,7 @@ const Quiz = (props: Props) => {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const [questions, setQuestions] = React.useState<Array<Question>>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
-  const [timeLeft, setTimeLeft] = useState(80);
+  const [timeLeft, setTimeLeft] = useState(90);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [chatTitle, setChatTitle] = useState("");
@@ -156,7 +156,7 @@ const Quiz = (props: Props) => {
     if (questions.length > 0 && !loading && !error && !timerStarted && !quizCompleted) {
       const delayTimer = setTimeout(() => {
         setTimerStarted(true);
-      }, 2000);
+      }, 1000);
 
       return () => clearTimeout(delayTimer);
     }

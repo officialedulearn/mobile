@@ -1,14 +1,52 @@
 import useUserStore from "@/core/userState";
 import { Tabs } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity } from "react-native";
+import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from "expo-blur";
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 type Props = {};
 
+// Animated Tab Icon Component for smooth transitions
+const AnimatedTabIcon: React.FC<{
+  source: any;
+  color: string;
+  focused: boolean;
+  style?: any;
+}> = ({ source, color, focused, style }) => {
+  const scale = useSharedValue(focused ? 1 : 0.95);
+  const opacity = useSharedValue(focused ? 1 : 0.8);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1 : 0.95, {
+      damping: 15,
+      stiffness: 300,
+    });
+    opacity.value = withTiming(focused ? 1 : 0.8, { duration: 200 });
+  }, [focused]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Image source={source} style={[style, { tintColor: color }]} />
+    </Animated.View>
+  );
+};
+
 const TabLayout = (props: Props) => {
   const theme = useUserStore(s => s.theme);
+  const streakModalVisible = useUserStore(s => s.streakModalVisible);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -29,10 +67,11 @@ const TabLayout = (props: Props) => {
   }, []);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: "#00FF80",
-        tabBarInactiveTintColor: "#777777",
+    <>
+      <Tabs
+        screenOptions={{
+        tabBarActiveTintColor: theme === "dark" ? '#fff' : '#00FF80',
+        tabBarInactiveTintColor: theme === "dark" ? '#777777' : '#000',
         tabBarStyle: [
           {
             borderTopWidth: 0,
@@ -44,7 +83,7 @@ const TabLayout = (props: Props) => {
             borderColor: theme === 'dark' ? '#131313' : "#FFF",
             borderWidth: 1,
           },
-          isKeyboardVisible && {
+          (isKeyboardVisible || streakModalVisible) && {
             display: 'none',
           }
         ],
@@ -74,23 +113,27 @@ const TabLayout = (props: Props) => {
         
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => (
-            <Image
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon
               source={theme === 'dark' ? require("@/assets/images/icons/dark/home.png") : require("@/assets/images/icons/home.png")}
-              style={[styles.tabIcon, { tintColor: color }]}
+              color={color}
+              focused={focused}
+              style={styles.tabIcon}
             />
           ),
         }}
       />
       
       <Tabs.Screen
-        name="quizzes"
+        name="hub"
         options={{
-          title: "Quizzes",
-          tabBarIcon: ({ color }) => (
-            <Image
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/brain2.png") : require("@/assets/images/icons/brain2.png")}
-              style={[styles.tabIcon, { tintColor: color }]}
+          title: "Hub",
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon
+              source={require("@/assets/images/icons/hub.png")}
+              color={color}
+              focused={focused}
+              style={styles.tabIcon}
             />
           ),
         }}
@@ -100,12 +143,29 @@ const TabLayout = (props: Props) => {
         name="chat"
         options={{
           title: "", 
-          tabBarIcon: ({ focused }) => (
-            <Image
-              source={require("@/assets/images/icons/Button.png")}
-              style={styles.chatIcon}
-            />
-          ),
+          tabBarIcon: ({ focused }) => {
+            const scale = useSharedValue(1);
+            
+            React.useEffect(() => {
+              scale.value = withSpring(focused ? 1.1 : 1, {
+                damping: 15,
+                stiffness: 300,
+              });
+            }, [focused]);
+
+            const animatedStyle = useAnimatedStyle(() => ({
+              transform: [{ scale: scale.value }],
+            }));
+
+            return (
+              <Animated.View style={animatedStyle}>
+                <Image
+                  source={require("@/assets/images/icons/Button.png")}
+                  style={styles.chatIcon}
+                />
+              </Animated.View>
+            );
+          },
         }}
       />
 
@@ -113,10 +173,12 @@ const TabLayout = (props: Props) => {
         name="rewards"
         options={{
           title: "Rewards",
-          tabBarIcon: ({ color }) => (
-            <Image
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon
               source={theme === 'dark' ? require("@/assets/images/icons/dark/gift.png") : require("@/assets/images/icons/gift.png")}
-              style={[styles.tabIcon, { tintColor: color }]}
+              color={color}
+              focused={focused}
+              style={styles.tabIcon}
             />
           ),
         }}
@@ -126,21 +188,40 @@ const TabLayout = (props: Props) => {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Image
+          tabBarIcon: ({ color, focused }) => (
+            <AnimatedTabIcon
               source={theme === 'dark' ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user.png")}
-              style={[styles.tabIcon, { tintColor: color }]}
+              color={color}
+              focused={focused}
+              style={styles.tabIcon}
             />
           ),
         }}
       />
-    </Tabs>
+
+      <Tabs.Screen
+        name="quizzes"
+        options={{
+          href: null,
+        }}
+      />
+      </Tabs>
+    </>
   );
 };
 
 export default TabLayout;
 
 const styles = StyleSheet.create({
+  blurOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 998,
+    elevation: 998,
+  },
   tabIcon: {
     width: 20,
     height: 20,
