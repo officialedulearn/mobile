@@ -124,12 +124,27 @@ const Room = () => {
           }
         })
 
-        communityService.onRoomUserJoined(() => {
-          setOnlineCount(prev => prev + 1)
+        communityService.onRoomUserJoined((data) => {
+          if (data.onlineCount !== undefined) {
+            setOnlineCount(data.onlineCount)
+          } else {
+            setOnlineCount(prev => prev + 1)
+          }
         })
 
-        communityService.onRoomUserLeft(() => {
-          setOnlineCount(prev => Math.max(1, prev - 1))
+        communityService.onRoomUserLeft((data) => {
+          if (data.onlineCount !== undefined) {
+            setOnlineCount(data.onlineCount)
+          } else {
+            setOnlineCount(prev => Math.max(1, prev - 1))
+          }
+        })
+
+        communityService.onUserStatus((data) => {
+          if (data.status === 'online' || data.status === 'offline') {
+         
+            console.log('User status changed:', data.userId, data.status)
+          }
         })
 
         communityService.onNewMessage(async (event: NewMessageEvent) => {

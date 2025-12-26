@@ -95,8 +95,7 @@ export default function RootLayout() {
           <StatusBar style={theme === "dark" ? "light" : "dark"} />
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            
-            {/* Auth Flow - Fade transitions for smooth experience */}
+    
             <Stack.Screen 
               name="onboarding" 
               options={{ 
@@ -138,10 +137,8 @@ export default function RootLayout() {
               }} 
             />
             
-            {/* Main Tab Navigation */}
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             
-            {/* Modal-style screens - Slide from bottom */}
             <Stack.Screen 
               name="settings" 
               options={{ 
@@ -164,6 +161,16 @@ export default function RootLayout() {
             />
             <Stack.Screen 
               name="editProfile" 
+              options={{ 
+                headerShown: false,
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+                gestureEnabled: true,
+                gestureDirection: 'vertical'
+              }} 
+            />
+            <Stack.Screen 
+              name="feedback" 
               options={{ 
                 headerShown: false,
                 presentation: 'modal',
@@ -203,7 +210,6 @@ export default function RootLayout() {
               }} 
             />
             
-            {/* iOS-style push transitions - Slide from right */}
             <Stack.Screen 
               name="leaderboard" 
               options={{ 

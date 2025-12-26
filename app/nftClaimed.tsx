@@ -116,7 +116,7 @@ const nftClaimed = (props: Props) => {
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <View style={styles.topSection}>
         <Image
-          source={theme === "dark" ? require("@/assets/images/icons/dark/SealCheck.png") : require("@/assets/images/icons/SealCheck.png")}
+          source={require("@/assets/images/eddie/Celebrate.png")}
           style={styles.checkImage}
         />
         <View style={styles.welcomeContainer}>
@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkImage: {
-    width: 120,
-    height: 120,
+    width: 160,
+    height: 190,
     marginBottom: 20,
   },
   welcomeContainer: {

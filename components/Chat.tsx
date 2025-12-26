@@ -36,7 +36,10 @@ import Animated, {
   useAnimatedStyle, 
   withRepeat, 
   withTiming, 
-  withSequence 
+  withSequence,
+  useSharedValue,
+  interpolate,
+  Easing
 } from 'react-native-reanimated';
 import { ChatService } from "@/services/chat.service";
 
@@ -72,6 +75,15 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const recorderState = useAudioRecorderState(audioRecorder);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  
+  const waveAnimations = useRef(
+    Array.from({ length: 5 }, () => useSharedValue(0))
+  ).current;
+
+  const micButtonScale = useSharedValue(1);
+  const micButtonRotation = useSharedValue(0);
+  const inputContainerOpacity = useSharedValue(1);
+  const recordingContainerScale = useSharedValue(0.95);
 
   const router = useRouter();
 
@@ -343,18 +355,116 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     [isGenerating, isNavigating, handleSendMessage],
   );
 
+  const recordingOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    if (recorderState.isRecording) {
+      inputContainerOpacity.value = withTiming(0, { 
+        duration: 200, 
+        easing: Easing.out(Easing.cubic) 
+      });
+      
+      recordingContainerScale.value = withSequence(
+        withTiming(0.95, { duration: 0 }),
+        withTiming(1.02, { duration: 200, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) })
+      );
+      
+      recordingOpacity.value = withTiming(1, { 
+        duration: 300, 
+        easing: Easing.out(Easing.cubic) 
+      });
+      
+      waveAnimations.forEach((anim, index) => {
+        setTimeout(() => {
+          anim.value = withRepeat(
+            withSequence(
+              withTiming(0.2, {
+                duration: 200 + index * 40,
+                easing: Easing.inOut(Easing.ease),
+              }),
+              withTiming(1, {
+                duration: 300 + index * 50,
+                easing: Easing.inOut(Easing.sin),
+              }),
+              withTiming(0.3, {
+                duration: 300 + index * 50,
+                easing: Easing.inOut(Easing.sin),
+              }),
+              withTiming(0.2, {
+                duration: 200 + index * 40,
+                easing: Easing.inOut(Easing.ease),
+              })
+            ),
+            -1,
+            false
+          );
+        }, index * 30);
+      });
+    } else {
+      inputContainerOpacity.value = withTiming(1, { 
+        duration: 250, 
+        easing: Easing.out(Easing.cubic) 
+      });
+      
+      recordingContainerScale.value = withTiming(0.95, { 
+        duration: 200, 
+        easing: Easing.in(Easing.cubic) 
+      });
+      
+      recordingOpacity.value = withTiming(0, { 
+        duration: 200, 
+        easing: Easing.in(Easing.cubic) 
+      });
+      
+      waveAnimations.forEach((anim) => {
+        anim.value = withTiming(0, { 
+          duration: 200, 
+          easing: Easing.in(Easing.ease) 
+        });
+      });
+      
+      micButtonScale.value = withTiming(1, { 
+        duration: 200, 
+        easing: Easing.out(Easing.cubic) 
+      });
+      micButtonRotation.value = withTiming(0, { 
+        duration: 200, 
+        easing: Easing.out(Easing.cubic) 
+      });
+    }
+  }, [recorderState.isRecording]);
+
   const startRecording = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      micButtonScale.value = withSequence(
+        withTiming(0.85, { duration: 100, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: 150, easing: Easing.out(Easing.back(1.5)) })
+      );
+      
+      micButtonRotation.value = withSequence(
+        withTiming(15, { duration: 100, easing: Easing.out(Easing.cubic) }),
+        withTiming(-10, { duration: 100, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 100, easing: Easing.out(Easing.ease) })
+      );
+      
+      Keyboard.dismiss();
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch (error) {
       console.error('Error starting recording:', error);
       Alert.alert('Error', 'Failed to start recording');
+      
+      micButtonScale.value = withTiming(1, { duration: 150 });
+      micButtonRotation.value = withTiming(0, { duration: 150 });
     }
   };
 
   const stopRecording = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await audioRecorder.stop();
       if (audioRecorder.uri) {
         setRecordingUri(audioRecorder.uri);
@@ -367,10 +477,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           });
           
           setInputText(response.transcription);
-          
-          setTimeout(() => {
-            
-          }, 100);
           
         } catch (transcriptionError) {
           console.error('Error transcribing audio:', transcriptionError);
@@ -566,41 +672,24 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           )}
 
           <View style={styles.chatContent}>
+
             {!messages || messages.length === 0 ? (
               <View style={styles.emptyStateContainer}>
+                <View style={styles.emptyImageContainer}>
+                {keyboardHeight === 0 && (
+                  <Image 
+                    source={require("@/assets/images/eddie/Mischievous.png")} 
+                    style={styles.emptyImage} 
+                  />
+                )}
                 <Image
                   source={
                     theme === "dark"
                       ? require("@/assets/images/logo.png")
-                      : require("@/assets/images/LOGO-1.png")
+                      : require("@/assets/images/LOGO-2.png")
                   }
                   style={styles.logo}
                 />
-                <View style={styles.suggestions}>
-                  {!loadingSuggestions && suggestions && Array.isArray(suggestions) &&
-                    suggestions.map((suggestion, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={[
-                          styles.suggestion,
-                          theme === "dark" && {
-                            backgroundColor: "#0D0D0D",
-                            borderColor: "#2E3033",
-                            borderWidth: 1,
-                          },
-                        ]}
-                        onPress={() => handleSuggestionPress(suggestion)}
-                      >
-                        <Text
-                          style={[
-                            styles.suggestionText,
-                            theme === "dark" && { color: "#E0E0E0" },
-                          ]}
-                        >
-                          {suggestion}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
                 </View>
               </View>
             ) : (
@@ -658,6 +747,50 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
             )}
           </View>
 
+          {(!messages || messages.length === 0) && !loadingSuggestions && suggestions && suggestions.length > 0 && (
+            <View
+              style={[
+                styles.suggestionsContainer,
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                  borderTopColor: "#2E3033",
+                },
+              ]}
+            >
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.suggestionsScrollContent}
+                style={styles.suggestionsScroll}
+              >
+                {suggestions.map((suggestion, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.suggestion,
+                      theme === "dark" && {
+                        backgroundColor: "#0D0D0D",
+                        borderColor: "#2E3033",
+                      },
+                    ]}
+                    onPress={() => handleSuggestionPress(suggestion)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.suggestionText,
+                        theme === "dark" && { color: "#E0E0E0" },
+                      ]}
+                      numberOfLines={2}
+                    >
+                      {suggestion}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
           <View
             style={[
               styles.inputContainer,
@@ -667,81 +800,266 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
               },
             ]}
           >
-            <View
-              style={[
-                styles.inputWrapper,
-                theme === "dark" && {
-                  backgroundColor: "#0D0D0D",
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.attachmentButton,
-                  (recorderState.isRecording || isTranscribing) && styles.recordingButton
-                ]}
-                onPress={recorderState.isRecording ? stopRecording : startRecording}
-                disabled={isGenerating || isNavigating || isTranscribing}
-              >
-                <FontAwesome 
-                  name={recorderState.isRecording ? "stop" : "microphone"} 
-                  size={24} 
-                  color={recorderState.isRecording ? "#FF4444" : (theme === "dark" ? "#E0E0E0" : "black")} 
-                />
-              </TouchableOpacity>
-              {(recorderState.isRecording || isTranscribing) && (
-                <Text style={[
-                  styles.recordingText,
-                  theme === "dark" && { color: "#FF4444" }
-                ]}>
-                  {recorderState.isRecording ? "Recording..." : "Transcribing..."}
-                </Text>
-              )}
-              <TextInput
-                placeholder="Type a message..."
-                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-                style={[
-                  styles.textInput,
-                  theme === "dark" && { color: "#E0E0E0" },
-                ]}
-                value={inputText}
-                onChangeText={setInputText}
-                returnKeyType="send"
-                onSubmitEditing={() => handleSendMessage()}
-                onFocus={() => {
-                  setTimeout(() => scrollToBottom(), 100);
-                }}
-                multiline={true}
-                editable={!isGenerating && !isNavigating}
-                textAlignVertical="center"
+            {recorderState.isRecording ? (
+              <RecordingInterface
+                waveAnimations={waveAnimations}
+                theme={theme}
+                recordingOpacity={recordingOpacity}
+                recordingContainerScale={recordingContainerScale}
+                onStop={stopRecording}
               />
-              <TouchableOpacity
-                style={styles.sendButton}
-                onPress={() => handleSendMessage()}
-                disabled={
-                  inputText.trim() === "" || isGenerating || isNavigating
-                }
-              >
-                <Image
-                  source={
-                    theme === "dark"
-                      ? require("@/assets/images/icons/dark/send-2.png")
-                      : require("@/assets/images/icons/send-2.png")
-                  }
-                  style={[
-                    { width: 24, height: 24 },
-                    (inputText.trim() === "" ||
-                      isGenerating ||
-                      isNavigating) &&
-                      styles.disabledSend,
-                  ]}
-                />
-              </TouchableOpacity>
-            </View>
+            ) : (
+              <InputInterface
+                theme={theme}
+                inputText={inputText}
+                setInputText={setInputText}
+                isTranscribing={isTranscribing}
+                isGenerating={isGenerating}
+                isNavigating={isNavigating}
+                handleSendMessage={handleSendMessage}
+                scrollToBottom={scrollToBottom}
+                startRecording={startRecording}
+                inputContainerOpacity={inputContainerOpacity}
+                micButtonScale={micButtonScale}
+                micButtonRotation={micButtonRotation}
+              />
+            )}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
+  );
+};
+
+const WaveVisualization = ({ 
+  waveAnimations, 
+  theme 
+}: { 
+  waveAnimations: Array<ReturnType<typeof useSharedValue<number>>>;
+  theme: string;
+}) => {
+  const baseHeights = [8, 12, 16, 14, 10];
+  const maxHeights = [24, 28, 32, 26, 22];
+
+  return (
+    <View style={styles.waveContainer}>
+      {waveAnimations.map((anim, index) => {
+        const animatedStyle = useAnimatedStyle(() => {
+          const height = interpolate(
+            anim.value,
+            [0, 1],
+            [baseHeights[index], maxHeights[index]]
+          );
+          return {
+            height,
+            opacity: 0.5 + anim.value * 0.5,
+            transform: [{ scaleY: 0.8 + anim.value * 0.2 }],
+          };
+        });
+
+        return (
+          <Animated.View
+            key={index}
+            style={[
+              styles.waveBar,
+              {
+                backgroundColor: theme === "dark" ? "#FF4444" : "#FF4444",
+              },
+              animatedStyle,
+            ]}
+          />
+        );
+      })}
+    </View>
+  );
+};
+
+const InputInterface = ({
+  theme,
+  inputText,
+  setInputText,
+  isTranscribing,
+  isGenerating,
+  isNavigating,
+  handleSendMessage,
+  scrollToBottom,
+  startRecording,
+  inputContainerOpacity,
+  micButtonScale,
+  micButtonRotation,
+}: {
+  theme: string;
+  inputText: string;
+  setInputText: (text: string) => void;
+  isTranscribing: boolean;
+  isGenerating: boolean;
+  isNavigating: boolean;
+  handleSendMessage: () => void;
+  scrollToBottom: () => void;
+  startRecording: () => void;
+  inputContainerOpacity: ReturnType<typeof useSharedValue<number>>;
+  micButtonScale: ReturnType<typeof useSharedValue<number>>;
+  micButtonRotation: ReturnType<typeof useSharedValue<number>>;
+}) => {
+  const animatedInputStyle = useAnimatedStyle(() => ({
+    opacity: inputContainerOpacity.value,
+    transform: [
+      { scale: interpolate(inputContainerOpacity.value, [0, 1], [0.98, 1]) }
+    ],
+  }));
+
+  const animatedMicStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: micButtonScale.value },
+      { rotate: `${micButtonRotation.value}deg` }
+    ],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.inputWrapper,
+        theme === "dark" && {
+          backgroundColor: "#0D0D0D",
+        },
+        animatedInputStyle,
+      ]}
+    >
+      {isTranscribing ? (
+        <View style={styles.transcribingContainer}>
+          <Text
+            style={[
+              styles.transcribingText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Transcribing...
+          </Text>
+        </View>
+      ) : (
+        <TextInput
+          placeholder="Ask Eddie anything..."
+          placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+          style={[
+            styles.textInput,
+            theme === "dark" && { color: "#E0E0E0" },
+          ]}
+          value={inputText}
+          onChangeText={setInputText}
+          returnKeyType="done"
+          blurOnSubmit={true}
+          onSubmitEditing={handleSendMessage}
+          onFocus={() => {
+            setTimeout(() => scrollToBottom(), 100);
+          }}
+          multiline={true}
+          editable={!isGenerating && !isNavigating && !isTranscribing}
+          textAlignVertical="center"
+        />
+      )}
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.micButton}
+          onPress={startRecording}
+          disabled={isGenerating || isNavigating || isTranscribing}
+          activeOpacity={0.7}
+        >
+          <Animated.View style={animatedMicStyle}>
+            <Image
+              source={require("@/assets/images/icons/mic.png")}
+              style={[
+                { width: 24, height: 24 },
+                theme === "dark" && { tintColor: "#E0E0E0" },
+                (isGenerating || isNavigating || isTranscribing) &&
+                  styles.disabledSend,
+              ]}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.sendButton}
+          onPress={handleSendMessage}
+          disabled={
+            inputText.trim() === "" || isGenerating || isNavigating || isTranscribing
+          }
+        >
+          <Image
+            source={
+              theme === "dark"
+                ? require("@/assets/images/icons/dark/send-2.png")
+                : require("@/assets/images/icons/send-2.png")
+            }
+            style={[
+              { width: 24, height: 24 },
+              (inputText.trim() === "" ||
+                isGenerating ||
+                isNavigating ||
+                isTranscribing) &&
+                styles.disabledSend,
+            ]}
+          />
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+};
+
+const RecordingInterface = ({
+  waveAnimations,
+  theme,
+  recordingOpacity,
+  recordingContainerScale,
+  onStop,
+}: {
+  waveAnimations: Array<ReturnType<typeof useSharedValue<number>>>;
+  theme: string;
+  recordingOpacity: ReturnType<typeof useSharedValue<number>>;
+  recordingContainerScale: ReturnType<typeof useSharedValue<number>>;
+  onStop: () => void;
+}) => {
+  const animatedWrapperStyle = useAnimatedStyle(() => ({
+    opacity: recordingOpacity.value,
+    transform: [
+      { scale: recordingContainerScale.value }
+    ],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        styles.recordingWrapper,
+        theme === "dark" && {
+          backgroundColor: "#1A0D0D",
+          borderColor: "#FF4444",
+        },
+        animatedWrapperStyle,
+      ]}
+    >
+      <WaveVisualization waveAnimations={waveAnimations} theme={theme} />
+      <View style={styles.recordingControls}>
+        <Text
+          style={[
+            styles.recordingLabel,
+            theme === "dark" && { color: "#FF4444" },
+          ]}
+        >
+          Recording...
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.stopRecordingButton,
+            theme === "dark" && { backgroundColor: "#FF4444" },
+          ]}
+          onPress={onStop}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={require("@/assets/images/icons/micoff.png")}
+            style={{ width: 20, height: 20, tintColor: "#FFFFFF" }}
+          />
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
   );
 };
 
@@ -850,13 +1168,12 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
+    flex: 1
   },
   logo: {
     width: 200,
     height: 200,
     resizeMode: "contain",
-    marginBottom: 20,
   },
   welcomeText: {
     color: "#2D3C52",
@@ -867,30 +1184,36 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     lineHeight: 32,
   },
-  suggestions: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    width: "100%",
+  suggestionsContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#EDF3FC",
+    backgroundColor: "#FFFFFF",
+  },
+  suggestionsScroll: {
+    flexGrow: 0,
+  },
+  suggestionsScrollContent: {
+    paddingHorizontal: 4,
+    gap: 10,
   },
   suggestion: {
-    padding: 16,
-    backgroundColor: "#F0F4FF",
-    borderRadius: 12,
-    minWidth: 100,
-    flex: 1,
-    height: 80,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 20,
+    minWidth: 120,
+    maxWidth: 280,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F0F4FF",
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   suggestionText: {
     fontFamily: "Satoshi",
@@ -898,6 +1221,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     fontWeight: "500",
+    lineHeight: 20,
   },
   messagesContainer: {
     flex: 1,
@@ -926,20 +1250,72 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    minHeight: 50,
   },
-  attachmentButton: {
-    marginRight: 10,
-  },
-  recordingButton: {
+  recordingWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#FFE6E6",
-    borderRadius: 20,
-    padding: 8,
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: "#FF4444",
+    minHeight: 60,
   },
-  recordingText: {
+  waveContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+    justifyContent: "center",
+  },
+  waveBar: {
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: "#FF4444",
+    minHeight: 4,
+  },
+  recordingControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginLeft: 16,
+  },
+  recordingLabel: {
     color: "#FF4444",
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "Urbanist",
-    marginLeft: 5,
+    fontWeight: "600",
+  },
+  stopRecordingButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FF4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 8,
+  },
+  micButton: {
+    padding: 5,
+  },
+  transcribingContainer: {
+    flex: 1,
+    padding: 10,
+    justifyContent: "center",
+  },
+  transcribingText: {
+    fontFamily: "Urbanist",
+    fontSize: 14,
+    color: "#61728C",
+    fontStyle: "italic",
   },
   textInput: {
     flex: 1,
@@ -949,7 +1325,6 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
   },
   sendButton: {
-    marginLeft: 10,
     padding: 5,
   },
   disabledSend: {
@@ -1027,7 +1402,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   messageBubble: {
-    maxWidth: "75%",
+    maxWidth: "75%", 
     borderRadius: 16,
     padding: 12,
     marginBottom: 4,
@@ -1036,4 +1411,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F4FF",
     borderTopLeftRadius: 4,
   },
+  emptyImage: {
+    width: 140,
+    height: 159,
+    resizeMode: "contain",
+  },
+  emptyImageContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    marginBottom: 40,
+  }
 });

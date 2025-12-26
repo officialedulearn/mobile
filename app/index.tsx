@@ -60,7 +60,7 @@ export default function Index() {
       }}
     >
       <StatusBar style="light" />
-      <Image source={require("../assets/images/logo.png")} />
+      <Image source={require("../assets/images/fox.png")} style={{ width: 200, height: 200 }} />
       
       {/* {(showMinSplash || isLoading) && (
         <View style={{ marginTop: 40, alignItems: "center" }}>

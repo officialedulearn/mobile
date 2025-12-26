@@ -55,6 +55,7 @@ export default {
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
+      "react-native-share",
       [
         "expo-notifications",
         {

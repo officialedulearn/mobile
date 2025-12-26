@@ -707,11 +707,11 @@ export class CommunityService {
     this.socket?.on("room_joined", callback);
   }
 
-  onRoomUserJoined(callback: (data: { userId: string; username: string; timestamp: string }) => void): void {
+  onRoomUserJoined(callback: (data: { userId: string; username: string; timestamp: string; onlineCount?: number }) => void): void {
     this.socket?.on("room_user_joined", callback);
   }
 
-  onRoomUserLeft(callback: (data: { userId: string; username: string; timestamp: string }) => void): void {
+  onRoomUserLeft(callback: (data: { userId: string; username: string; timestamp: string; onlineCount?: number }) => void): void {
     this.socket?.on("room_user_left", callback);
   }
 

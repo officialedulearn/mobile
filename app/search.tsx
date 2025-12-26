@@ -246,14 +246,10 @@ const Search = (props: Props) => {
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         ) : searchQuery.trim() ? (
-          <Text
-            style={[
-              styles.noResultsText,
-              theme === "dark" && { color: "#E0E0E0" },
-            ]}
-          >
-            No users found
-          </Text>
+          <View style={{alignItems: "center", justifyContent: "center", gap: 10}}>
+            <Image source={require("@/assets/images/eddie/notfound.png")} style={{width: 150, height: 150}}/>
+            <Text style={{fontFamily: "Satoshi", fontSize: 16, color: theme === "dark" ? "#E0E0E0" : "#2D3C52", fontWeight: "500", lineHeight: 26}}>No users found</Text>
+          </View>
         ) : (
           <SearchResult
             id="default-user"

@@ -107,6 +107,43 @@ const Auth = () => {
     try {
       setLoading(true);
 
+      if (!isSignUp && formData.email !== "playreview@edulearn.com") {
+        try {
+          const { UserService } = await import('@/services/auth.service');
+          const userService = new UserService();
+          const availabilityResult = await userService.checkAvailability(
+            formData.email
+          );
+
+          if (availabilityResult.emailAvailable) {
+            Alert.alert(
+              "No Account Found",
+              "This email isn't registered. Please sign up to continue.",
+              [
+                {
+                  text: "Sign Up",
+                  onPress: () => setIsSignUp(true),
+                },
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+              ]
+            );
+            setLoading(false);
+            return;
+          }
+        } catch (availabilityError) {
+          console.error("Availability check failed:", availabilityError);
+          Alert.alert(
+            "Login Failed",
+            "Unable to verify account. Please try again."
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
       if (isSignUp && formData.email !== "playreview@edulearn.com") {
         try {
           const { UserService } = await import('@/services/auth.service');
@@ -121,6 +158,7 @@ const Auth = () => {
               "Email Already Registered",
               "This email is already registered. Please use a different email or try logging in."
             );
+            setLoading(false);
             return;
           }
 
@@ -129,6 +167,7 @@ const Auth = () => {
               "Username Taken",
               "This username is already taken. Please choose a different username."
             );
+            setLoading(false);
             return;
           }
         } catch (availabilityError) {
@@ -137,6 +176,7 @@ const Auth = () => {
             "Connection Error",
             "Failed to verify availability. Please try again."
           );
+          setLoading(false);
           return;
         }
       }

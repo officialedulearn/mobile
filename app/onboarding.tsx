@@ -32,7 +32,7 @@ const OnBoarding = () => {
       title: "Welcome to EduLearn",
       subtitle:
         "Your personal tutor always ready to explain, quiz, and guide you on web3.",
-      illustration: require("@/assets/images/bot.png"),
+      illustration: require("@/assets/images/eddie/Mischievous.png"),
       buttonTexts: ["Get Started"],
     },
     {

@@ -269,7 +269,11 @@ const settings = (props: Props) => {
             />
           </TouchableOpacity>
 
-          <View style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+          <TouchableOpacity 
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+            onPress={() => router.push("/feedback")}
+            disabled={loading}
+          >
             <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
@@ -282,7 +286,7 @@ const settings = (props: Props) => {
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
-          </View>
+          </TouchableOpacity>
 
           {/* <TouchableOpacity 
             style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
@@ -306,9 +310,10 @@ const settings = (props: Props) => {
       </View>
 
       <TouchableOpacity
-        onPress={() => {
-          logout();
-          router.push("/")
+        onPress={async () => {
+          await logout();
+          router.dismissAll();
+          router.replace("/");
         }}
         style={[styles.logoutButton]}
       >

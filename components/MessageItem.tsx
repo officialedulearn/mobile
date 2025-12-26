@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
   },
   botBubble: {
-    backgroundColor: "#F0F4FF",
     borderTopLeftRadius: 4,
   },
   messageText: {

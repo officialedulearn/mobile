@@ -2,7 +2,7 @@ import useUserStore from "@/core/userState";
 import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   StyleSheet,
@@ -10,17 +10,19 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  useColorScheme
+  useColorScheme,
+  Modal
 } from "react-native";
 import { ProgressBar } from "react-native-paper";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import BottomSheet, { BottomSheetBackdrop } from "@gorhom/bottom-sheet";
 import { BlurView } from "expo-blur";
 import DailyCheckInStreak from "@/components/streak";
 import * as StoreReview from "expo-store-review";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RoadmapService } from "@/services/roadmap.service";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 
 type Props = {};
@@ -33,7 +35,6 @@ const index = (props: Props) => {
   const setStreakModalVisible = useUserStore(s => s.setStreakModalVisible);
   const [latestRoadmap, setLatestRoadmap] = useState<any>(null);
   const [roadmapProgress, setRoadmapProgress] = useState({ completed: 0, total: 0 });
-  const bottomSheetRef = useRef<BottomSheet>(null);
   const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
     if (!url || typeof url !== 'string') return undefined;
     return url
@@ -78,14 +79,11 @@ const index = (props: Props) => {
         
          if(lastShownDate !== today) {
           setTimeout(() => {
-            if (bottomSheetRef.current) {
-              bottomSheetRef.current.snapToIndex(0);
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              AsyncStorage.setItem('streakModalLastShown', today);
-              setStreakModalVisible(true);
-            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            AsyncStorage.setItem('streakModalLastShown', today);
           }, 1000);
-         }
+        }
+        setStreakModalVisible(true);
       } catch (error) {
         console.log("Error checking streak modal:", error);
       }
@@ -152,14 +150,77 @@ const index = (props: Props) => {
   const { progress, xpNeeded } = getMilestoneProgress();
 
   const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
-console.log(user?.profilePictureURL)
-  const handleShare = () => {
-    console.log("share");
+  const [isSharing, setIsSharing] = useState(false);
+
+  const handleShare = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsSharing(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+      const cardUrl = `${apiUrl}/cards/streak/${user.id}?theme=dark`;
+      
+      console.log(`[Share] Starting download from: ${cardUrl}`);
+      const startTime = Date.now();
+      
+      const fileUri = `${FileSystem.documentDirectory}streak-${user.id}.png`;
+      
+      const downloadResumable = FileSystem.createDownloadResumable(
+        cardUrl,
+        fileUri,
+        {},
+        (downloadProgress) => {
+          const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+          console.log(`[Share] Download progress: ${(progress * 100).toFixed(0)}%`);
+        }
+      );
+      
+      const downloadPromise = downloadResumable.downloadAsync();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Download timeout')), 30000)
+      );
+      
+      const result = await Promise.race([downloadPromise, timeoutPromise]);
+      
+      if (!result) {
+        console.error('[Share] Download returned null');
+        throw new Error('Download failed');
+      }
+      
+      const downloadResult = result as FileSystem.FileSystemDownloadResult;
+      console.log(`[Share] Download completed in ${Date.now() - startTime}ms with status ${downloadResult.status}`);
+      
+      if (downloadResult.status === 200) {
+        const isAvailable = await Sharing.isAvailableAsync();
+        
+        if (isAvailable) {
+          await Sharing.shareAsync(downloadResult.uri, {
+            mimeType: 'image/png',
+            dialogTitle: `I'm on a ${user.streak} day learning streak on EduLearn! 🔥`,
+            UTI: 'public.png',
+          });
+        } else {
+          console.log("Sharing is not available on this device");
+        }
+        
+        setStreakModalVisible(false);
+      } else {
+        console.error("Failed to download streak card:", downloadResult.status);
+      }
+    } catch (error) {
+      console.error("Error sharing streak card:", error);
+      if (error instanceof Error && error.message === 'Download timeout') {
+        console.error("The server took too long to generate the card");
+      }
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleCloseModal = async () => {
     try {
-      bottomSheetRef.current?.close();
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const isAvailable = await StoreReview.isAvailableAsync();
       if (isAvailable) {
@@ -404,94 +465,100 @@ console.log(user?.profilePictureURL)
         </ScrollView>
       </View>
 
-      {streakModalVisible && (
+      <Modal
+        visible={streakModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModal}
+      >
         <BlurView
           intensity={30}
           tint={theme === "dark" ? "dark" : "light"}
           style={styles.blurOverlay}
           experimentalBlurMethod="dimezisBlurView"
-        />
-      )}
-
-      <View style={styles.bottomSheetContainer} pointerEvents={streakModalVisible ? "auto" : "none"}>
-        <BottomSheet
-          ref={bottomSheetRef}
-          index={-1}
-          snapPoints={['62%']}
-          enablePanDownToClose={true}
-          enableDynamicSizing={false}
-          onClose={() => setStreakModalVisible(false)}
-          backgroundStyle={[
-            styles.bottomSheetBackground,
-            theme === "dark" && styles.bottomSheetBackgroundDark
-          ]}
-          handleIndicatorStyle={[
-            styles.bottomSheetIndicator,
-            theme === "dark" && styles.bottomSheetIndicatorDark
-          ]}
-          style={styles.bottomSheetStyle}
-          bottomInset={20}
-          backdropComponent={() => null}
         >
-        <View style={styles.bottomSheetContent}>
-          <TouchableOpacity 
-            style={styles.closeButton}
-            onPress={handleCloseModal}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.closeButtonText, theme === "dark" && { color: "#E0E0E0" }]}>✕</Text>
-          </TouchableOpacity>
-          
-          <Image 
-            source={require("@/assets/images/eddie/proud.png")} 
-            style={styles.modalImage} 
-            resizeMode="contain"
-          />
-          <Text style={[styles.modalTitle, theme === "dark" && styles.modalTitleDark]}>
-            Congratulations! You've achieved {user?.streak} days of streak!
-          </Text>
-          
-          <DailyCheckInStreak streak={user?.streak} noBorder />
+          <View style={styles.modalContainer}>
+            <View style={[
+              styles.modalContent,
+              theme === "dark" && styles.modalContentDark
+            ]}>
+              <View style={styles.topImageSection}>
+                <Image 
+                  source={require("@/assets/images/eddie/ellipse.png")} 
+                  style={styles.ellipseOverlay} 
+                  resizeMode="cover"
+                />
+                
+                <View style={styles.imageContainer}>
+                  <Image 
+                    source={require("@/assets/images/eddie/streak.png")} 
+                    style={styles.modalImage} 
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
 
-          <View style={styles.modalButtonsContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.modalButton, 
-                styles.modalButtonSecondary,
-                theme === "dark" && styles.modalButtonSecondaryDark
-              ]} 
-              onPress={handleCloseModal}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.modalButtonText, 
-                styles.modalButtonTextSecondary,
-                theme === "dark" && styles.modalButtonTextSecondaryDark,
-              ]}>
-                Close
+              <View style={styles.streakTextContainer}>
+                <Text style={styles.streakText}>{user?.streak}</Text>
+                <Text style={styles.streakTextSubtitle}>Days streak</Text>
+              </View>
+
+              <Text style={[styles.modalTitle, theme === "dark" && styles.modalTitleDark]}>
+              You are on 🔥, Keep showing up daily
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.modalButton, 
-                styles.modalButtonPrimary,
-                theme === "dark" && styles.modalButtonPrimaryDark
-              ]} 
-              onPress={() => handleShare()}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.modalButtonText, 
-                styles.modalButtonTextPrimary,
-                theme === "dark" && styles.modalButtonTextPrimaryDark
-              ]}>
-                Share
-              </Text>
-            </TouchableOpacity>
+
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity 
+                  style={[
+                    styles.modalButton, 
+                    styles.modalButtonSecondary,
+                    theme === "dark" && styles.modalButtonSecondaryDark
+                  ]} 
+                  onPress={handleCloseModal}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.modalButtonText, 
+                    styles.modalButtonTextSecondary,
+                    theme === "dark" && styles.modalButtonTextSecondaryDark,
+                  ]}>
+                    Close
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.modalButton, 
+                    styles.modalButtonPrimary,
+                    theme === "dark" && styles.modalButtonPrimaryDark,
+                    isSharing && styles.modalButtonDisabled
+                  ]} 
+                  onPress={handleShare}
+                  activeOpacity={0.7}
+                  disabled={isSharing}
+                >
+                  {isSharing ? (
+                    <Text style={[
+                      styles.modalButtonText, 
+                      styles.modalButtonTextPrimary,
+                      theme === "dark" && styles.modalButtonTextPrimaryDark
+                    ]}>
+                      Preparing...
+                    </Text>
+                  ) : (
+                    <Text style={[
+                      styles.modalButtonText, 
+                      styles.modalButtonTextPrimary,
+                      theme === "dark" && styles.modalButtonTextPrimaryDark
+                    ]}>
+                      Share
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-        </BottomSheet>
-      </View>
+        </BlurView>
+      </Modal>
     </>
   );
 };
@@ -883,89 +950,81 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   blurOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
-    elevation: 999,
+    flex: 1,
   },
-  bottomSheetContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-    elevation: 1000,
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
   },
-  bottomSheetStyle: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderRadius: 24,
-    overflow: "hidden",
-  },
-  bottomSheetBackground: {
+  modalContent: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 24,
-    elevation: 9999,
-  },
-  bottomSheetBackgroundDark: {
-    backgroundColor: "#131313",
-    borderWidth: 1,
-    borderColor: "#2E3033",
-  },
-  bottomSheetIndicator: {
-    backgroundColor: "#E0E0E0",
-    width: 40,
-  },
-  bottomSheetIndicatorDark: {
-    backgroundColor: "#2E3033",
-  },
-  bottomSheetContent: {
     paddingHorizontal: 20,
     paddingBottom: 24,
     paddingTop: 8,
     alignItems: "center",
     position: "relative",
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+    overflow: "hidden",
   },
-  closeButton: {
-    position: "absolute",
-    top: 0,
-    right: 20,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  modalContentDark: {
+    backgroundColor: "#131313",
+    borderWidth: 1,
+    borderColor: "#2E3033",
+  },
+  topImageSection: {
+    position: "relative",
+    width: "100%",
+    height: 200,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    zIndex: 10,
+    marginTop: 8,
+    marginBottom: 8,
   },
-  closeButtonText: {
-    fontSize: 20,
-    color: "#2D3C52",
-    fontWeight: "400",
+  ellipseOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: 1,
+  },
+  imageContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
   },
   modalImage: {
     width: 130,
     height: 130,
-    marginBottom: 8,
-    marginTop: 8,
+  },
+  streakTextContainer: {
+    width: "100%",
   },
   modalTitle: {
     fontFamily: "Satoshi",
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "500",
     lineHeight: 24,
-    color: "#2D3C52",
+    color: "#61728C",
     textAlign: "center",
     marginBottom: 16,
     paddingHorizontal: 8,
@@ -984,7 +1043,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -995,9 +1054,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#00FF80",
   },
   modalButtonSecondary: {
-    backgroundColor: "#F9FBFC",
-    borderWidth: 1,
-    borderColor: "#000",
+    backgroundColor: "#B4FFD9",
   },
   modalButtonSecondaryDark: {
     backgroundColor: "#0D0D0D",
@@ -1016,9 +1073,32 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
   modalButtonTextSecondary: {
-    color: "#2D3C52",
+    color: "#028D48",
   },
   modalButtonTextSecondaryDark: {
     color: "#E0E0E0",
   },
+  modalButtonDisabled: {
+    opacity: 0.6,
+  },
+  streakText: {
+    color: "#00FF80",
+    textAlign: "center",
+    fontFamily: "Satoshi",
+    fontWeight: 900,
+    lineHeight: 76.8,
+    letterSpacing: 1.28,
+    fontSize: 64,
+    textShadowColor: "#049A4F",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 3,
+  },
+  streakTextSubtitle: {
+    color: "#2D3C52",
+    fontFamily: "Satoshi",
+    fontWeight: 700,
+    lineHeight: 36,
+    fontSize: 20,
+    textAlign: "center",
+  }
 });

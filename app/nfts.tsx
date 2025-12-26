@@ -468,7 +468,6 @@ const styles = StyleSheet.create({
   },
   rewardImageCard: {
 
-    borderWidth: 1,
   },
   rewardCard: {
     borderRadius: 12,
@@ -483,8 +482,6 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     margin: 8,
     maxWidth: "45%",
-    width: 152,
-    height: 192
   },
   darkRewardCard: {
     borderColor: "#2E3033",
@@ -624,14 +621,13 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   cancelButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#B4FFD9",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#000000",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
     flex: 1,
   },
   claimModalButton: {
@@ -641,6 +637,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
     flex: 1,
   },
   claimModalButtonText: {
@@ -651,7 +648,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   cancelButtonText: {
-    color: "#000000",
+    color: "#028D48",
     fontFamily: "Satoshi",
     fontSize: 16,
     fontWeight: "700",

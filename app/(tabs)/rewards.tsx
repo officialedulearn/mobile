@@ -13,7 +13,6 @@ import {
   Modal,
   Share,
 } from "react-native";
-import * as Sharing from 'expo-sharing';
 import { levels } from "@/utils/constants";
 import useUserStore from "@/core/userState";
 import { ProgressBar, DataTable } from "react-native-paper";

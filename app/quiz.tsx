@@ -316,8 +316,8 @@ const Quiz = (props: Props) => {
               <Image
                 source={
                   score >= questions.length / 2
-                    ? require("@/assets/images/Trophy.png")
-                    : require("@/assets/images/trophy-red.png")
+                    ? require("@/assets/images/eddie/congrats.png")
+                    : require("@/assets/images/eddie/failed.png")
                 }
                 style={styles.medalImage}
               />
