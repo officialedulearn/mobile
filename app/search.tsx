@@ -61,7 +61,10 @@ const SearchResult = ({
         },
       ]}
       onPress={() => {
-        router.push(`/user/${id}`);
+        router.dismiss();
+        setTimeout(() => {
+          router.push(`/user/${id}`);
+        }, 100);
       }}
     >
       <View

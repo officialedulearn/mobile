@@ -9,7 +9,11 @@ const Welcome = (props: Props) => {
   const { user, theme } = useUserStore();
 
   const handleStartChatting = async () => {
-    router.push("/(tabs)");
+    if(user?.isPremium) {
+      router.push("/(tabs)");
+    } else {
+      router.push("/freeTrialIntro");
+    }
   };
 
   return (

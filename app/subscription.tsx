@@ -17,7 +17,6 @@ import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import Purchases from "react-native-purchases";
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 const { width } = Dimensions.get("window");
 
 const planData = [
@@ -114,6 +113,8 @@ const Subscription = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasTrialEligibility, setHasTrialEligibility] = useState(false);
+  const [trialText, setTrialText] = useState('');
   const { user, theme } = useUserStore();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -178,6 +179,7 @@ const Subscription = () => {
       }
 
       const product = products[0];
+      
       const { customerInfo } = await Purchases.purchaseStoreProduct(product);
       
       console.log('📢 Purchase successful, customer info:', customerInfo);
@@ -279,9 +281,9 @@ const Subscription = () => {
   }, []);
 
   useEffect(() => {
-    const testProductFetch = async () => {
+    const checkTrialEligibility = async () => {
       try {
-        console.log('📢 Testing product fetch with your IDs...');
+        console.log('📢 Checking trial eligibility...');
         console.log(`📢 Platform: ${Platform.OS}`);
         
         const productIds = Platform.OS === 'android' 
@@ -291,7 +293,33 @@ const Subscription = () => {
         console.log('📢 Looking for:', productIds);
         const products = await Purchases.getProducts(productIds);
         console.log('📢 Products found count:', products.length);
-        console.log('📢 Products found:', products);
+        
+        if (products.length > 0) {
+          const monthlyProduct = products.find(p => 
+            p.identifier === 'rc_499_edulearn' || p.identifier === 'premium_monthly'
+          );
+          
+          if (monthlyProduct) {
+            console.log('📢 Monthly product:', monthlyProduct.identifier);
+            console.log('📢 Product price:', monthlyProduct.priceString);
+            console.log('📢 Intro price:', monthlyProduct.introPrice);
+            
+            const intro = monthlyProduct.introPrice;
+            
+            if (intro && intro.periodNumberOfUnits === 3 && intro.periodUnit === 'DAY') {
+              console.log('📢 3-day trial available!');
+              setHasTrialEligibility(true);
+              setTrialText(`3-day free trial, then ${monthlyProduct.priceString}/month`);
+            } else if (intro) {
+              console.log('📢 Trial available:', intro);
+              const periodText = intro.periodUnit === 'DAY' ? 'day' : 
+                                 intro.periodUnit === 'WEEK' ? 'week' : 
+                                 intro.periodUnit === 'MONTH' ? 'month' : 'period';
+              setHasTrialEligibility(true);
+              setTrialText(`${intro.periodNumberOfUnits}-${periodText} free trial, then ${monthlyProduct.priceString}/month`);
+            }
+          }
+        }
         
         products.forEach((product) => {
           console.log('📢 Product identifier:', product.identifier);
@@ -299,29 +327,21 @@ const Subscription = () => {
           console.log('📢 Product currency:', product.currencyCode);
         });
       } catch (error) {
-        console.log('📢 Error fetching products:', error);
+        console.log('📢 Error checking trial eligibility:', error);
       }
     };
-    testProductFetch();
+    checkTrialEligibility();
   }, []);
 
   return (
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />  
       
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={theme === "dark" 
-          ? ['rgba(0, 255, 128, 0.25)', 'rgba(0, 255, 128, 0.15)', 'rgba(0, 255, 128, 0.08)', 'rgba(0, 255, 128, 0.03)', 'rgba(0, 255, 128, 0.01)', 'transparent'] 
-          : ['rgba(0, 255, 128, 0.3)', 'rgba(0, 255, 128, 0.2)', 'rgba(0, 255, 128, 0.12)', 'rgba(0, 255, 128, 0.06)', 'rgba(0, 255, 128, 0.02)', 'transparent']}
-        start={{ x: 0.5, y: 0.5 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.backgroundGradientCenter}
-      />
-      
       <View style={styles.topNav}>
         <BackButton />
-        <Text style={[styles.headerText, theme === "dark" && styles.headerTextDark]}>Upgrade your Plan</Text>
+        <Text style={[styles.headerText, theme === "dark" && styles.headerTextDark]}>
+          Upgrade your Plan
+        </Text>
       </View>
 
       <View style={[styles.switchPills, theme === "dark" && styles.switchPillsDark]}>
@@ -366,99 +386,116 @@ const Subscription = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {planData.map((plan, index) => (
-          <View key={index} style={styles.cardContainer}>
-            <PlanCard
-              name={plan.name}
-              price={plan.price}
-              isAnnual={isAnnual}
-              features={plan.features}
-            />
-          </View>
-        ))}
-      </ScrollView>
+      <View style={styles.cardsSection}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {planData.map((plan, index) => (
+            <View key={index} style={styles.cardContainer}>
+              <PlanCard
+                name={plan.name}
+                price={plan.price}
+                isAnnual={isAnnual}
+                features={plan.features}
+              />
+            </View>
+          ))}
+        </ScrollView>
 
-      <View style={styles.dotsContainer}>
-        {planData.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              currentPlanIndex === index && styles.activeDot,
-              theme === "dark" && styles.dotDark,
-              theme === "dark" && currentPlanIndex === index && styles.activeDotDark,
-            ]}
-          />
-        ))}
+        <View style={styles.dotsContainer}>
+          {planData.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                currentPlanIndex === index && styles.activeDot,
+                theme === "dark" && styles.dotDark,
+                theme === "dark" && currentPlanIndex === index && styles.activeDotDark,
+              ]}
+            />
+          ))}
+        </View>
       </View>
 
-      <TouchableOpacity 
-        style={[
-          styles.upgradeButton, 
-          (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabled,
-          theme === "dark" && styles.upgradeButtonDark,
-          theme === "dark" && (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabledDark
-        ]}
-        onPress={handleUpgrade}
-        disabled={isLoading || planData[currentPlanIndex].price === 0}
-      >
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator color="#00FF80" size="small" />
+      <View style={styles.bottomSection}>
+        {hasTrialEligibility && currentPlanIndex === 1 && (
+          <View style={styles.trialBannerContainer}>
+            <View style={[styles.trialBanner, theme === "dark" && styles.trialBannerDark]}>
+              <Text style={[styles.trialBannerText, theme === "dark" && styles.trialBannerTextDark]}>
+                🎉 {trialText}
+              </Text>
+              <Text style={[styles.trialBannerSubtext, theme === "dark" && styles.trialBannerSubtextDark]}>
+                Cancel anytime before trial ends
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={[
+            styles.upgradeButton, 
+            (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabled,
+            theme === "dark" && styles.upgradeButtonDark,
+            theme === "dark" && (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabledDark
+          ]}
+          onPress={handleUpgrade}
+          disabled={isLoading || planData[currentPlanIndex].price === 0}
+        >
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#00FF80" size="small" />
+              <Text style={[
+                styles.upgradeButtonText,
+                theme === "dark" && styles.upgradeButtonTextDark
+              ]}>Processing...</Text>
+            </View>
+          ) : (
             <Text style={[
               styles.upgradeButtonText,
-              theme === "dark" && styles.upgradeButtonTextDark
-            ]}>Processing...</Text>
-          </View>
-        ) : (
-          <Text style={[
-            styles.upgradeButtonText,
-            planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabled,
-            theme === "dark" && styles.upgradeButtonTextDark,
-            theme === "dark" && planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabledDark
-          ]}>
-            {planData[currentPlanIndex].price === 0 ? 'Current Plan' : 'Upgrade'}
-          </Text>
-        )}
-      </TouchableOpacity>
-
-      <View style={styles.legalLinksContainer}>
-        <TouchableOpacity onPress={openPrivacyPolicy}>
-          <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
-            Privacy Policy
-          </Text>
+              planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabled,
+              theme === "dark" && styles.upgradeButtonTextDark,
+              theme === "dark" && planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabledDark
+            ]}>
+              {planData[currentPlanIndex].price === 0 ? 'Current Plan' : 'Upgrade'}
+            </Text>
+          )}
         </TouchableOpacity>
-        <Text style={[styles.legalSeparator, theme === "dark" && styles.legalSeparatorDark]}>•</Text>
-        <TouchableOpacity onPress={openTermsOfUse}>
-          <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
-            Terms of Use (EULA)
+
+        <View style={styles.legalLinksContainer}>
+          <TouchableOpacity onPress={openPrivacyPolicy}>
+            <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+              Privacy Policy
+            </Text>
+          </TouchableOpacity>
+          <Text style={[styles.legalSeparator, theme === "dark" && styles.legalSeparatorDark]}>•</Text>
+          <TouchableOpacity onPress={openTermsOfUse}>
+            <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+              Terms of Use (EULA)
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity 
+          onPress={restorePurchases}
+          disabled={isLoading}
+          style={styles.restoreButton}
+        >
+          <Text style={[
+            styles.restoreButtonText,
+            theme === "dark" && styles.restoreButtonTextDark,
+            isLoading && styles.restoreButtonTextDisabled
+          ]}>
+            Restore Purchases
           </Text>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity 
-        onPress={restorePurchases}
-        disabled={isLoading}
-        style={styles.restoreButton}
-      >
-        <Text style={[
-          styles.restoreButtonText,
-          theme === "dark" && styles.restoreButtonTextDark,
-          isLoading && styles.restoreButtonTextDisabled
-        ]}>
-          Restore Purchases
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -472,16 +509,6 @@ const styles = StyleSheet.create({
   },
   containerDark: {
     backgroundColor: "#0D0D0D",
-  },
-  backgroundGradientCenter: {
-    position: "absolute",
-    top: "35%",
-    left: "50%",
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    transform: [{ translateX: -150 }, { translateY: -150 }],
-    zIndex: 0,
   },
   topNav: {
     flexDirection: "row",
@@ -572,6 +599,9 @@ const styles = StyleSheet.create({
   annuallyContent: {
     flexDirection: "row",
     gap: 8,
+  },
+  cardsSection: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
@@ -721,8 +751,8 @@ const styles = StyleSheet.create({
   dotsContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
     position: "relative",
     zIndex: 1,
   },
@@ -742,6 +772,47 @@ const styles = StyleSheet.create({
   activeDotDark: {
     backgroundColor: "#00FF80",
   },
+  bottomSection: {
+    paddingBottom: 0,
+  },
+  trialBannerContainer: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  trialBanner: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#E0F2FE",
+    alignItems: "center",
+  },
+  trialBannerDark: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#2E3033",
+  },
+  trialBannerText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#2D3C52",
+    fontFamily: "Satoshi",
+    textAlign: "center",
+    marginBottom: 2,
+  },
+  trialBannerTextDark: {
+    color: "#E0E0E0",
+  },
+  trialBannerSubtext: {
+    fontSize: 11,
+    color: "#61728C",
+    fontFamily: "Satoshi",
+    textAlign: "center",
+  },
+  trialBannerSubtextDark: {
+    color: "#B3B3B3",
+  },
   upgradeButton: {
     backgroundColor: "#000",
     paddingVertical: 16,
@@ -749,7 +820,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 16,
-    marginBottom: 40,
+    marginBottom: 10,
     position: "relative",
     zIndex: 1,
   },

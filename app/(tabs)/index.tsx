@@ -81,9 +81,9 @@ const index = (props: Props) => {
           setTimeout(() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             AsyncStorage.setItem('streakModalLastShown', today);
+            setStreakModalVisible(true);
           }, 1000);
         }
-        setStreakModalVisible(true);
       } catch (error) {
         console.log("Error checking streak modal:", error);
       }
@@ -259,7 +259,19 @@ const index = (props: Props) => {
             </View>
           </View>
 
-          <TouchableOpacity
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <TouchableOpacity
+            style={[styles.searchNav, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+            onPress={() => router.push("/notifications")}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={require("@/assets/images/icons/notification.png")}
+              style={{ width: 20, height: 20 }}
+            />
+          </TouchableOpacity>
+        <TouchableOpacity
             style={[styles.searchNav, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/search")}
             activeOpacity={0.7}
@@ -269,6 +281,7 @@ const index = (props: Props) => {
               style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
+        </View>
         </View>
 
         <View style={[styles.xpProgress, theme === "dark" && { backgroundColor: "#00FF80" }]}>

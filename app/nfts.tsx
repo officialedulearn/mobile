@@ -258,6 +258,10 @@ const NFT = (props: Props) => {
           />
         ) : (
           <View style={styles.emptyState}>
+            <Image
+              source={require("@/assets/images/eddie/eddy.gif")}
+              style={{ width: 100, height: 100 }}
+            />
             <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
               You haven't claimed any badge yet.
             </Text>

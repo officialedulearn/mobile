@@ -948,7 +948,7 @@ const InputInterface = ({
           onChangeText={setInputText}
           returnKeyType="done"
           blurOnSubmit={true}
-          onSubmitEditing={handleSendMessage}
+          onSubmitEditing={() => handleSendMessage()}
           onFocus={() => {
             setTimeout(() => scrollToBottom(), 100);
           }}
@@ -978,7 +978,7 @@ const InputInterface = ({
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.sendButton}
-          onPress={handleSendMessage}
+          onPress={() => handleSendMessage()}
           disabled={
             inputText.trim() === "" || isGenerating || isNavigating || isTranscribing
           }

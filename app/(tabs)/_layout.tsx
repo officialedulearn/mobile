@@ -1,7 +1,7 @@
 import useUserStore from "@/core/userState";
-import { Tabs } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View } from "react-native";
+import { Tabs, usePathname } from "expo-router";
+import React, { useEffect, useState, useRef, createContext, useContext } from "react";
+import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View, Dimensions } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from "expo-blur";
@@ -10,7 +10,18 @@ import Animated, {
   useSharedValue, 
   withSpring,
   withTiming,
+  SlideInRight,
+  SlideInLeft,
+  Easing,
 } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const TAB_ORDER = ['index', 'hub', 'chat', 'rewards', 'profile'];
+
+export const SlideTransitionContext = createContext<{
+  direction: 'left' | 'right';
+}>({ direction: 'right' });
 
 type Props = {};
 
@@ -49,6 +60,23 @@ const TabLayout = (props: Props) => {
   const streakModalVisible = useUserStore(s => s.streakModalVisible);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  const previousPathRef = useRef(pathname);
+  const [direction, setDirection] = useState<'left' | 'right'>('right');
+
+  useEffect(() => {
+    const currentTab = pathname.split('/')[1] || 'index';
+    const previousTab = previousPathRef.current.split('/')[1] || 'index';
+    
+    const currentIndex = TAB_ORDER.indexOf(currentTab);
+    const previousIndex = TAB_ORDER.indexOf(previousTab);
+    
+    if (currentIndex !== previousIndex && currentIndex !== -1 && previousIndex !== -1) {
+      setDirection(currentIndex > previousIndex ? 'right' : 'left');
+    }
+    
+    previousPathRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -67,11 +95,13 @@ const TabLayout = (props: Props) => {
   }, []);
 
   return (
-    <>
+    <SlideTransitionContext.Provider value={{ direction }}>
       <Tabs
         screenOptions={{
         tabBarActiveTintColor: theme === "dark" ? '#fff' : '#00FF80',
         tabBarInactiveTintColor: theme === "dark" ? '#777777' : '#000',
+        animation: 'shift',
+        sceneStyle: { backgroundColor: theme === 'dark' ? '#131313' : '#FFF' },
         tabBarStyle: [
           {
             borderTopWidth: 0,
@@ -206,7 +236,58 @@ const TabLayout = (props: Props) => {
         }}
       />
       </Tabs>
-    </>
+    </SlideTransitionContext.Provider>
+  );
+};
+
+export const useSlideTransition = () => useContext(SlideTransitionContext);
+
+export const SlideTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { direction } = useSlideTransition();
+  
+  const slideInRight = () => {
+    'worklet';
+    const animations = {
+      originX: withSpring(0, {
+        damping: 14,
+        stiffness: 180,
+        mass: 0.6,
+      }),
+    };
+    const initialValues = {
+      originX: SCREEN_WIDTH,
+    };
+    return {
+      initialValues,
+      animations,
+    };
+  };
+
+  const slideInLeft = () => {
+    'worklet';
+    const animations = {
+      originX: withSpring(0, {
+        damping: 14,
+        stiffness: 180,
+        mass: 0.6,
+      }),
+    };
+    const initialValues = {
+      originX: -SCREEN_WIDTH,
+    };
+    return {
+      initialValues,
+      animations,
+    };
+  };
+  
+  return (
+    <Animated.View 
+      style={{ flex: 1 }}
+      entering={direction === 'right' ? slideInRight : slideInLeft}
+    >
+      {children}
+    </Animated.View>
   );
 };
 

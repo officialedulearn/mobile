@@ -143,10 +143,9 @@ export default function RootLayout() {
               name="settings" 
               options={{ 
                 headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
+                animation: 'slide_from_right',
                 gestureEnabled: true,
-                gestureDirection: 'vertical'
+                gestureDirection: 'horizontal'
               }} 
             />
             <Stack.Screen 
@@ -183,10 +182,18 @@ export default function RootLayout() {
               name="subscription" 
               options={{ 
                 headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
+                animation: 'slide_from_right',
                 gestureEnabled: true,
-                gestureDirection: 'vertical'
+                gestureDirection: 'horizontal'
+              }} 
+            />
+            <Stack.Screen 
+              name="freeTrialIntro" 
+              options={{ 
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal'
               }} 
             />
             <Stack.Screen 
@@ -250,6 +257,7 @@ export default function RootLayout() {
               name="user/[id]" 
               options={{ 
                 headerShown: false,
+                presentation: 'card',
                 animation: 'slide_from_right',
                 gestureEnabled: true,
                 gestureDirection: 'horizontal'
@@ -284,6 +292,16 @@ export default function RootLayout() {
             />
             <Stack.Screen 
               name="joinCommunity" 
+              options={{ 
+                headerShown: false,
+                animation: 'slide_from_right',
+                gestureEnabled: true,
+                gestureDirection: 'horizontal'
+              }} 
+            />
+
+            <Stack.Screen 
+              name="notifications" 
               options={{ 
                 headerShown: false,
                 animation: 'slide_from_right',
