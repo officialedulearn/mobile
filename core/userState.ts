@@ -25,6 +25,8 @@ interface UserState {
   setTheme: (theme: 'light' | 'dark') => Promise<void>;
   loadTheme: () => Promise<void>;
   updateUserPointsFromQuiz: (xpEarned: number) => void;
+  updateUserCredits: (credits: number) => void;
+  updateUserQuizzes: (quizzesCompleted: number) => void;
 }
 
 const userService = new UserService();
@@ -86,6 +88,12 @@ const useUserStore = create<UserState>((set, get) => ({
   walletBalanceLoading: false,
   theme: 'light',
   streakModalVisible: false,
+  updateUserCredits: (credits: number) => set((state) => ({
+    user: state.user ? { ...state.user, credits } : null,
+  })),
+  updateUserQuizzes: (quizzesCompleted: number) => set((state) => ({
+    user: state.user ? { ...state.user, quizCompleted: quizzesCompleted } : null,
+  })),
   setStreakModalVisible: (visible: boolean) => set({ streakModalVisible: visible }),
   setUserAsync: async () => {
     set({ isLoading: true });

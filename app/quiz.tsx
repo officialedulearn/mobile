@@ -594,19 +594,19 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 24,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
   },
   metricText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "400",
     lineHeight: 26,
   },
   questionsText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 24,
     fontWeight: "700",
     lineHeight: 30,
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   },
   timeLeft: {
     color: "#f00",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textTransform: "uppercase",
     lineHeight: 24,
     fontWeight: "500",
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
   },
   quizResult: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
     lineHeight: 30,
     fontSize: 16,
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontSize: 16,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 20,
   },
   options: {
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "400",
     flex: 1,
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   navButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     color: "#61728C",
   },
@@ -757,14 +757,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
     marginBottom: 10,
   },
   resultsMessage: {
     fontSize: 16,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     marginBottom: 30,
   },
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 15,
   },
   answersList: {
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     lineHeight: 48,
     marginBottom: 20,
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 5,
   },
   answerDetails: {
@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   },
   answerText: {
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 2,
   },
   correctAnswer: {
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
   correctAnswerText: {
     fontSize: 14,
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   returnButton: {
     backgroundColor: "#000",
@@ -853,7 +853,7 @@ const styles = StyleSheet.create({
   },
   returnButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
   },
@@ -931,7 +931,7 @@ const styles = StyleSheet.create({
     borderColor: "#00FF80",
   },
   resultsButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "600",
     lineHeight: 20,

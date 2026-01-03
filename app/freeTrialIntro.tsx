@@ -6,47 +6,72 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import Purchases from "react-native-purchases";
 
 const trialFeatures = [
   {
-    icon: "🤖",
-    title: "Advanced AI Models",
-    description: "Access to Gemini 2.5 Pro for smarter learning"
-  },
-  {
     icon: "💬",
     title: "Unlimited Chat Messages",
-    description: "Chat with your AI tutor without limits"
   },
   {
     icon: "📝",
-    title: "15 Quiz Attempts Daily",
-    description: "Test your knowledge more frequently"
-  },
-  {
-    icon: "⚡",
-    title: "20 Chat Credits Per Day",
-    description: "More credits for advanced features"
+    title: "More Quiz Attempts and Credits Daily",
   },
   {
     icon: "🎖️",
     title: "Exclusive Premium Badges",
-    description: "Unlock special achievements and rewards"
   },
   {
     icon: "🔄",
     title: "Credit Rollovers",
-    description: "Unused credits carry over to the next day"
   },
 ];
 
 const FreeTrialIntro = () => {
   const { theme } = useUserStore();
+  const [hasTrialEligibility, setHasTrialEligibility] = useState(false);
+  const [trialText, setTrialText] = useState('');
+
+  useEffect(() => {
+    const checkTrialEligibility = async () => {
+      try {
+        const productIds = Platform.OS === 'android' 
+          ? ['premium_monthly', 'premium_annual']
+          : ['rc_499_edulearn', 'rc_4999_edulearn'];
+        
+        const products = await Purchases.getProducts(productIds);
+        
+        if (products.length > 0) {
+          const monthlyProduct = products.find(p => 
+            p.identifier === 'rc_499_edulearn' || p.identifier === 'premium_monthly'
+          );
+          
+          if (monthlyProduct) {
+            const intro = monthlyProduct.introPrice;
+            
+            if (intro && intro.periodNumberOfUnits === 3 && intro.periodUnit === 'DAY') {
+              setHasTrialEligibility(true);
+              setTrialText(`3-day free trial, then ${monthlyProduct.priceString}/month`);
+            } else if (intro) {
+              const periodText = intro.periodUnit === 'DAY' ? 'day' : 
+                                 intro.periodUnit === 'WEEK' ? 'week' : 
+                                 intro.periodUnit === 'MONTH' ? 'month' : 'period';
+              setHasTrialEligibility(true);
+              setTrialText(`${intro.periodNumberOfUnits}-${periodText} free trial, then ${monthlyProduct.priceString}/month`);
+            }
+          }
+        }
+      } catch (error) {
+        console.log('Error checking trial eligibility:', error);
+      }
+    };
+    checkTrialEligibility();
+  }, []);
 
   const handleLearnMore = () => {
     router.push("/subscription");
@@ -81,11 +106,9 @@ const FreeTrialIntro = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroSection}>
+          <Image source={require("@/assets/images/eddie/freeTrial.gif")} style={{ width: 150, height: 150 }} />
           <Text style={[styles.heroTitle, theme === "dark" && styles.heroTitleDark]}>
-            Start Your Free Trial
-          </Text>
-          <Text style={[styles.heroSubtitle, theme === "dark" && styles.heroSubtitleDark]}>
-            Experience premium features at no cost
+            Unlock the Full Eddy Experience
           </Text>
         </View>
 
@@ -95,49 +118,41 @@ const FreeTrialIntro = () => {
               key={index} 
               style={[styles.featureCard, theme === "dark" && styles.featureCardDark]}
             >
-              <View style={styles.featureIconContainer}>
+              <View style={[styles.featureIconContainer, theme === "dark" && styles.featureIconContainerDark]}>
                 <Text style={styles.featureIcon}>{feature.icon}</Text>
               </View>
               <View style={styles.featureContent}>
                 <Text style={[styles.featureTitle, theme === "dark" && styles.featureTitleDark]}>
                   {feature.title}
                 </Text>
-                <Text style={[styles.featureDescription, theme === "dark" && styles.featureDescriptionDark]}>
-                  {feature.description}
-                </Text>
+                
               </View>
             </View>
           ))}
         </View>
 
-        <View style={styles.trialInfoContainer}>
-          <View style={[styles.trialInfoBox, theme === "dark" && styles.trialInfoBoxDark]}>
-            <Text style={[styles.trialInfoText, theme === "dark" && styles.trialInfoTextDark]}>
-              🎉 3-day free trial, then ${Platform.OS === 'android' ? '5' : '4.99'}/month
-            </Text>
-            <Text style={[styles.trialInfoSubtext, theme === "dark" && styles.trialInfoSubtextDark]}>
-              Cancel anytime before trial ends. No charges until trial is over.
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
       <View style={styles.bottomContainer}>
+        {hasTrialEligibility && (
+          <View style={styles.trialBannerContainer}>
+            <View style={[styles.trialBanner, theme === "dark" && styles.trialBannerDark]}>
+              <Text style={[styles.trialBannerText, theme === "dark" && styles.trialBannerTextDark]}>
+                🎉 {trialText}
+              </Text>
+              <Text style={[styles.trialBannerSubtext, theme === "dark" && styles.trialBannerSubtextDark]}>
+                Cancel anytime before trial ends
+              </Text>
+            </View>
+          </View>
+        )}
+
         <TouchableOpacity 
           style={[styles.startButton, theme === "dark" && styles.startButtonDark]}
           onPress={handleLearnMore}
         >
           <Text style={[styles.startButtonText, theme === "dark" && styles.startButtonTextDark]}>
             Learn More
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.skipTextButton}
-          onPress={handleSkip}
-        >
-          <Text style={[styles.skipText, theme === "dark" && styles.skipTextDark]}>
-            Continue with Free Plan
           </Text>
         </TouchableOpacity>
       </View>
@@ -186,9 +201,10 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Bold",
     textAlign: "center",
     marginBottom: 8,
+    marginTop: 16,
   },
   heroTitleDark: {
     color: "#E0E0E0",
@@ -196,25 +212,21 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     fontSize: 16,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
   },
   heroSubtitleDark: {
     color: "#B3B3B3",
   },
   featuresContainer: {
-    gap: 12,
-    marginBottom: 24,
+    
   },
   featureCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
-    borderWidth: 1,
-    borderColor: "#EDF3FC",
   },
   featureCardDark: {
     backgroundColor: "#131313",
@@ -224,9 +236,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F9FBFC",
+    backgroundColor: "#E8F5E9",
+    borderWidth: 2,
+    borderColor: "#00FF80",
     alignItems: "center",
     justifyContent: "center",
+  },
+  featureIconContainerDark: {
+    backgroundColor: "#1A2E1A",
+    borderColor: "#00FF80",
   },
   featureIcon: {
     fontSize: 24,
@@ -235,10 +253,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 18,
+    fontWeight: "800",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 4,
   },
   featureTitleDark: {
@@ -247,7 +265,7 @@ const styles = StyleSheet.create({
   featureDescription: {
     fontSize: 14,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 20,
   },
   featureDescriptionDark: {
@@ -271,7 +289,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     marginBottom: 4,
   },
@@ -281,7 +299,7 @@ const styles = StyleSheet.create({
   trialInfoSubtext: {
     fontSize: 14,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
   },
   trialInfoSubtextDark: {
@@ -306,7 +324,7 @@ const styles = StyleSheet.create({
     color: "#00FF80",
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   startButtonTextDark: {
     color: "#000",
@@ -319,9 +337,45 @@ const styles = StyleSheet.create({
     color: "#61728C",
     fontSize: 14,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   skipTextDark: {
+    color: "#B3B3B3",
+  },
+  trialBannerContainer: {
+    marginBottom: 12,
+  },
+  trialBanner: {
+    backgroundColor: "#F0F9FF",
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#E0F2FE",
+    alignItems: "center",
+  },
+  trialBannerDark: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#2E3033",
+  },
+  trialBannerText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  trialBannerTextDark: {
+    color: "#E0E0E0",
+  },
+  trialBannerSubtext: {
+    fontSize: 12,
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
+    textAlign: "center",
+  },
+  trialBannerSubtextDark: {
     color: "#B3B3B3",
   },
 });

@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     textAlign: "center",
     lineHeight: 42,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontStyle: "normal",
   },
   subtitle: {
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     marginBottom: 24,
   },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     flex: 1,
   },
   startButton: {

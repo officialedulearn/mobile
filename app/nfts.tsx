@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
+import { BlurView } from "expo-blur";
 import BackButton from "@/components/backButton";
 import { RewardsService } from "@/services/rewards.service";
 import useUserStore from "@/core/userState";
@@ -260,10 +261,10 @@ const NFT = (props: Props) => {
           <View style={styles.emptyState}>
             <Image
               source={require("@/assets/images/eddie/eddy.gif")}
-              style={{ width: 100, height: 100 }}
+              style={{ width: 150, height: 150, marginBottom: 20 }}
             />
             <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
-              You haven't claimed any badge yet.
+              You havent claimed any badges yet. Earn badges by completing courses and quizzes 🫠
             </Text>
           </View>
         )
@@ -315,9 +316,16 @@ const NFT = (props: Props) => {
                   style={styles.lockedImage}
                   source={getImageSource(item.imageUrl)}
                 />
+                <BlurView
+                  intensity={20}
+                  tint="dark"
+                  style={styles.blurOverlay}
+                >
+                  <Text style={styles.lockedText}>
+                    {item.title}
+                  </Text>
+                </BlurView>
               </View>
-              <Text style={[styles.rewardTitle, theme === "dark" && styles.darkRewardTitle]}>{item.title}</Text>
-             
             </View>
           )}
           keyExtractor={(item: any) => item.id}
@@ -329,7 +337,21 @@ const NFT = (props: Props) => {
         </View>
       )}
 
-      <Modal isVisible={isModalVisible} style={styles.rewardModal}>
+      <Modal 
+        isVisible={isModalVisible} 
+        style={styles.rewardModal}
+        animationIn="zoomIn"
+        animationOut="zoomOut"
+        animationInTiming={400}
+        animationOutTiming={300}
+        backdropTransitionInTiming={400}
+        backdropTransitionOutTiming={300}
+        backdropOpacity={0.6}
+        useNativeDriver={true}
+        useNativeDriverForBackdrop={true}
+        hideModalContentWhileAnimating={true}
+        onBackdropPress={() => toggleModal()}
+      >
         <View style={[styles.modalContent, theme === "dark" && styles.darkModalContent]}>
           {error ? (
             <>
@@ -418,11 +440,11 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     fontSize: 20,
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   darkHeaderTitle: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   tabsContainer: {
     marginBottom: 20,
@@ -439,16 +461,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     borderBottomWidth: 2,
     borderBottomColor: "#000",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   darkActiveTab: {
     color: "#FFFFFF",
     borderBottomColor: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   tabText: {
     textAlign: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
@@ -457,14 +479,13 @@ const styles = StyleSheet.create({
   },
   darkTabText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   rewardImage: {
-    width: "100%",
-    aspectRatio: 1,
+    width: 159,
+    height: 192,
     borderRadius: 8,
     marginBottom: 8,
-
   },
   rewardsList: {
     gap: 16,
@@ -496,23 +517,23 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 20,
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 4,
   },
   darkRewardTitle: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   rewardText: {
     color: "#2D3C52",
     fontWeight: "400",
     lineHeight: 16,
     fontSize: 12,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   darkRewardText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   dateContainer: {
     flexDirection: "row",
@@ -525,44 +546,64 @@ const styles = StyleSheet.create({
   },
   lockedOverlay: {
     position: "relative",
-    width: "100%",
-    aspectRatio: 1, 
+    width: 159,
+    height: 192,
     borderRadius: 8,
     marginBottom: 8,
     overflow: "hidden",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
   lockedImage: {
-    width: "100%",
-    height: "100%", 
+    width: 159,
+    height: 192,
     borderRadius: 8,
-    opacity: 0.5,
+  },
+  blurOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 12,
+  },
+  lockedText: {
+    color: "#FFFFFF",
+    fontFamily: "Satoshi-Regular",
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   rewardDescription: {
     color: "#61728C",
     fontWeight: "400",
     lineHeight: 16,
     fontSize: 12,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   darkRewardDescription: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   emptyState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: -120,
   },
   emptyStateText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     textAlign: "center",
   },
   darkEmptyStateText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   claimButton: {
     backgroundColor: "#000",
@@ -577,7 +618,7 @@ const styles = StyleSheet.create({
   },
   claimButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 24,
@@ -609,14 +650,14 @@ const styles = StyleSheet.create({
   },
   modalText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     textAlign: "center",
     marginVertical: 16,
   },
   darkModalText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   modalButtons: {
     flexDirection: "row",
@@ -646,20 +687,20 @@ const styles = StyleSheet.create({
   },
   claimModalButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
   },
   cancelButtonText: {
     color: "#028D48",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
   },
   claimTitle: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     fontWeight: "700",
     textAlign: "center",
@@ -668,7 +709,7 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     color: "#FF3B30",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "700",
     textAlign: "center",
@@ -676,18 +717,18 @@ const styles = StyleSheet.create({
   },
   darkErrorTitle: {
     color: "#FF3B30",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   errorText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     textAlign: "center",
     marginBottom: 16,
   },
   darkErrorText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   errorIcon: {
     width: 40,
@@ -700,14 +741,14 @@ const styles = StyleSheet.create({
   },
   nftNameText: {
     color: "#E0E0E0",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
   },
   darkNftNameText: {
     color: "#E0E0E0",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
@@ -718,14 +759,14 @@ const styles = StyleSheet.create({
   },
   darkCancelButtonText: {
     color: "#FFFFFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   darkClaimModalButton: {
     backgroundColor: "#00FF80",
   },
   claimModalTitle: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     fontWeight: "700",
     textAlign: "center",

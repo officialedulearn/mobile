@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 20,
     fontWeight: "600",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   subText: {
     fontFamily: "Urbanist",
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 3,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     flexShrink: 1,
     paddingHorizontal: 4,
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   level: {
     fontSize: 9,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "500",
     marginTop: 1,
     textAlign: "center",
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "500",
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 12
   },
   tableContainer: {
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   tableTitle: {
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginBottom: 10,
     marginLeft: 5,
   },
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   tableRow: {
     borderBottomWidth: 1,
     borderBottomColor: '#EDF3FC',
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     paddingVertical: 8,
     display: 'flex',
     justifyContent: 'space-between',
@@ -562,14 +562,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   rankText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: 'center',
   },
   nameText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   xpText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   loadingContainer: {
     justifyContent: 'center',

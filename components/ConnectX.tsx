@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     lineHeight: 24,
@@ -184,13 +184,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#FF3B30",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     marginBottom: 8,
   },
   dismissText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     textAlign: "right",
@@ -206,13 +206,13 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 16,
     fontWeight: "700",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
     marginBottom: 4,
   },
   userHandle: {
     fontSize: 14,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   }
 });

@@ -352,7 +352,7 @@ const index = (props: Props) => {
               <Text
                 style={[
                   {
-                    fontFamily: "Satoshi",
+                    fontFamily: "Satoshi-Regular",
                     lineHeight: 24,
                     fontSize: 14,
                     fontWeight: 400,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   xpText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     lineHeight: 24,
     color: "#00FF80",
@@ -654,14 +654,14 @@ const styles = StyleSheet.create({
     width: 20,
   },
   cardText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     lineHeight: 26,
     color: "#2D3C52",
     fontWeight: "500",
   },
   cardSubText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     lineHeight: 20,
     color: "#61728C",
@@ -706,14 +706,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   highlightsTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     color: "#2D3C52",
     fontWeight: "600",
     lineHeight: 24,
   },
   highlightsSubtitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     marginTop: 2,
@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#00FF8015",
   },
   viewAllText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#00FF80",
     fontWeight: "600",
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   loadingText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
   },
@@ -764,20 +764,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activityTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#2D3C52",
     fontWeight: "500",
     lineHeight: 24,
   },
   activityTime: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#61728C",
     marginTop: 2,
   },
   activityXp: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     fontWeight: "400",
@@ -789,14 +789,14 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   emptyStateTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     color: "#2D3C52",
     fontWeight: "600",
     marginBottom: 4,
   },
   emptyStateSubtitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     textAlign: "center",
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
   },
   activityContainerHeaderText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: 500,
     lineHeight: 30,
@@ -877,14 +877,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   roadmapCardLabel: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     fontWeight: "500",
     color: "#61728C",
     marginBottom: 2,
   },
   roadmapCardTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
     color: "#2D3C52",
@@ -899,13 +899,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   roadmapProgressText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "400",
     color: "#61728C",
   },
   roadmapProgressPercentage: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "600",
     color: "#000",
@@ -952,11 +952,11 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontSize: 20,
     fontWeight: 500,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   bountyChallengeText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "400",
     lineHeight: 20,
@@ -1033,7 +1033,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   modalTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
@@ -1074,7 +1074,7 @@ const styles = StyleSheet.create({
     borderColor: "#2E3033",
   },
   modalButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
     lineHeight: 24,
@@ -1097,7 +1097,7 @@ const styles = StyleSheet.create({
   streakText: {
     color: "#00FF80",
     textAlign: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: 900,
     lineHeight: 76.8,
     letterSpacing: 1.28,
@@ -1108,7 +1108,7 @@ const styles = StyleSheet.create({
   },
   streakTextSubtitle: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: 700,
     lineHeight: 36,
     fontSize: 20,

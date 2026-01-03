@@ -57,6 +57,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const user = useUserStore((s) => s.user);
   const theme = useUserStore((s) => s.theme);
+  const updateUserCredits = useUserStore((s) => s.updateUserCredits);
   const [inputText, setInputText] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -240,6 +241,17 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     if (textToSend === "" || isGenerating || isNavigating) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const currentCredits = Number(user?.credits) || 0;
+    console.log("Current credits (raw):", user?.credits, "Parsed:", currentCredits);
+    
+    if (currentCredits <= 0.5) {
+      console.log("User has insufficient credits, redirecting to freeTrialIntro");
+      router.push("/freeTrialIntro");
+      return;
+    }
+    
+    updateUserCredits(currentCredits - 0.5);
 
     setInputText("");
 
@@ -529,7 +541,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     borderColor: "#2E3033",
                   },
                 ]}
-                onPress={() => setDrawerOpen(true)}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDrawerOpen(true)
+                }}
                 activeOpacity={0.8}
               >
                 <Image
@@ -1138,7 +1153,7 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     fontSize: 20,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
     flex: 1,
   },
@@ -1178,7 +1193,7 @@ const styles = StyleSheet.create({
   welcomeText: {
     color: "#2D3C52",
     textAlign: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
     fontSize: 24,
     marginBottom: 30,
@@ -1216,7 +1231,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   suggestionText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
     fontSize: 14,
     textAlign: "center",
@@ -1368,7 +1383,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     color: "#2D3C52",
   },

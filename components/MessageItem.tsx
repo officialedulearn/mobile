@@ -109,14 +109,14 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
     },
     heading1: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-      fontFamily: "Satoshi",
+      fontFamily: "Satoshi-Regular",
       fontSize: 18,
       fontWeight: "700" as const,
       marginBottom: 8,
     },
     heading2: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-      fontFamily: "Satoshi",
+      fontFamily: "Satoshi-Regular",
       fontSize: 16,
       fontWeight: "700" as const,
       marginBottom: 8,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 22,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   userMessageText: {
     color: "#2D3C52",
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 14,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   editButton: {
     marginLeft: 8,

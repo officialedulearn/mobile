@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     textAlign: "center",
     lineHeight: 42,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontStyle: "normal",
   },
   welcomeTextDark: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textAlign: "center",
     marginBottom: 24,
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     flex: 1,
   },
   startButton: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#000",
     fontWeight: "700",
     textAlign: "center",
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   shareButtonText: {
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#000",
     fontWeight: "700",
     textAlign: "center",
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   },
   viewButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: "#61728C",
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   errorText: {
     color: "#FF4D4F",
@@ -320,6 +320,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     marginBottom: 20,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   }
 });

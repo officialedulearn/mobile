@@ -29,7 +29,6 @@ const planData = [
       "10 chat credits per day",
       "Daily credit renewal",
       "Basic Badge rewards",
-      "Community access"
     ],
   },
   {
@@ -37,8 +36,7 @@ const planData = [
     price: Platform.OS === 'android' ? 5 : 4.99,
     features: [
       "Advanced AI models (Gemini 2.5 Pro)",
-      "15 quiz attempts per day",
-      "20 chat credits per day",
+      "15 quiz attempts and 20 credits per day",
       "Credit rollovers & priority support",
       "Exclusive premium badges",
       "Unlimited Chat Messages"
@@ -113,8 +111,6 @@ const Subscription = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [currentPlanIndex, setCurrentPlanIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasTrialEligibility, setHasTrialEligibility] = useState(false);
-  const [trialText, setTrialText] = useState('');
   const { user, theme } = useUserStore();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -280,59 +276,6 @@ const Subscription = () => {
     fetchCustomerInfo();
   }, []);
 
-  useEffect(() => {
-    const checkTrialEligibility = async () => {
-      try {
-        console.log('📢 Checking trial eligibility...');
-        console.log(`📢 Platform: ${Platform.OS}`);
-        
-        const productIds = Platform.OS === 'android' 
-          ? ['premium_monthly', 'premium_annual']
-          : ['rc_499_edulearn', 'rc_4999_edulearn'];
-        
-        console.log('📢 Looking for:', productIds);
-        const products = await Purchases.getProducts(productIds);
-        console.log('📢 Products found count:', products.length);
-        
-        if (products.length > 0) {
-          const monthlyProduct = products.find(p => 
-            p.identifier === 'rc_499_edulearn' || p.identifier === 'premium_monthly'
-          );
-          
-          if (monthlyProduct) {
-            console.log('📢 Monthly product:', monthlyProduct.identifier);
-            console.log('📢 Product price:', monthlyProduct.priceString);
-            console.log('📢 Intro price:', monthlyProduct.introPrice);
-            
-            const intro = monthlyProduct.introPrice;
-            
-            if (intro && intro.periodNumberOfUnits === 3 && intro.periodUnit === 'DAY') {
-              console.log('📢 3-day trial available!');
-              setHasTrialEligibility(true);
-              setTrialText(`3-day free trial, then ${monthlyProduct.priceString}/month`);
-            } else if (intro) {
-              console.log('📢 Trial available:', intro);
-              const periodText = intro.periodUnit === 'DAY' ? 'day' : 
-                                 intro.periodUnit === 'WEEK' ? 'week' : 
-                                 intro.periodUnit === 'MONTH' ? 'month' : 'period';
-              setHasTrialEligibility(true);
-              setTrialText(`${intro.periodNumberOfUnits}-${periodText} free trial, then ${monthlyProduct.priceString}/month`);
-            }
-          }
-        }
-        
-        products.forEach((product) => {
-          console.log('📢 Product identifier:', product.identifier);
-          console.log('📢 Product price:', product.priceString);
-          console.log('📢 Product currency:', product.currencyCode);
-        });
-      } catch (error) {
-        console.log('📢 Error checking trial eligibility:', error);
-      }
-    };
-    checkTrialEligibility();
-  }, []);
-
   return (
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />  
@@ -425,19 +368,6 @@ const Subscription = () => {
       </View>
 
       <View style={styles.bottomSection}>
-        {hasTrialEligibility && currentPlanIndex === 1 && (
-          <View style={styles.trialBannerContainer}>
-            <View style={[styles.trialBanner, theme === "dark" && styles.trialBannerDark]}>
-              <Text style={[styles.trialBannerText, theme === "dark" && styles.trialBannerTextDark]}>
-                🎉 {trialText}
-              </Text>
-              <Text style={[styles.trialBannerSubtext, theme === "dark" && styles.trialBannerSubtextDark]}>
-                Cancel anytime before trial ends
-              </Text>
-            </View>
-          </View>
-        )}
-
         <TouchableOpacity 
           style={[
             styles.upgradeButton, 
@@ -524,7 +454,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   headerTextDark: {
     color: "#E0E0E0",
@@ -568,18 +498,18 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 14,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   pillTextDark: {
     color: "#E0E0E0",
   },
   pillTextActive: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   pillTextActiveDark: {
     color: "#000",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   discountBox: {
     borderRadius: 16,
@@ -594,7 +524,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#00FF80",
     textAlign: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   annuallyContent: {
     flexDirection: "row",
@@ -646,7 +576,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignSelf: "flex-start",
     marginBottom: 8,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   billingLabelDark: {
     color: "#B3B3B3",
@@ -662,7 +592,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 32,
   },
   numberPriceTextDark: {
@@ -672,7 +602,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#61728C",
     marginLeft: 4,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
   },
   littlePriceTextDark: {
@@ -683,7 +613,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#2D3C52",
     marginTop: 4,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   planNameDark: {
     color: "#E0E0E0",
@@ -691,7 +621,7 @@ const styles = StyleSheet.create({
   renewalText: {
     fontSize: 12,
     color: "#007AFF",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     marginTop: -8,
     fontWeight: "500",
   },
@@ -703,7 +633,7 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     marginTop: 4,
     lineHeight: 20,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   planDescriptionDark: {
     color: "#B3B3B3",
@@ -714,7 +644,7 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     marginTop: 16,
     marginBottom: 8,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   featuresTitleDark: {
     color: "#E0E0E0",
@@ -743,7 +673,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 14,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   featureTextDark: {
     color: "#E0E0E0",
@@ -775,44 +705,6 @@ const styles = StyleSheet.create({
   bottomSection: {
     paddingBottom: 0,
   },
-  trialBannerContainer: {
-    marginHorizontal: 16,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  trialBanner: {
-    backgroundColor: "#F0F9FF",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#E0F2FE",
-    alignItems: "center",
-  },
-  trialBannerDark: {
-    backgroundColor: "#1A1A1A",
-    borderColor: "#2E3033",
-  },
-  trialBannerText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#2D3C52",
-    fontFamily: "Satoshi",
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  trialBannerTextDark: {
-    color: "#E0E0E0",
-  },
-  trialBannerSubtext: {
-    fontSize: 11,
-    color: "#61728C",
-    fontFamily: "Satoshi",
-    textAlign: "center",
-  },
-  trialBannerSubtextDark: {
-    color: "#B3B3B3",
-  },
   upgradeButton: {
     backgroundColor: "#000",
     paddingVertical: 16,
@@ -842,7 +734,7 @@ const styles = StyleSheet.create({
     color: "#00FF80",
     fontSize: 16,
     fontWeight: "600",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   upgradeButtonTextDark: {
     color: "#000",
@@ -868,7 +760,7 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontSize: 12,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     textDecorationLine: "underline",
   },
   legalLinkTextDark: {
@@ -894,7 +786,7 @@ const styles = StyleSheet.create({
     color: "#61728C",
     fontSize: 14,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   restoreButtonTextDark: {
     color: "#B3B3B3",

@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginRight: 4,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   skipTextDark: {
     color: "#E0E0E0",
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     lineHeight: 42,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   titleDark: {
     color: "#E0E0E0",
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     color: "#61728C",
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     paddingHorizontal: 10,
     maxWidth: Platform.OS === "ios" ? "90%" : "100%",
     alignSelf: "center",
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#00FF80",
   },
   getStartedText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     color: "#00FF80",
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#00FF80",
   },
   signInText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     color: "#000",
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     color: "#00FF80",
   },
   signUpText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     color: "#00FF80",

@@ -9,11 +9,12 @@ import { StatusBar } from "expo-status-bar";
 import useUserStore from "@/core/userState";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { ChatProvider } from "@/contexts/ChatContext";
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    Satoshi: require("@/assets/fonts/Satoshi-Regular.otf"),
+    "Satoshi-Regular": require("@/assets/fonts/Satoshi-Regular.otf"),
+    "Satoshi-Medium": require("@/assets/fonts/Satoshi-Medium.otf"),
     Urbanist: require("@/assets/fonts/Urbanist-Regular.ttf"),
   });
 
@@ -35,13 +36,15 @@ export default function RootLayout() {
   useEffect(() => {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_PROJECT_APPLE_API_KEY as string
+        apiKey: process.env
+          .EXPO_PUBLIC_REVENUECAT_PROJECT_APPLE_API_KEY as string,
       });
-    } else if (Platform.OS === 'android') {
+    } else if (Platform.OS === "android") {
       Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_PROJECT_GOOGLE_API_KEY as string
+        apiKey: process.env
+          .EXPO_PUBLIC_REVENUECAT_PROJECT_GOOGLE_API_KEY as string,
       });
     }
   }, []);
@@ -51,16 +54,16 @@ export default function RootLayout() {
       if (user?.id) {
         try {
           await Purchases.logIn(user.id);
-          console.log('RevenueCat user identified:', user.id);
+          console.log("RevenueCat user identified:", user.id);
         } catch (error) {
-          console.error('Failed to identify user in RevenueCat:', error);
+          console.error("Failed to identify user in RevenueCat:", error);
         }
       } else {
         try {
           await Purchases.logOut();
-          console.log('RevenueCat user logged out');
+          console.log("RevenueCat user logged out");
         } catch (error) {
-          console.error('Failed to log out from RevenueCat:', error);
+          console.error("Failed to log out from RevenueCat:", error);
         }
       }
     };
@@ -95,237 +98,237 @@ export default function RootLayout() {
           <StatusBar style={theme === "dark" ? "light" : "dark"} />
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-    
-            <Stack.Screen 
-              name="onboarding" 
-              options={{ 
+
+            <Stack.Screen
+              name="onboarding"
+              options={{
                 headerShown: false,
-                animation: 'fade',
-                gestureEnabled: false
-              }} 
+                animation: "fade",
+                gestureEnabled: false,
+              }}
             />
-            <Stack.Screen 
-              name="auth/index" 
-              options={{ 
+            <Stack.Screen
+              name="auth/index"
+              options={{
                 headerShown: false,
-                animation: 'fade',
-                gestureEnabled: false
-              }} 
+                animation: "fade",
+                gestureEnabled: false,
+              }}
             />
-            <Stack.Screen 
-              name="auth/verifyOtp" 
-              options={{ 
+            <Stack.Screen
+              name="auth/verifyOtp"
+              options={{
                 headerShown: false,
-                animation: 'fade',
-                gestureEnabled: false
-              }} 
+                animation: "fade",
+                gestureEnabled: false,
+              }}
             />
-            <Stack.Screen 
-              name="auth/welcome" 
-              options={{ 
+            <Stack.Screen
+              name="auth/welcome"
+              options={{
                 headerShown: false,
-                animation: 'fade',
-                gestureEnabled: false
-              }} 
+                animation: "fade",
+                gestureEnabled: false,
+              }}
             />
-            <Stack.Screen 
-              name="auth/identity" 
-              options={{ 
+            <Stack.Screen
+              name="auth/identity"
+              options={{
                 headerShown: false,
-                animation: 'fade',
-                gestureEnabled: false
-              }} 
-            />
-            
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            
-            <Stack.Screen 
-              name="settings" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="theme" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-                gestureEnabled: true,
-                gestureDirection: 'vertical'
-              }} 
-            />
-            <Stack.Screen 
-              name="editProfile" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-                gestureEnabled: true,
-                gestureDirection: 'vertical'
-              }} 
-            />
-            <Stack.Screen 
-              name="feedback" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-                gestureEnabled: true,
-                gestureDirection: 'vertical'
-              }} 
-            />
-            <Stack.Screen 
-              name="subscription" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="freeTrialIntro" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="nftClaimed" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-                gestureEnabled: true,
-                gestureDirection: 'vertical'
-              }} 
-            />
-            <Stack.Screen 
-              name="search" 
-              options={{ 
-                headerShown: false,
-                presentation: 'modal',
-                animation: 'slide_from_bottom',
-                gestureEnabled: true,
-                gestureDirection: 'vertical'
-              }} 
-            />
-            
-            <Stack.Screen 
-              name="leaderboard" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="quiz" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="nfts" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="connectX" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="user/[id]" 
-              options={{ 
-                headerShown: false,
-                presentation: 'card',
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="nft/[id]" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="community" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="roadmaps/[id]" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
-            />
-            <Stack.Screen 
-              name="joinCommunity" 
-              options={{ 
-                headerShown: false,
-                animation: 'slide_from_right',
-                gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
+                animation: "fade",
+                gestureEnabled: false,
+              }}
             />
 
-            <Stack.Screen 
-              name="notifications" 
-              options={{ 
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+            <Stack.Screen
+              name="settings"
+              options={{
                 headerShown: false,
-                animation: 'slide_from_right',
+                animation: "slide_from_right",
                 gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
+                gestureDirection: "horizontal",
+              }}
             />
-            <Stack.Screen 
-              name="room/[id]" 
-              options={{ 
+            <Stack.Screen
+              name="theme"
+              options={{
                 headerShown: false,
-                animation: 'slide_from_right',
+                presentation: "modal",
+                animation: "slide_from_bottom",
                 gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
+                gestureDirection: "vertical",
+              }}
             />
-            <Stack.Screen 
-              name="roomInfo/[id]" 
-              options={{ 
+            <Stack.Screen
+              name="editProfile"
+              options={{
                 headerShown: false,
-                animation: 'slide_from_right',
+                presentation: "modal",
+                animation: "slide_from_bottom",
                 gestureEnabled: true,
-                gestureDirection: 'horizontal'
-              }} 
+                gestureDirection: "vertical",
+              }}
+            />
+            <Stack.Screen
+              name="feedback"
+              options={{
+                headerShown: false,
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                gestureEnabled: true,
+                gestureDirection: "vertical",
+              }}
+            />
+            <Stack.Screen
+              name="subscription"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="freeTrialIntro"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="nftClaimed"
+              options={{
+                headerShown: false,
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                gestureEnabled: true,
+                gestureDirection: "vertical",
+              }}
+            />
+            <Stack.Screen
+              name="search"
+              options={{
+                headerShown: false,
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                gestureEnabled: true,
+                gestureDirection: "vertical",
+              }}
+            />
+
+            <Stack.Screen
+              name="leaderboard"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="quiz"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="nfts"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="connectX"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="user/[id]"
+              options={{
+                headerShown: false,
+                presentation: "card",
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="nft/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="community"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="roadmaps/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="joinCommunity"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+
+            <Stack.Screen
+              name="notifications"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="room/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="roomInfo/[id]"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
             />
           </Stack>
         </BottomSheetModalProvider>

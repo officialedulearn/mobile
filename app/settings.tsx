@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 500,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
   },
   logoutButton: {
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 700,
     color: "#940803",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24
   },
   settings: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   settingText: {
     lineHeight: 24,
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "500",
     color: "#2D3C52"
   },
@@ -511,14 +511,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: "center",
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   modalDescription: {
     fontSize: 16,
     color: "#61728C",
     marginBottom: 24,
     textAlign: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
     paddingHorizontal: 8,
   },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   privateKeyText: {
     fontSize: 14,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   copyButton: {
     backgroundColor: "#000",
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   copyButtonText: {
     color: "#00FF80",
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
   },
   closeButton: {
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "#000",
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "500",
   },
   buttonContainer: {
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#000",
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "500",
   },
   confirmButton: {
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: "#00FF80",
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
   },
   disabledButton: {
@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
   },
   getProTitle: {
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
     color: "#E0E0E0",
     lineHeight: 20,
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
   },
   getProTitleLight: {
     fontSize: 16,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "700",
     color: "#FFFFFF",
     lineHeight: 20,
@@ -650,14 +650,14 @@ const styles = StyleSheet.create({
   },
   getProDescription: {
     fontSize: 12,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "400",
     color: "#B3B3B3",
     lineHeight: 16,
   },
   getProDescriptionLight: {
     fontSize: 12,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "400",
     color: "rgba(255, 255, 255, 0.8)",
     lineHeight: 16,

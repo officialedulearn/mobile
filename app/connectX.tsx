@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     fontWeight: "500",
     lineHeight: 24,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 24,
     fontWeight: "700",
     lineHeight: 32,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   description: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 24,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   benefitsTitle: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 12,
@@ -117,13 +117,13 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     lineHeight: 24,
   },
   disclaimer: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     textAlign: "center",
     marginTop: 24,

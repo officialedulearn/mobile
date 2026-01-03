@@ -120,7 +120,7 @@ const TabLayout = (props: Props) => {
         tabBarLabelStyle: {
           fontSize: 12,
           marginBottom: 5,
-          fontFamily: "Satoshi",
+          fontFamily: "Satoshi-Regular",
         },
         headerShown: false,
         tabBarShowLabel: true,

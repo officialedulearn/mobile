@@ -4,7 +4,17 @@ import { ChatService } from "@/services/chat.service";
 import { useChatNavigation } from "@/contexts/ChatContext";
 import { BlurView } from "expo-blur";
 import * as React from "react";
-import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, TouchableWithoutFeedback } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  Easing
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 
 const groupChatsByRecency = (chats: Chat[]) => {
   const now = new Date();
@@ -38,6 +48,11 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
 
+  const translateX = useSharedValue(-300);
+  const backdropOpacity = useSharedValue(0);
+  const contentOpacity = useSharedValue(0);
+  const startX = useSharedValue(0);
+
   const filteredChats = React.useMemo(() => {
     if (!searchQuery.trim()) return chats;
     
@@ -51,17 +66,77 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
     return groupChatsByRecency(filteredChats);
   }, [filteredChats]);
   
+  React.useEffect(() => {
+    translateX.value = withSpring(0, {
+      damping: 20,
+      stiffness: 90,
+      mass: 0.8
+    });
+    backdropOpacity.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.cubic)
+    });
+    setTimeout(() => {
+      contentOpacity.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.ease)
+      });
+    }, 100);
+  }, []);
+  const handleClose = React.useCallback(() => {
+    translateX.value = withTiming(-300, {
+      duration: 250,
+      easing: Easing.in(Easing.cubic)
+    });
+    backdropOpacity.value = withTiming(0, {
+      duration: 250,
+      easing: Easing.in(Easing.cubic)
+    });
+    contentOpacity.value = withTiming(0, {
+      duration: 150,
+      easing: Easing.in(Easing.ease)
+    });
+    setTimeout(() => {
+      onClose();
+    }, 250);
+  }, [onClose]);
+
   const goToChat = React.useCallback((id: string) => {
     if (isNavigating) return;
-    onClose();
-    navigateToChat(id);
-  }, [isNavigating, onClose, navigateToChat]);
+    handleClose();
+    setTimeout(() => navigateToChat(id), 250);
+  }, [isNavigating, handleClose, navigateToChat]);
 
   const handleCreateNewChat = React.useCallback(() => {
     if (isNavigating) return;
-    onClose();
-    createNewChat();
-  }, [isNavigating, onClose, createNewChat]);
+    handleClose();
+    setTimeout(() => createNewChat(), 250);
+  }, [isNavigating, handleClose, createNewChat]);
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      startX.value = translateX.value;
+    })
+    .onUpdate((event) => {
+      const newTranslateX = startX.value + event.translationX;
+      if (newTranslateX <= 0) {
+        translateX.value = newTranslateX;
+        backdropOpacity.value = Math.max(0, 1 + newTranslateX / 300);
+      }
+    })
+    .onEnd((event) => {
+      if (translateX.value < -100 || event.velocityX < -500) {
+        runOnJS(handleClose)();
+      } else {
+        translateX.value = withSpring(0, {
+          damping: 20,
+          stiffness: 90
+        });
+        backdropOpacity.value = withTiming(1, {
+          duration: 200
+        });
+      }
+    });
 
   React.useEffect(() => {
     const fetchChats = async () => {
@@ -70,7 +145,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
         const chatList = await chatService.getHistory(
           user?.id as unknown as string
         );
-        setChats(chatList.sort((a, b) => 
+        setChats(chatList.sort((a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ));
       } catch (error) {
@@ -80,7 +155,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
         setIsLoading(false);
       }
     };
-    
+
     if (user?.id) {
       fetchChats();
     }
@@ -123,6 +198,17 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
       </View>
     );
   };
+  const drawerAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }]
+  }));
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value
+  }));
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value
+  }));
 
   const renderContent = () => {
     if (isLoading) {
@@ -181,73 +267,86 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <>
-      <BlurView
-        intensity={15}
-        tint="dark"
-        style={styles.blurBackdrop}
-        onTouchStart={isNavigating ? undefined : onClose}
-      />
-
-      <View style={[styles.drawer, theme === "dark" && { backgroundColor: "#131313" }]}>
-        <View style={[styles.drawerHeader, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
-          <TextInput
-            placeholder="Search chats..."
-            placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-            style={[styles.searchInput, theme === "dark" && { 
-              backgroundColor: "#0D0D0D", 
-              borderColor: "#2E3033",
-              color: "#E0E0E0"
-            }]}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            editable={!isNavigating}
+      <TouchableWithoutFeedback onPress={isNavigating ? undefined : handleClose}>
+        <Animated.View style={[styles.blurBackdrop, backdropAnimatedStyle]}>
+          <BlurView
+            intensity={15}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
           />
-          <TouchableOpacity 
-            style={[
-              styles.button, 
-              theme === "dark" && { 
-                backgroundColor: "#0D0D0D", 
-                borderColor: "#2E3033" 
-              },
-              isNavigating && styles.disabledButton
-            ]} 
-            activeOpacity={0.8}
-            onPress={handleCreateNewChat}
-            disabled={isNavigating}
-          >
-            {isNavigating ? (
-              <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
-            ) : (
-              <Image
-                source={theme === "dark" 
-                  ? require("@/assets/images/icons/dark/pen.png")
-                  : require("@/assets/images/icons/pen.png")
-                }
-                style={{width: 20, height: 20}}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
+      </TouchableWithoutFeedback>
 
-        {renderContent()}
-        
-        {chats.length > 0 && (
-          <TouchableOpacity 
-            style={[
-              styles.newChatButton,
-              isNavigating && styles.disabledButton
-            ]}
-            onPress={handleCreateNewChat}
-            disabled={isNavigating}
-          >
-            {isNavigating ? (
-              <ActivityIndicator size="small" color="#2D3C52" />
-            ) : (
-              <Text style={styles.newChatButtonText}>+ New Chat</Text>
+      <GestureDetector gesture={panGesture}>
+        <Animated.View
+          style={[
+            styles.drawer,
+            theme === "dark" && { backgroundColor: "#131313" },
+            drawerAnimatedStyle
+          ]}
+        >
+          <Animated.View style={[{ flex: 1 }, contentAnimatedStyle]}>
+            <View style={[styles.drawerHeader, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
+              <TextInput
+                placeholder="Search chats..."
+                placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+                style={[styles.searchInput, theme === "dark" && {
+                  backgroundColor: "#0D0D0D",
+                  borderColor: "#2E3033",
+                  color: "#E0E0E0"
+                }]}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                editable={!isNavigating}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  theme === "dark" && {
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#2E3033"
+                  },
+                  isNavigating && styles.disabledButton
+                ]}
+                activeOpacity={0.8}
+                onPress={handleCreateNewChat}
+                disabled={isNavigating}
+              >
+                {isNavigating ? (
+                  <ActivityIndicator size="small" color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
+                ) : (
+                  <Image
+                    source={theme === "dark"
+                      ? require("@/assets/images/icons/dark/pen.png")
+                      : require("@/assets/images/icons/pen.png")
+                    }
+                    style={{width: 20, height: 20}}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {renderContent()}
+
+            {chats.length > 0 && (
+              <TouchableOpacity
+                style={[
+                  styles.newChatButton,
+                  isNavigating && styles.disabledButton
+                ]}
+                onPress={handleCreateNewChat}
+                disabled={isNavigating}
+              >
+                {isNavigating ? (
+                  <ActivityIndicator size="small" color="#2D3C52" />
+                ) : (
+                  <Text style={styles.newChatButtonText}>+ New Chat</Text>
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-        )}
-      </View>
+          </Animated.View>
+        </Animated.View>
+      </GestureDetector>
     </>
   );
 };
@@ -297,7 +396,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeader: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     color: "#2D3C52",
@@ -324,13 +423,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chatTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#2D3C52",
     marginBottom: 4,
   },
   chatDate: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#777777",
   },
@@ -353,7 +452,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loadingText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     color: "#2D3C52",
   },
@@ -373,14 +472,14 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   emptyStateText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "500",
     color: "#2D3C52",
     marginBottom: 8,
   },
   emptyStateSubtext: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#777777",
     textAlign: "center",
@@ -402,7 +501,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   newChatButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: "600",
     fontSize: 16,
     color: "#2D3C52",

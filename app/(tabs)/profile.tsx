@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
   cardText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: 500,
     lineHeight: 22,
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   },
   verifyText: {
     color: "#000",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     fontWeight: "500",
   },
@@ -781,14 +781,14 @@ const styles = StyleSheet.create({
   levelNumber: {
     position: "absolute",
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "700",
     textAlign: "center",
   },
   levelText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     fontWeight: "500",
   },
@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     fontWeight: 500,
     lineHeight: 22,
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   walletCard: {
     backgroundColor: "rgba(255, 255, 255, 0.10)",
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
   },
   balanceValue: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 2,
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
   },
   walletText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
@@ -932,6 +932,7 @@ const styles = StyleSheet.create({
     fontWeight: 400,
     color: "#61728C",
     lineHeight: 16,
+    fontFamily: "Urbanist",
   },
   refCard: {
     backgroundColor: "#fff",
@@ -956,7 +957,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   inviteTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: 500,
     color: "#2D3C52",
@@ -987,7 +988,7 @@ const styles = StyleSheet.create({
   },
   referralCode: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: 500,
   },
@@ -1004,7 +1005,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     fontWeight: "700",
     textAlign: "center",
@@ -1021,13 +1022,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     width: "100%",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     marginBottom: 8,
   },
   balanceText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     textAlign: "right",
   },
@@ -1061,20 +1062,20 @@ const styles = StyleSheet.create({
   },
   buyModalButtonText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
   
   },
   cancelButtonText: {
     color: "#000000",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
   },
   errorText: {
     color: "#FF3B30",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     textAlign: "center",
     marginBottom: 8,
@@ -1099,7 +1100,7 @@ const styles = StyleSheet.create({
   },
   tokenUtilityText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     flex: 1,
     paddingRight: 15,
@@ -1233,7 +1234,7 @@ const styles = StyleSheet.create({
   },
   edlnPopoverText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     flex: 1,
@@ -1260,7 +1261,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sectionTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "600",
     color: "#2D3C52",
@@ -1290,7 +1291,7 @@ const styles = StyleSheet.create({
     height: 32,
   },
   roadmapTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
     color: "#2D3C52",
@@ -1311,7 +1312,7 @@ const styles = StyleSheet.create({
     height: 16,
   },
   roadmapStatText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "400",
     color: "#61728C",
@@ -1326,7 +1327,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   viewRoadmapButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
     color: "#00FF80",

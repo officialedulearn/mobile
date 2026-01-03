@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 24,
     fontWeight: '500',
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52"
   },
   header: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: "#61728C", 
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14, 
     fontStyle: "normal",
     fontWeight: "500",
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "400",
   },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     minHeight: 120,
   },
   charCountContainer: {
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: 12,
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   buttonsContainer: {
     justifyContent: 'center',
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     color: "#000",
     fontWeight: "500",
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24
   },
   submitButton: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     color: "#00FF80",
     fontWeight: "700",
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     lineHeight: 24,
   },
   disabledButton: {
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 10,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   closeButton: {
     marginTop: 10,
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: 'white',
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: '500',
   },
 })

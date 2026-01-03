@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
     fontWeight: "500",
     fontSize: 20,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   themeText: {
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "400",
     flex: 1,

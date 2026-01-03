@@ -555,7 +555,7 @@ const rewards = (props: Props) => {
         <Text
           style={[
             {
-              fontFamily: "Satoshi",
+              fontFamily: "Satoshi-Regular",
               fontWeight: 500,
               fontSize: 16,
               lineHeight: 30,
@@ -575,7 +575,7 @@ const rewards = (props: Props) => {
           <Text
             style={[
               {
-                fontFamily: "Satoshi",
+                fontFamily: "Satoshi-Regular",
                 fontWeight: 500,
                 fontSize: 14,
                 lineHeight: 24,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   headerText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     lineHeight: 24,
     fontWeight: 500,
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   },
   subText: {
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontWeight: 400,
     lineHeight: 24,
     fontSize: 14,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
   levelNumber: {
     position: "absolute",
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 34,
     fontWeight: "700",
     textAlign: "center",
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   },
   levelText: {
     color: "#00FF80",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 24,
@@ -697,18 +697,18 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: 700,
     fontSize: 28,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#00FF80",
   },
   upskillText: {
     fontWeight: 400,
     fontSize: 14,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#00FF80",
     lineHeight: 24,
   },
   nftHeaderText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: 500,
     color: "#2D3C52",
@@ -761,14 +761,14 @@ const styles = StyleSheet.create({
     minHeight: 150,
   },
   emptyStateText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "500",
     color: "#2D3C52",
     marginBottom: 8,
   },
   emptyStateSubtext: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     textAlign: "center",
@@ -810,13 +810,13 @@ const styles = StyleSheet.create({
     height: 40,
   },
   earningLabel: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     color: "#000",
   },
   earningAmount: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "700",
     color: "#000",
@@ -828,7 +828,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   claimButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     color: "#00FF80",
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionHeader: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: 500,
     color: "#2D3C52",
@@ -897,7 +897,7 @@ const styles = StyleSheet.create({
     height: 24,
   },
   chatText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#2D3C52",
     flex: 1,
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     height: 16,
   },
   xpHistoryText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#61728C",
   },
@@ -922,12 +922,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dateText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#2D3C52",
   },
   activityTypeText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#00FF80",
     textTransform: "capitalize",
@@ -939,7 +939,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   streakText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
     color: "#fff",
     fontWeight: "500",
@@ -978,7 +978,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
     fontWeight: "700",
     color: "#2D3C52",
@@ -1000,13 +1000,13 @@ const styles = StyleSheet.create({
     height: 24,
   },
   assetAmount: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
   },
   modalDescription: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     textAlign: "center",
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
     width: "45%",
   },
   closeButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     color: "#00FF80",
@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
     borderColor: "#000",
   },
   shareButtonText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     fontWeight: "500",
     color: "#000",
@@ -1058,14 +1058,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   webNoticeTitle: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     fontWeight: "600",
     color: "#2D3C52",
     textAlign: "center",
   },
   webNoticeText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     textAlign: "center",

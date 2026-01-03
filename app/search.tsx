@@ -224,7 +224,7 @@ const Search = (props: Props) => {
       <View style={styles.topResults}>
         <Text
           style={{
-            fontFamily: "Satoshi",
+            fontFamily: "Satoshi-Regular",
             fontSize: 16,
             color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
             fontWeight: "500",
@@ -251,7 +251,7 @@ const Search = (props: Props) => {
         ) : searchQuery.trim() ? (
           <View style={{alignItems: "center", justifyContent: "center", gap: 10}}>
             <Image source={require("@/assets/images/eddie/notfound.png")} style={{width: 150, height: 150}}/>
-            <Text style={{fontFamily: "Satoshi", fontSize: 16, color: theme === "dark" ? "#E0E0E0" : "#2D3C52", fontWeight: "500", lineHeight: 26}}>No users found</Text>
+            <Text style={{fontFamily: "Satoshi-Regular", fontSize: 16, color: theme === "dark" ? "#E0E0E0" : "#2D3C52", fontWeight: "500", lineHeight: 26}}>No users found</Text>
           </View>
         ) : (
           <SearchResult
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
   topNavText: {
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
     color: "#2D3C52",
     lineHeight: 24,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     borderColor: "#EDF3FC",
     backgroundColor: "#fff",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   topResults: {
     padding: 20,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchResultText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
     color: "#61728C",
     fontWeight: "500",
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F9FBFC",
   },
   streakText: {
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 10,
     color: "#61728C",
     fontWeight: "500",

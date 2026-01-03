@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
   welcome: {
     fontSize: 28,
     fontWeight: "700",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
     marginBottom: 8,
   },
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#61728C",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   subtitleDark: {
     color: "#B3B3B3",
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#2D3C52",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   inputDark: {
     color: "#E0E0E0",

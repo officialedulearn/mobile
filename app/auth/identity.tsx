@@ -110,7 +110,7 @@ const identity = (props: Props) => {
             color: learningGoal.trim() ? "#2D3C52" : (theme === "dark" ? "#B3B3B3" : "#61728C"),
             fontWeight: "600",
             fontSize: 16,
-            fontFamily: "Satoshi",
+            fontFamily: "Satoshi-Regular",
           }}>
             {isLoading ? "Setting up..." : "Finish Setup"}
           </Text>
@@ -142,13 +142,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     lineHeight: 42,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   subText: {
     color: "#61728C",
     lineHeight: 24,
     fontWeight: "500",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
   },
   displayNameText: {
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     lineHeight: 24,
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
   inputs: {
     marginTop: 32,
@@ -172,6 +172,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "Satoshi",
+    fontFamily: "Satoshi-Regular",
   },
 });
