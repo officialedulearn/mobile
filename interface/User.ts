@@ -16,4 +16,5 @@ export interface User {
     learning?: string;
     lastLoggedIn?: string | Date;
     profilePictureURL: string | null;
+    quizLimit?: number;
 }

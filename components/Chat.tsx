@@ -21,26 +21,26 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import * as Haptics from 'expo-haptics';
+import * as Haptics from "expo-haptics";
 import {
   useAudioRecorder,
   AudioModule,
   RecordingPresets,
   setAudioModeAsync,
   useAudioRecorderState,
-} from 'expo-audio';
+} from "expo-audio";
 import ChatDrawer from "./ChatDrawer";
 import { MessageItem } from "./MessageItem";
 import { useRouter } from "expo-router";
-import Animated, { 
-  useAnimatedStyle, 
-  withRepeat, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
   withSequence,
   useSharedValue,
   interpolate,
-  Easing
-} from 'react-native-reanimated';
+  Easing,
+} from "react-native-reanimated";
 import { ChatService } from "@/services/chat.service";
 
 type Props = {
@@ -53,7 +53,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const aiService = new AIService();
   const chatService = new ChatService();
   const { isNavigating, createNewChat, refreshChatList } = useChatNavigation();
-  const [messages, setMessages] = useState<Array<Message>>(initialMessages || []);
+  const [messages, setMessages] = useState<Array<Message>>(
+    initialMessages || [],
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const user = useUserStore((s) => s.user);
   const theme = useUserStore((s) => s.theme);
@@ -67,7 +69,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [waitingForStream, setWaitingForStream] = useState(false);
-  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
+    null,
+  );
 
   const tokenQueueRef = useRef<string[]>([]);
   const processingTokensRef = useRef(false);
@@ -76,9 +80,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const recorderState = useAudioRecorderState(audioRecorder);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  
+
   const waveAnimations = useRef(
-    Array.from({ length: 5 }, () => useSharedValue(0))
+    Array.from({ length: 5 }, () => useSharedValue(0)),
   ).current;
 
   const micButtonScale = useSharedValue(1);
@@ -108,22 +112,25 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     };
   }, []);
 
-  const safeSetMessages = useCallback((updater: Array<Message> | ((prev: Array<Message>) => Array<Message>)) => {
-    setMessages((prev) => {
-      const prevMessages = prev || [];
-      if (typeof updater === 'function') {
-        const result = updater(prevMessages);
-        return Array.isArray(result) ? result : [];
-      }
-      return Array.isArray(updater) ? updater : [];
-    });
-  }, []);
+  const safeSetMessages = useCallback(
+    (updater: Array<Message> | ((prev: Array<Message>) => Array<Message>)) => {
+      setMessages((prev) => {
+        const prevMessages = prev || [];
+        if (typeof updater === "function") {
+          const result = updater(prevMessages);
+          return Array.isArray(result) ? result : [];
+        }
+        return Array.isArray(updater) ? updater : [];
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     (async () => {
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (!status.granted) {
-        Alert.alert('Permission to access microphone was denied');
+        Alert.alert("Permission to access microphone was denied");
       }
 
       setAudioModeAsync({
@@ -180,42 +187,50 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     }, 100);
   }, []);
 
-  const processTokenQueue = useCallback((assistantMessageId: string) => {
-    if (processingTokensRef.current || tokenQueueRef.current.length === 0) {
-      return;
-    }
-
-    processingTokensRef.current = true;
-
-    const processChunk = () => {
-      if (tokenQueueRef.current.length === 0) {
-        processingTokensRef.current = false;
+  const processTokenQueue = useCallback(
+    (assistantMessageId: string) => {
+      if (processingTokensRef.current || tokenQueueRef.current.length === 0) {
         return;
       }
 
-      const allTokens = tokenQueueRef.current.splice(0, tokenQueueRef.current.length).join('');
-      
-      safeSetMessages((currentMessages) => {
-        const messagesCopy = [...currentMessages];
-        const messageIndex = messagesCopy.findIndex(msg => msg && msg.id === assistantMessageId);
-        
-        if (messageIndex !== -1) {
-          const message = messagesCopy[messageIndex];
-          const currentContent = typeof message.content === 'string' 
-            ? message.content 
-            : (message.content || '');
-          message.content = currentContent + allTokens;
+      processingTokensRef.current = true;
+
+      const processChunk = () => {
+        if (tokenQueueRef.current.length === 0) {
+          processingTokensRef.current = false;
+          return;
         }
-        
-        return messagesCopy;
-      });
 
-      scrollToBottom();
-      processingTokensRef.current = false;
-    };
+        const allTokens = tokenQueueRef.current
+          .splice(0, tokenQueueRef.current.length)
+          .join("");
 
-    processChunk();
-  }, [scrollToBottom, safeSetMessages]);
+        safeSetMessages((currentMessages) => {
+          const messagesCopy = [...currentMessages];
+          const messageIndex = messagesCopy.findIndex(
+            (msg) => msg && msg.id === assistantMessageId,
+          );
+
+          if (messageIndex !== -1) {
+            const message = messagesCopy[messageIndex];
+            const currentContent =
+              typeof message.content === "string"
+                ? message.content
+                : message.content || "";
+            message.content = currentContent + allTokens;
+          }
+
+          return messagesCopy;
+        });
+
+        scrollToBottom();
+        processingTokensRef.current = false;
+      };
+
+      processChunk();
+    },
+    [scrollToBottom, safeSetMessages],
+  );
 
   const handleScroll = useCallback(
     (event: {
@@ -243,14 +258,21 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const currentCredits = Number(user?.credits) || 0;
-    console.log("Current credits (raw):", user?.credits, "Parsed:", currentCredits);
-    
+    console.log(
+      "Current credits (raw):",
+      user?.credits,
+      "Parsed:",
+      currentCredits,
+    );
+
     if (currentCredits <= 0.5) {
-      console.log("User has insufficient credits, redirecting to freeTrialIntro");
+      console.log(
+        "User has insufficient credits, redirecting to freeTrialIntro",
+      );
       router.push("/freeTrialIntro");
       return;
     }
-    
+
     updateUserCredits(currentCredits - 0.5);
 
     setInputText("");
@@ -296,13 +318,16 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
             });
             messageCreated = true;
           }
-          
+
           tokenQueueRef.current.push(token);
           processTokenQueue(assistantMessageId);
         },
         (fullMessage: Message) => {
           const checkQueueComplete = () => {
-            if (tokenQueueRef.current.length === 0 && !processingTokensRef.current) {
+            if (
+              tokenQueueRef.current.length === 0 &&
+              !processingTokensRef.current
+            ) {
               setIsGenerating(false);
               setStreamingMessageId(null);
               refreshChatList();
@@ -316,41 +341,45 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         (error: Error) => {
           console.error("Error generating message:", error);
           setInputText(textToSend);
-          
+
           tokenQueueRef.current = [];
           processingTokensRef.current = false;
-          
+
           if (messageCreated) {
-            safeSetMessages((currentMessages) => 
-              currentMessages.filter(msg => msg.id !== assistantMessageId)
+            safeSetMessages((currentMessages) =>
+              currentMessages.filter((msg) => msg.id !== assistantMessageId),
             );
           }
-          
+
           setIsGenerating(false);
           setWaitingForStream(false);
           setStreamingMessageId(null);
-          Alert.alert('Error', error.message || 'Failed to generate response. Please try again.');
-        }
+          Alert.alert(
+            "Error",
+            error.message || "Failed to generate response. Please try again.",
+          );
+        },
       );
-
-
     } catch (error: any) {
       console.error("Error generating message:", error);
       setInputText(textToSend);
       setIsGenerating(false);
       setWaitingForStream(false);
       setStreamingMessageId(null);
-      
+
       tokenQueueRef.current = [];
       processingTokensRef.current = false;
-      
+
       if (messageCreated) {
-        safeSetMessages((currentMessages) => 
-          currentMessages.filter(msg => msg.id !== assistantMessageId)
+        safeSetMessages((currentMessages) =>
+          currentMessages.filter((msg) => msg.id !== assistantMessageId),
         );
       }
-      
-      Alert.alert('Error', error.message || 'Failed to start streaming. Please try again.');
+
+      Alert.alert(
+        "Error",
+        error.message || "Failed to start streaming. Please try again.",
+      );
     }
   };
 
@@ -371,22 +400,22 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   useEffect(() => {
     if (recorderState.isRecording) {
-      inputContainerOpacity.value = withTiming(0, { 
-        duration: 200, 
-        easing: Easing.out(Easing.cubic) 
+      inputContainerOpacity.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
       });
-      
+
       recordingContainerScale.value = withSequence(
         withTiming(0.95, { duration: 0 }),
         withTiming(1.02, { duration: 200, easing: Easing.out(Easing.cubic) }),
-        withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) })
+        withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) }),
       );
-      
-      recordingOpacity.value = withTiming(1, { 
-        duration: 300, 
-        easing: Easing.out(Easing.cubic) 
+
+      recordingOpacity.value = withTiming(1, {
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
       });
-      
+
       waveAnimations.forEach((anim, index) => {
         setTimeout(() => {
           anim.value = withRepeat(
@@ -406,43 +435,43 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
               withTiming(0.2, {
                 duration: 200 + index * 40,
                 easing: Easing.inOut(Easing.ease),
-              })
+              }),
             ),
             -1,
-            false
+            false,
           );
         }, index * 30);
       });
     } else {
-      inputContainerOpacity.value = withTiming(1, { 
-        duration: 250, 
-        easing: Easing.out(Easing.cubic) 
+      inputContainerOpacity.value = withTiming(1, {
+        duration: 250,
+        easing: Easing.out(Easing.cubic),
       });
-      
-      recordingContainerScale.value = withTiming(0.95, { 
-        duration: 200, 
-        easing: Easing.in(Easing.cubic) 
+
+      recordingContainerScale.value = withTiming(0.95, {
+        duration: 200,
+        easing: Easing.in(Easing.cubic),
       });
-      
-      recordingOpacity.value = withTiming(0, { 
-        duration: 200, 
-        easing: Easing.in(Easing.cubic) 
+
+      recordingOpacity.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.in(Easing.cubic),
       });
-      
+
       waveAnimations.forEach((anim) => {
-        anim.value = withTiming(0, { 
-          duration: 200, 
-          easing: Easing.in(Easing.ease) 
+        anim.value = withTiming(0, {
+          duration: 200,
+          easing: Easing.in(Easing.ease),
         });
       });
-      
-      micButtonScale.value = withTiming(1, { 
-        duration: 200, 
-        easing: Easing.out(Easing.cubic) 
+
+      micButtonScale.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
       });
-      micButtonRotation.value = withTiming(0, { 
-        duration: 200, 
-        easing: Easing.out(Easing.cubic) 
+      micButtonRotation.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
       });
     }
   }, [recorderState.isRecording]);
@@ -450,25 +479,25 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const startRecording = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
+
       micButtonScale.value = withSequence(
         withTiming(0.85, { duration: 100, easing: Easing.out(Easing.cubic) }),
-        withTiming(1, { duration: 150, easing: Easing.out(Easing.back(1.5)) })
+        withTiming(1, { duration: 150, easing: Easing.out(Easing.back(1.5)) }),
       );
-      
+
       micButtonRotation.value = withSequence(
         withTiming(15, { duration: 100, easing: Easing.out(Easing.cubic) }),
         withTiming(-10, { duration: 100, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 100, easing: Easing.out(Easing.ease) })
+        withTiming(0, { duration: 100, easing: Easing.out(Easing.ease) }),
       );
-      
+
       Keyboard.dismiss();
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch (error) {
-      console.error('Error starting recording:', error);
-      Alert.alert('Error', 'Failed to start recording');
-      
+      console.error("Error starting recording:", error);
+      Alert.alert("Error", "Failed to start recording");
+
       micButtonScale.value = withTiming(1, { duration: 150 });
       micButtonRotation.value = withTiming(0, { duration: 150 });
     }
@@ -480,29 +509,30 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       await audioRecorder.stop();
       if (audioRecorder.uri) {
         setRecordingUri(audioRecorder.uri);
-        console.log('Recording saved to:', audioRecorder.uri);
-      
+        console.log("Recording saved to:", audioRecorder.uri);
+
         try {
           setIsTranscribing(true);
           const response = await aiService.transcribeAudio({
             audioUri: audioRecorder.uri,
           });
-          
+
           setInputText(response.transcription);
-          
         } catch (transcriptionError) {
-          console.error('Error transcribing audio:', transcriptionError);
-          Alert.alert('Error', 'Failed to process your audio message. Please try again.');
+          console.error("Error transcribing audio:", transcriptionError);
+          Alert.alert(
+            "Error",
+            "Failed to process your audio message. Please try again.",
+          );
         } finally {
           setIsTranscribing(false);
         }
       }
     } catch (error) {
-      console.error('Error stopping recording:', error);
-      Alert.alert('Error', 'Failed to stop recording');
+      console.error("Error stopping recording:", error);
+      Alert.alert("Error", "Failed to stop recording");
     }
   };
-
 
   return (
     <View
@@ -543,7 +573,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setDrawerOpen(true)
+                  setDrawerOpen(true);
                 }}
                 activeOpacity={0.8}
               >
@@ -567,112 +597,134 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 {title || "AI Tutor Chat"}
               </Text>
             </View>
-           {
-            messages.length === 0 && (
+            {messages.length === 0 && (
               <TouchableOpacity
-              style={[
-                styles.button,
-                theme === "dark" && {
-                  backgroundColor: "#0D0D0D",
-                  borderColor: "#2E3033",
-                },
-              ]}
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                handleCreateNewChat();
-              }}
-            >
-              <Image
-                source={
-                  theme === "dark"
-                    ? require("@/assets/images/icons/dark/pen.png")
-                    : require("@/assets/images/icons/pen.png")
-                }
-                style={{ width: 20, height: 20 }}
-              />
-            </TouchableOpacity>
-            )
-           }
-            
+                style={[
+                  styles.button,
+                  theme === "dark" && {
+                    backgroundColor: "#0D0D0D",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  handleCreateNewChat();
+                }}
+              >
+                <Image
+                  source={
+                    theme === "dark"
+                      ? require("@/assets/images/icons/dark/pen.png")
+                      : require("@/assets/images/icons/pen.png")
+                  }
+                  style={{ width: 20, height: 20 }}
+                />
+              </TouchableOpacity>
+            )}
+
             {messages.length > 0 && (
-
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  theme === "dark" && {
-                    backgroundColor: "#0D0D0D",
-                    borderColor: "#2E3033",
-                  },
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.navigate({
-                    pathname: "/quiz",
-                    params: {
-                      chatId: chatId,
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    theme === "dark" && {
+                      backgroundColor: "#0D0D0D",
+                      borderColor: "#2E3033",
                     },
-                  });
-                }}
-              >
-                <Image
-                  source={theme === "dark"
-                    ? require("@/assets/images/icons/dark/BrainChat.png")
-                    : require("@/assets/images/icons/BrainChat.png")
-                  }
-                  style={{ width: 20, height: 20 }}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  theme === "dark" && {
-                    backgroundColor: "#0D0D0D",
-                    borderColor: "#2E3033",
-                  },
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Alert.alert(
-                    "Delete Chat",
-                    "Are you sure you want to delete this chat? This action cannot be undone.",
-                    [
-                      {
-                        text: "Cancel",
-                        style: "cancel",
-                        onPress: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-                      },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: async () => {
-                          try {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            await chatService.deleteChat(chatId);
-                            await refreshChatList();
-                            Alert.alert("Success", "Chat deleted successfully");
-                            createNewChat();
-                          } catch (error) {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                            Alert.alert("Error", "Failed to delete chat. Please try again.");
-                          }
-                        }
-                      }
-                    ]
-                  );
-                }}
-              >
-                <Image
-                  source={theme === "dark"
-                    ? require("@/assets/images/icons/dark/delete.png")
-                    : require("@/assets/images/icons/delete.png")
-                  }
-                  style={{ width: 20, height: 20 }}
-                />
-              </TouchableOpacity>
-            </View>
+                  ]}
+                  onPress={async () => {
+                    await Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Light,
+                    );
+
+                    const quizLimit = user?.quizLimit ?? 0;
+                    const credits = user?.credits ?? 0;
+
+                    const hasAccess = quizLimit > 0 && credits > 0;
+
+                    if (!hasAccess) {
+                      router.push("/freeTrialIntro");
+                      return;
+                    }
+
+                    router.navigate({
+                      pathname: "/quiz",
+                      params: { chatId },
+                    });
+                  }}
+                >
+                  <Image
+                    source={
+                      theme === "dark"
+                        ? require("@/assets/images/icons/dark/BrainChat.png")
+                        : require("@/assets/images/icons/BrainChat.png")
+                    }
+                    style={{ width: 20, height: 20 }}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    theme === "dark" && {
+                      backgroundColor: "#0D0D0D",
+                      borderColor: "#2E3033",
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    Alert.alert(
+                      "Delete Chat",
+                      "Are you sure you want to delete this chat? This action cannot be undone.",
+                      [
+                        {
+                          text: "Cancel",
+                          style: "cancel",
+                          onPress: () =>
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light,
+                            ),
+                        },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: async () => {
+                            try {
+                              Haptics.notificationAsync(
+                                Haptics.NotificationFeedbackType.Success,
+                              );
+                              await chatService.deleteChat(chatId);
+                              await refreshChatList();
+                              Alert.alert(
+                                "Success",
+                                "Chat deleted successfully",
+                              );
+                              createNewChat();
+                            } catch (error) {
+                              Haptics.notificationAsync(
+                                Haptics.NotificationFeedbackType.Error,
+                              );
+                              Alert.alert(
+                                "Error",
+                                "Failed to delete chat. Please try again.",
+                              );
+                            }
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <Image
+                    source={
+                      theme === "dark"
+                        ? require("@/assets/images/icons/dark/delete.png")
+                        : require("@/assets/images/icons/delete.png")
+                    }
+                    style={{ width: 20, height: 20 }}
+                  />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -687,24 +739,23 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           )}
 
           <View style={styles.chatContent}>
-
             {!messages || messages.length === 0 ? (
               <View style={styles.emptyStateContainer}>
                 <View style={styles.emptyImageContainer}>
-                {keyboardHeight === 0 && (
-                  <Image 
-                    source={require("@/assets/images/eddie/Mischievous.png")} 
-                    style={styles.emptyImage} 
+                  {keyboardHeight === 0 && (
+                    <Image
+                      source={require("@/assets/images/eddie/Mischievous.png")}
+                      style={styles.emptyImage}
+                    />
+                  )}
+                  <Image
+                    source={
+                      theme === "dark"
+                        ? require("@/assets/images/logo.png")
+                        : require("@/assets/images/LOGO-2.png")
+                    }
+                    style={styles.logo}
                   />
-                )}
-                <Image
-                  source={
-                    theme === "dark"
-                      ? require("@/assets/images/logo.png")
-                      : require("@/assets/images/LOGO-2.png")
-                  }
-                  style={styles.logo}
-                />
                 </View>
               </View>
             ) : (
@@ -717,31 +768,40 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                   scrollEventThrottle={400}
                   showsVerticalScrollIndicator={false}
                 >
-                  {messages && Array.isArray(messages) && messages
-                    .filter(message => {
-                      if (!message || !message.id) return false;
-                      
-                      if (message.role === 'user') return true;
-                      
-                      let content = '';
-                      if (typeof message.content === 'string') {
-                        content = message.content;
-                      } else if (message.content && typeof message.content === 'object' && 'text' in message.content) {
-                        content = (message.content as any).text || '';
-                      }
-                        
-                      return content.length > 0 || message.id === streamingMessageId;
-                    })
-                    .map((message) => {
-                      const isStreaming = message.id === streamingMessageId;
-                      return (
-                        <MessageItem 
-                          key={message.id} 
-                          message={message}
-                          isStreaming={isStreaming}
-                        />
-                      );
-                    })}
+                  {messages &&
+                    Array.isArray(messages) &&
+                    messages
+                      .filter((message) => {
+                        if (!message || !message.id) return false;
+
+                        if (message.role === "user") return true;
+
+                        let content = "";
+                        if (typeof message.content === "string") {
+                          content = message.content;
+                        } else if (
+                          message.content &&
+                          typeof message.content === "object" &&
+                          "text" in message.content
+                        ) {
+                          content = (message.content as any).text || "";
+                        }
+
+                        return (
+                          content.length > 0 ||
+                          message.id === streamingMessageId
+                        );
+                      })
+                      .map((message) => {
+                        const isStreaming = message.id === streamingMessageId;
+                        return (
+                          <MessageItem
+                            key={message.id}
+                            message={message}
+                            isStreaming={isStreaming}
+                          />
+                        );
+                      })}
 
                   {waitingForStream && <AITypingIndicator />}
                 </ScrollView>
@@ -762,49 +822,52 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
             )}
           </View>
 
-          {(!messages || messages.length === 0) && !loadingSuggestions && suggestions && suggestions.length > 0 && (
-            <View
-              style={[
-                styles.suggestionsContainer,
-                theme === "dark" && {
-                  backgroundColor: "#131313",
-                  borderTopColor: "#2E3033",
-                },
-              ]}
-            >
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.suggestionsScrollContent}
-                style={styles.suggestionsScroll}
+          {(!messages || messages.length === 0) &&
+            !loadingSuggestions &&
+            suggestions &&
+            suggestions.length > 0 && (
+              <View
+                style={[
+                  styles.suggestionsContainer,
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderTopColor: "#2E3033",
+                  },
+                ]}
               >
-                {suggestions.map((suggestion, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.suggestion,
-                      theme === "dark" && {
-                        backgroundColor: "#0D0D0D",
-                        borderColor: "#2E3033",
-                      },
-                    ]}
-                    onPress={() => handleSuggestionPress(suggestion)}
-                    activeOpacity={0.7}
-                  >
-                    <Text
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.suggestionsScrollContent}
+                  style={styles.suggestionsScroll}
+                >
+                  {suggestions.map((suggestion, index) => (
+                    <TouchableOpacity
+                      key={index}
                       style={[
-                        styles.suggestionText,
-                        theme === "dark" && { color: "#E0E0E0" },
+                        styles.suggestion,
+                        theme === "dark" && {
+                          backgroundColor: "#0D0D0D",
+                          borderColor: "#2E3033",
+                        },
                       ]}
-                      numberOfLines={2}
+                      onPress={() => handleSuggestionPress(suggestion)}
+                      activeOpacity={0.7}
                     >
-                      {suggestion}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+                      <Text
+                        style={[
+                          styles.suggestionText,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {suggestion}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
           <View
             style={[
@@ -846,10 +909,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   );
 };
 
-const WaveVisualization = ({ 
-  waveAnimations, 
-  theme 
-}: { 
+const WaveVisualization = ({
+  waveAnimations,
+  theme,
+}: {
   waveAnimations: Array<ReturnType<typeof useSharedValue<number>>>;
   theme: string;
 }) => {
@@ -863,7 +926,7 @@ const WaveVisualization = ({
           const height = interpolate(
             anim.value,
             [0, 1],
-            [baseHeights[index], maxHeights[index]]
+            [baseHeights[index], maxHeights[index]],
           );
           return {
             height,
@@ -919,14 +982,14 @@ const InputInterface = ({
   const animatedInputStyle = useAnimatedStyle(() => ({
     opacity: inputContainerOpacity.value,
     transform: [
-      { scale: interpolate(inputContainerOpacity.value, [0, 1], [0.98, 1]) }
+      { scale: interpolate(inputContainerOpacity.value, [0, 1], [0.98, 1]) },
     ],
   }));
 
   const animatedMicStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: micButtonScale.value },
-      { rotate: `${micButtonRotation.value}deg` }
+      { rotate: `${micButtonRotation.value}deg` },
     ],
   }));
 
@@ -955,10 +1018,7 @@ const InputInterface = ({
         <TextInput
           placeholder="Ask Eddie anything..."
           placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-          style={[
-            styles.textInput,
-            theme === "dark" && { color: "#E0E0E0" },
-          ]}
+          style={[styles.textInput, theme === "dark" && { color: "#E0E0E0" }]}
           value={inputText}
           onChangeText={setInputText}
           returnKeyType="done"
@@ -995,7 +1055,10 @@ const InputInterface = ({
           style={styles.sendButton}
           onPress={() => handleSendMessage()}
           disabled={
-            inputText.trim() === "" || isGenerating || isNavigating || isTranscribing
+            inputText.trim() === "" ||
+            isGenerating ||
+            isNavigating ||
+            isTranscribing
           }
         >
           <Image
@@ -1034,9 +1097,7 @@ const RecordingInterface = ({
 }) => {
   const animatedWrapperStyle = useAnimatedStyle(() => ({
     opacity: recordingOpacity.value,
-    transform: [
-      { scale: recordingContainerScale.value }
-    ],
+    transform: [{ scale: recordingContainerScale.value }],
   }));
 
   return (
@@ -1086,10 +1147,10 @@ const AITypingIndicator = () => {
       opacity: withRepeat(
         withSequence(
           withTiming(1, { duration: 500 }),
-          withTiming(0, { duration: 500 })
+          withTiming(0, { duration: 500 }),
         ),
         -1,
-        false
+        false,
       ),
     };
   });
@@ -1114,11 +1175,15 @@ const AITypingIndicator = () => {
           theme === "dark" && {
             backgroundColor: "#131313",
           },
-          { paddingVertical: 8 }
+          { paddingVertical: 8 },
         ]}
       >
         <Animated.View style={[styles.cursorContainer, cursorStyle]}>
-          <Text style={[styles.cursor, theme === "dark" && { color: "#E0E0E0" }]}>|</Text>
+          <Text
+            style={[styles.cursor, theme === "dark" && { color: "#E0E0E0" }]}
+          >
+            |
+          </Text>
         </Animated.View>
       </View>
     </View>
@@ -1183,7 +1248,7 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     alignItems: "center",
     justifyContent: "center",
-    flex: 1
+    flex: 1,
   },
   logo: {
     width: 200,
@@ -1417,7 +1482,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   messageBubble: {
-    maxWidth: "75%", 
+    maxWidth: "75%",
     borderRadius: 16,
     padding: 12,
     marginBottom: 4,
@@ -1435,5 +1500,5 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "center",
     marginBottom: 40,
-  }
+  },
 });

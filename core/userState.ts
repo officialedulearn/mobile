@@ -141,6 +141,7 @@ const useUserStore = create<UserState>((set, get) => ({
         quizCompleted: userFromDB.quizCompleted,
         isPremium: userFromDB.isPremium || false,
         profilePictureURL: userFromDB.profilePictureURL || null,
+        quizLimit: userFromDB.quizLimit,
       };
       
       set({ user: userData });
