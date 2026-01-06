@@ -30,8 +30,7 @@ const quizzes = (props: Props) => {
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
   
   const chatService = new ChatService();
-  const user = useUserStore((s) => s.user);
-  const theme = useUserStore(s => s.theme);
+  const {updateUserCredits, theme, user} = useUserStore()
   const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth * 0.75;
@@ -65,6 +64,32 @@ const quizzes = (props: Props) => {
 
     fetchData();
   }, [user?.id, fetchQuizActivities]);
+
+  const startQuiz = () => {
+
+    const currentCredits = Number(user?.credits) || 0;
+    console.log(
+      "Current credits (raw):",
+      user?.credits,
+      "Parsed:",
+      currentCredits,
+    );
+
+    if (currentCredits <= 0.5) {
+      console.log(
+        "User has insufficient credits, redirecting to freeTrialIntro",
+      );
+      router.push("/freeTrialIntro");
+      return;
+    }
+
+    updateUserCredits(currentCredits - 0.5);
+
+    router.push({
+      pathname: "/quiz",
+      params: {chatId: chat.id}
+    })
+  }
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -140,10 +165,7 @@ const quizzes = (props: Props) => {
                 <TouchableOpacity style={
                   [styles.startButton, {marginBottom: 10}, theme === "dark" && {backgroundColor: "#00FF80"}]
                 } onPress={() => {
-                  router.push({
-                    pathname: "/quiz",
-                    params: {chatId: chat.id}
-                  })
+                  startQuiz()
                 }}>
                   <Text style={[styles.startButtonText, theme === "dark" && {color: "#000"}]}>Start Quiz</Text>
                 </TouchableOpacity>
