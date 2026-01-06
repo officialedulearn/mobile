@@ -65,7 +65,7 @@ const quizzes = (props: Props) => {
     fetchData();
   }, [user?.id, fetchQuizActivities]);
 
-  const startQuiz = () => {
+  const startQuiz = (chatId: string) => {
 
     const currentCredits = Number(user?.credits) || 0;
     console.log(
@@ -87,7 +87,7 @@ const quizzes = (props: Props) => {
 
     router.push({
       pathname: "/quiz",
-      params: {chatId: chat.id}
+      params: {chatId: chatId}
     })
   }
 
@@ -165,7 +165,7 @@ const quizzes = (props: Props) => {
                 <TouchableOpacity style={
                   [styles.startButton, {marginBottom: 10}, theme === "dark" && {backgroundColor: "#00FF80"}]
                 } onPress={() => {
-                  startQuiz()
+                  startQuiz(chat.id)
                 }}>
                   <Text style={[styles.startButtonText, theme === "dark" && {color: "#000"}]}>Start Quiz</Text>
                 </TouchableOpacity>
