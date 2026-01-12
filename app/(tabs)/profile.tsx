@@ -6,6 +6,7 @@ import { getUserMetrics } from "@/utils/utils";
 import React, { useEffect, useState, useRef } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from "react-native";
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
 import { WalletService } from "@/services/wallet.service";
@@ -331,7 +332,13 @@ const Profile = (props: Props) => {
                 <Text style={[styles.xpText, theme === "dark" && {color: "#000"}]}>{user?.xp} XP</Text>
               </View>
             </View>
-            {/* <View style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}>
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/wallet");
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+              style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}
+            >
               <View style={styles.walletInfoContainer}>
                 <Image 
                   source={theme === "dark" ? require("@/assets/images/icons/dark/wallet.png") : require("@/assets/images/icons/wallet.png")} 
@@ -345,8 +352,10 @@ const Profile = (props: Props) => {
                   {user?.address}
                 </Text>
                 <TouchableOpacity
-                  onPress={async () => {
+                  onPress={async (e) => {
+                    e.stopPropagation();
                     await Clipboard.setStringAsync(user?.address || "");
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   style={styles.copyButton}
                 >
@@ -369,7 +378,11 @@ const Profile = (props: Props) => {
                   
                   <TouchableOpacity 
                     style={styles.buyButton}
-                    onPress={toggleBuyModal}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      router.push("/wallet");
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
                   >
                     <Text style={styles.buyButtonIcon}>+</Text>
                   </TouchableOpacity>
@@ -382,7 +395,7 @@ const Profile = (props: Props) => {
                   </View>
                 </View>
               </View>
-            </View> */}
+            </TouchableOpacity>
           </View>
 
           <View style={[styles.achievements, { marginTop: 12 }, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>

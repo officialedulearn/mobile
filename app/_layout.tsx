@@ -191,6 +191,15 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen
+              name="wallet"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
               name="freeTrialIntro"
               options={{
                 headerShown: false,

@@ -11,6 +11,7 @@ import {
   Linking,
 } from "react-native";
 import React, { useState, useRef } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BackButton from "@/components/backButton";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
@@ -247,7 +248,7 @@ const Subscription = () => {
 
 
   return (
-    <View style={[styles.container, theme === "dark" && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark]} edges={['top']}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />  
       
       <View style={styles.topNav}>
@@ -337,7 +338,7 @@ const Subscription = () => {
         </View>
       </View>
 
-      <View style={styles.bottomSection}>
+      <SafeAreaView style={styles.bottomSection} edges={['bottom']}>
         <TouchableOpacity 
           style={[
             styles.upgradeButton, 
@@ -381,9 +382,8 @@ const Subscription = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
-      </View>
-    </View>
+      </SafeAreaView>
+    </SafeAreaView>
   );
 };
 
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     gap: 16,
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 10,
     marginBottom: 16,
     position: "relative",
     zIndex: 1,
