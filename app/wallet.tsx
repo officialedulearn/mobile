@@ -440,9 +440,13 @@ function Wallet() {
     try {
       setIsBurning(true);
       setBurningAmount(burnAmount);
-      await walletService.burnEDLN(user?.id || '', burnAmount);
+            const response = await walletService.burnEDLN(user?.id || '', burnAmount);
+      
+      if (!response || !response.signature) {
+        throw new Error('Burn transaction failed');
+      }
+      
       const credits = getCreditsFromBurnAmount(burnAmount);
-      await userService.incrementCredits(user?.id || '', credits);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       await refreshBalance();
@@ -453,7 +457,7 @@ function Wallet() {
       
       setIsBurning(false);
       setBurningAmount(null);
-      showToast('success', `Tokens burned! You received ${credits} credits.`);
+      showToast('success', `Successfully burned ${burnAmount.toLocaleString()} EDLN!`);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       const errorMsg = error?.response?.data?.message || error?.message || 'Failed to burn tokens';
