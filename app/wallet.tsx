@@ -27,6 +27,7 @@ import SolanaQR from '@/components/SolanaQR';
 import useUserStore from '@/core/userState';
 import { WalletService, DeviceInfo } from '@/services/wallet.service';
 import { UserService } from '@/services/auth.service';
+import { CardSharingService } from '@/services/cardSharing.service';
 import { generateUUID } from '@/utils/constants';
 
 const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
@@ -39,6 +40,7 @@ const getHighQualityImageUrl = (url: string | null | undefined): string | undefi
 
 const walletService = new WalletService();
 const userService = new UserService();
+const cardSharingService = new CardSharingService();
 
 function Wallet() {
   const { user, theme } = useUserStore();
@@ -89,6 +91,7 @@ function Wallet() {
   const [burningAmount, setBurningAmount] = useState<number | null>(null);
   const [burnSuccessModalVisible, setBurnSuccessModalVisible] = useState(false);
   const [activeTokenUtilIndex, setActiveTokenUtilIndex] = useState(0);
+  const [isSharingCard, setIsSharingCard] = useState(false);
 
   useEffect(() => {
     const loadStoredToken = async () => {
@@ -481,6 +484,23 @@ function Wallet() {
     });
   };
 
+  const handleShareEarningsCard = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsSharingCard(true);
+      await cardSharingService.shareEarningsCard(user.id, netWorth);
+      showToast('success', 'Earnings card shared successfully!');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Failed to share earnings card';
+      showToast('error', errorMsg);
+      console.error('Error sharing earnings card:', error);
+    } finally {
+      setIsSharingCard(false);
+    }
+  };
+
   const getModalTitle = () => {
     if (buyMethod === null && purchaseType === null) return 'Buy Tokens';
     if (buyMethod === null && purchaseType !== null) {
@@ -544,7 +564,7 @@ function Wallet() {
           <View style={[styles.walletAddressCard, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
             <View style={styles.walletAddressHeader}>
               <Image 
-                source={theme === 'dark' ? require('@/assets/images/icons/dark/wallet.png') : require('@/assets/images/icons/wallet.png')} 
+                source={theme === 'dark' ? require('@/assets/images/icons/wallet.png') : require('@/assets/images/icons/dark/wallet.png')} 
                 style={styles.walletIconSmall}
               />
               <Text style={[styles.walletAddressLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
@@ -621,6 +641,27 @@ function Wallet() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              onPress={handleShareEarningsCard}
+              disabled={isSharingCard}
+              style={[
+                styles.shareButton,
+                theme === 'dark' && { backgroundColor: '#131313', borderColor: '#00FF80' },
+                isSharingCard && styles.disabledButton
+              ]}
+            >
+              {isSharingCard ? (
+                <ActivityIndicator size="small" color={theme === 'dark' ? '#00FF80' : '#000'} />
+              ) : (
+                <>
+                  <FontAwesome5 name="share-alt" size={16} color={theme === 'dark' ? '#00FF80' : '#000'} />
+                  <Text style={[styles.shareButtonText, theme === 'dark' && { color: '#00FF80' }]}>
+                    Share Earnings Card
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={[styles.tokenBalancesSection, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
@@ -1674,5 +1715,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi-Regular',
     fontSize: 16,
     fontWeight: '700',
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    gap: 8,
+  },
+  shareButtonText: {
+    color: '#000000',
+    fontFamily: 'Satoshi-Regular',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
