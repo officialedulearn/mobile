@@ -17,6 +17,7 @@ import {
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Route } from "expo-router/build/Route";
+import OAuthButtons from "@/components/OAuthButtons";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
@@ -33,6 +34,7 @@ const Auth = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   useEffect(() => {
     setIsSignUp(signUp === "1");
@@ -351,6 +353,7 @@ const Auth = () => {
         </View>
 
         <View style={styles.content}>
+
           {isSignUp && (
             <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
               <TextInput
@@ -422,17 +425,25 @@ const Auth = () => {
           <TouchableOpacity
             style={[
               styles.signInButton,
-              loading ? styles.disabledButton : null,
+              (loading || oauthLoading) ? styles.disabledButton : null,
               theme === "dark" && styles.signInButtonDark
             ]}
             onPress={() => handleAuth()}
-            disabled={loading}
+            disabled={loading || oauthLoading}
           >
             <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
               {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
 
+          
+          <View style={styles.dividerContainer}>
+            <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
+            <Text style={[styles.dividerText, theme === "dark" && styles.dividerTextDark]}>OR</Text>
+            <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
+          </View>
+
+          <OAuthButtons onLoadingChange={setOauthLoading} />
           {isSignUp && (
             <View style={styles.privacyContainer}>
               <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>
@@ -603,6 +614,29 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: "contain",
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#EDF3FC',
+  },
+  dividerLineDark: {
+    backgroundColor: '#2E3033',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#61728C',
+    fontFamily: 'Satoshi-Regular',
+  },
+  dividerTextDark: {
+    color: '#B3B3B3',
   },
 });
 

@@ -7,6 +7,7 @@ import {
   FlatList,
   ImageSourcePropType,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { BlurView } from "expo-blur";
@@ -16,6 +17,7 @@ import useUserStore from "@/core/userState";
 import { format } from "date-fns";
 import Modal from "react-native-modal";
 import { router } from "expo-router";
+import Purchases from "react-native-purchases";
 
 type Props = {};
 interface UserRewardWithDetails {
@@ -99,7 +101,68 @@ const NFT = (props: Props) => {
       setIsLoading(true);
       setError(null);
 
-      await rewardService.claimReward(user.id as unknown as string, rewardId);
+      await Purchases.logIn(user.id as unknown as string);
+      console.log("RevenueCat user identified for badge claim:", user.id);
+
+      // IMPORTANT: The product "rc_badge_claim" MUST be configured as CONSUMABLE
+      // in both the App Store/Play Store AND RevenueCat dashboard.
+      // Non-consumable products can only be purchased once per user.
+      const productIdentifier = "rc_badge_claim1";
+      const products = await Purchases.getProducts([productIdentifier]);
+
+      if (products.length === 0) {
+        throw new Error("Badge claim product not found. Please contact support.");
+      }
+
+      const product = products[0];
+      console.log("Purchasing badge claim product:", productIdentifier);
+
+      let purchaseResult;
+      try {
+        purchaseResult = await Purchases.purchaseStoreProduct(product);
+        console.log("RevenueCat purchase successful, finalizing on-chain...");
+      } catch (purchaseError: any) {
+        console.error("Purchase error details:", {
+          code: purchaseError.code,
+          message: purchaseError.message,
+          userCancelled: purchaseError.userCancelled,
+        });
+
+        if (purchaseError.userCancelled) {
+          throw purchaseError;
+        }
+
+        if (purchaseError.code === 'PURCHASE_NOT_ALLOWED' || 
+            purchaseError.message?.includes('already purchased') ||
+            purchaseError.message?.includes('already own') ||
+            purchaseError.message?.includes('This in-app purchase has already been bought')) {
+          console.log("Product appears to be non-consumable or already owned. Attempting workaround...");
+          
+          await Purchases.restorePurchases();
+          
+          try {
+            purchaseResult = await Purchases.purchaseStoreProduct(product);
+            console.log("RevenueCat purchase successful after restore, finalizing on-chain...");
+          } catch (retryError: any) {
+            throw new Error(
+              "Unable to purchase badge claim. The product may be configured as non-consumable. " +
+              "Please ensure 'rc_badge_claim' is set as a consumable product in both the App Store/Play Store and RevenueCat dashboard. " +
+              `Error: ${retryError.message || purchaseError.message}`
+            );
+          }
+        } else {
+          throw purchaseError;
+        }
+      }
+
+      await rewardService.claimRewardAdmin(
+        user.id as unknown as string,
+        rewardId
+      );
+
+      console.log("On-chain transaction finalized successfully");
+
+      
 
       const userRewards = await rewardService.getUserRewards(
         user.id as unknown as string
@@ -125,7 +188,9 @@ const NFT = (props: Props) => {
       
       let errorMessage = "Failed to claim badge";
       
-      if (error?.message) {
+      if (error?.userCancelled) {
+        errorMessage = "Purchase cancelled";
+      } else if (error?.message) {
         if (error.message.includes("insufficient funds for rent")) {
           errorMessage = "Your wallet doesn't have enough SOL to pay for transaction fees";
         } else if (error.message.includes("Transaction simulation failed")) {

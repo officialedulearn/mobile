@@ -1,15 +1,16 @@
 import { useFonts } from "expo-font";
-import { SplashScreen, Stack } from "expo-router";
+import { SplashScreen, Stack, router } from "expo-router";
 import { useEffect } from "react";
 import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, Platform } from "react-native";
+import { StyleSheet, Platform, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import useUserStore from "@/core/userState";
 import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { supabase } from "@/utils/supabase";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -87,6 +88,67 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    const handleDeepLink = async (url: string) => {
+      if (url.includes('auth/callback')) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('OAuth session error:', error);
+          return;
+        }
+        
+        if (session && session.user.app_metadata?.provider === 'google') {
+          const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+          
+          try {
+            const response = await fetch(`${API_URL}auth/oauth/callback`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                supabaseUserId: session.user.id,
+                email: session.user.email,
+                name: session.user.user_metadata?.full_name || '',
+                provider: 'google',
+                providerId: session.user.id
+              })
+            });
+            
+            if (!response.ok) {
+              throw new Error('OAuth callback failed');
+            }
+            
+            const { isNewUser, needsUsername } = await response.json();
+            
+            if (needsUsername) {
+              router.push('/auth/setupUsername' as any);
+            } else {
+              router.push('/(tabs)');
+            }
+          } catch (err) {
+            console.error('OAuth callback error:', err);
+          }
+        }
+      }
+    };
+    
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+    
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+    
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
@@ -133,6 +195,14 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="auth/identity"
+              options={{
+                headerShown: false,
+                animation: "fade",
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen
+              name="auth/setupUsername"
               options={{
                 headerShown: false,
                 animation: "fade",

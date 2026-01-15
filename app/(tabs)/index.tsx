@@ -21,8 +21,7 @@ import * as StoreReview from "expo-store-review";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RoadmapService } from "@/services/roadmap.service";
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
+import { CardSharingService } from "@/services/cardSharing.service";
 
 
 type Props = {};
@@ -151,69 +150,17 @@ const index = (props: Props) => {
 
   const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
   const [isSharing, setIsSharing] = useState(false);
+  const cardSharingService = new CardSharingService();
 
   const handleShare = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !user?.streak) return;
     
     try {
       setIsSharing(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
-      const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
-      const cardUrl = `${apiUrl}/cards/streak/${user.id}?theme=dark`;
-      
-      console.log(`[Share] Starting download from: ${cardUrl}`);
-      const startTime = Date.now();
-      
-      const fileUri = `${FileSystem.documentDirectory}streak-${user.id}.png`;
-      
-      const downloadResumable = FileSystem.createDownloadResumable(
-        cardUrl,
-        fileUri,
-        {},
-        (downloadProgress) => {
-          const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-          console.log(`[Share] Download progress: ${(progress * 100).toFixed(0)}%`);
-        }
-      );
-      
-      const downloadPromise = downloadResumable.downloadAsync();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Download timeout')), 30000)
-      );
-      
-      const result = await Promise.race([downloadPromise, timeoutPromise]);
-      
-      if (!result) {
-        console.error('[Share] Download returned null');
-        throw new Error('Download failed');
-      }
-      
-      const downloadResult = result as FileSystem.FileSystemDownloadResult;
-      console.log(`[Share] Download completed in ${Date.now() - startTime}ms with status ${downloadResult.status}`);
-      
-      if (downloadResult.status === 200) {
-        const isAvailable = await Sharing.isAvailableAsync();
-        
-        if (isAvailable) {
-          await Sharing.shareAsync(downloadResult.uri, {
-            mimeType: 'image/png',
-            dialogTitle: `I'm on a ${user.streak} day learning streak on EduLearn! 🔥`,
-            UTI: 'public.png',
-          });
-        } else {
-          console.log("Sharing is not available on this device");
-        }
-        
-        setStreakModalVisible(false);
-      } else {
-        console.error("Failed to download streak card:", downloadResult.status);
-      }
+      await cardSharingService.shareStreakCard(user.id, user.streak);
+      setStreakModalVisible(false);
     } catch (error) {
       console.error("Error sharing streak card:", error);
-      if (error instanceof Error && error.message === 'Download timeout') {
-        console.error("The server took too long to generate the card");
-      }
     } finally {
       setIsSharing(false);
     }
@@ -513,7 +460,7 @@ const index = (props: Props) => {
 
               <View style={styles.streakTextContainer}>
                 <Text style={styles.streakText}>{user?.streak}</Text>
-                <Text style={styles.streakTextSubtitle}>Days streak</Text>
+                <Text style={[styles.streakTextSubtitle, theme === "dark" && styles.streakTextSubtitleDark]}>Days streak</Text>
               </View>
 
               <Text style={[styles.modalTitle, theme === "dark" && styles.modalTitleDark]}>
@@ -582,6 +529,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FBFC",
+  },
+  containerDark: {
+    backgroundColor: "#0d0d0d",
   },
   scrollContent: {
     flexDirection: "column",
@@ -1071,6 +1021,7 @@ const styles = StyleSheet.create({
   },
   modalButtonSecondaryDark: {
     backgroundColor: "#0D0D0D",
+    borderWidth: 1,
     borderColor: "#2E3033",
   },
   modalButtonText: {
@@ -1113,5 +1064,8 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontSize: 20,
     textAlign: "center",
+  },
+  streakTextSubtitleDark: {
+    color: "#E0E0E0",
   }
 });

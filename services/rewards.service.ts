@@ -30,6 +30,17 @@ export class RewardsService {
     }
   }
 
+  async claimRewardAdmin(userId: string, rewardId: string): Promise<any> {
+    try {
+      const response = await httpClient.post('/rewards/claim/admin', { userId, rewardId });
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error claiming reward ${rewardId} for user ${userId}:`, error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to claim reward';
+      throw new Error(errorMessage);
+    }
+  }
+
   async getAllRewards(): Promise<Reward[]> {
     try {
       const response = await httpClient.get('/rewards');

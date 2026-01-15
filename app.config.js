@@ -25,6 +25,7 @@ export default {
       icon: "./assets/images/mainlogo.png",
       bundleIdentifier: "com.edulearnv2.app",
       supportsTablet: true,
+      usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
@@ -55,6 +56,7 @@ export default {
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {
