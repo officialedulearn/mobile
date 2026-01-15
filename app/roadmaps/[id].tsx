@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Share } from "react-native";
 import React, { useState, useEffect } from "react";
 import BackButton from "@/components/backButton";
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { RoadmapWithSteps, RoadmapStep } from "@/interface/Roadmap";
 import { RoadmapService } from "@/services/roadmap.service";
 import useUserStore from "@/core/userState";
+import { CardSharingService } from "@/services/cardSharing.service";
 
 const Roadmap = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -15,7 +16,7 @@ const Roadmap = () => {
   const [startingStep, setStartingStep] = useState<string | null>(null);
 
   const roadmapService = new RoadmapService();
-
+  const cardSharingService = new CardSharingService();
   const fetchRoadmap = async () => {
     if (!id) return;
     
@@ -72,6 +73,21 @@ const Roadmap = () => {
   const calculateTotalTime = () => {
     if (!roadmapData?.steps) return 0;
     return roadmapData.steps.reduce((sum, step) => sum + step.time, 0);
+  };
+
+  const calculateProgress = () => {
+    if (!roadmapData?.steps || roadmapData.steps.length === 0) return 0;
+    const completedSteps = roadmapData.steps.filter(step => step.done).length;
+    return Math.round((completedSteps / roadmapData.steps.length) * 100);
+  };
+
+  const handleShareProgress = async () => {
+    try {
+      
+      await cardSharingService.shareRoadmapProgressCard(id as string, roadmapData?.roadmap.title || "");
+    } catch (error: any) {
+      console.error("Failed to share:", error);
+    }
   };
 
   if (isLoading || !roadmapData) {
@@ -177,6 +193,18 @@ const Roadmap = () => {
             </Text>
           </View>
         </View>
+
+        <TouchableOpacity 
+          style={[
+            styles.shareButton, 
+            theme === "dark" && { backgroundColor: "transparent", borderColor: "#00FF80" }
+          ]}
+          onPress={handleShareProgress}
+        >
+          <Text style={[styles.shareButtonText, theme === "dark" && { color: "#00FF80" }]}>
+            Share Progress ({calculateProgress()}%)
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.roadmapSteps}>
@@ -383,6 +411,24 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
     fontWeight: "500",
     color: "#61728C",
+  },
+  shareButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  shareButtonText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: "Satoshi",
+    fontWeight: "500",
+    color: "#000",
   },
 });
 

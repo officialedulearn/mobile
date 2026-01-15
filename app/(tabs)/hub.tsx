@@ -102,62 +102,75 @@ const Hub = (props: Props) => {
         contentContainerStyle={styles.communitiesContainer}
         showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
+        {activeTab === 'communities' ? (
+          isLoading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={theme === 'dark' ? '#00FF80' : '#000'} />
+              <Text style={[styles.loadingText, theme === 'dark' && styles.darkText]}>
+                Loading communities...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <Text style={[styles.errorText, theme === 'dark' && styles.darkText]}>
+                {error}
+              </Text>
+              <TouchableOpacity onPress={fetchCommunities} style={styles.retryButton}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : communities.length === 0 ? (
+            <View style={styles.centerContainer}>
+              <FontAwesome5 name="users" size={48} color={theme === 'dark' ? '#B0B0B0' : '#61728C'} />
+              <Text style={[styles.emptyText, theme === 'dark' && styles.darkText]}>
+                No communities yet
+              </Text>
+              <Text style={[styles.emptySubtext, theme === 'dark' && styles.darkTextSecondary]}>
+                Join a community to get started
+              </Text>
+            </View>
+          ) : (
+            communities.map((community) => (
+              <TouchableOpacity 
+                key={community.id}
+                onPress={() => router.push({ pathname: '/room/[id]', params: { id: community.id } })}
+                style={styles.communityCardWrapper}
+              >
+                <View style={[styles.communityCard, theme === 'dark' && styles.darkCommunityCard]}>
+                  <Image 
+                    source={{
+                      uri: community.imageUrl || 'https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png'
+                    }} 
+                    style={styles.communityCardImage} 
+                  />
+
+                  <View style={styles.communityCardContent}>
+                    <Text style={[styles.communityCardTitle, theme === 'dark' && styles.darkText]}>
+                      {community.title}
+                    </Text>
+                    <Text style={[styles.communityLastMessage, theme === 'dark' && styles.darkTextSecondary]}>
+                      {communityDetails[community.id]?.description || 'Join this community'}
+                    </Text>
+                    <Text style={[styles.communityLastMessage, theme === 'dark' && styles.darkTextSecondary]}>
+                      {communityDetails[community.id]?.memberCount !== undefined
+                        ? `${communityDetails[community.id].memberCount} members`
+                        : 'Loading members...'}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )
+        ) : (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={theme === 'dark' ? '#00FF80' : '#000'} />
-            <Text style={[styles.loadingText, theme === 'dark' && styles.darkText]}>
-              Loading communities...
-            </Text>
-          </View>
-        ) : error ? (
-          <View style={styles.centerContainer}>
-            <Text style={[styles.errorText, theme === 'dark' && styles.darkText]}>
-              {error}
-            </Text>
-            <TouchableOpacity onPress={fetchCommunities} style={styles.retryButton}>
-              <Text style={styles.retryButtonText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : communities.length === 0 ? (
-          <View style={styles.centerContainer}>
-            <FontAwesome5 name="users" size={48} color={theme === 'dark' ? '#B0B0B0' : '#61728C'} />
+            <FontAwesome5 name="fire" size={48} color="#FF3B30" />
             <Text style={[styles.emptyText, theme === 'dark' && styles.darkText]}>
-              No communities yet
+              Trending Communities
             </Text>
             <Text style={[styles.emptySubtext, theme === 'dark' && styles.darkTextSecondary]}>
-              Join a community to get started
+              Coming soon! Check back later for trending communities.
             </Text>
           </View>
-        ) : (
-          communities.map((community) => (
-            <TouchableOpacity 
-              key={community.id}
-              onPress={() => router.push({ pathname: '/room/[id]', params: { id: community.id } })}
-            >
-              <View style={[styles.communityCard, theme === 'dark' && styles.darkCommunityCard]}>
-                <Image 
-                  source={{
-                    uri: community.imageUrl || 'https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png'
-                  }} 
-                  style={styles.communityCardImage} 
-                />
-
-                <View style={styles.communityCardContent}>
-                  <Text style={[styles.communityCardTitle, theme === 'dark' && styles.darkText]}>
-                    {community.title}
-                  </Text>
-                  <Text style={[styles.communityLastMessage, theme === 'dark' && styles.darkTextSecondary]}>
-                    {communityDetails[community.id]?.description || 'Join this community'}
-                  </Text>
-                  <Text style={[styles.communityLastMessage, theme === 'dark' && styles.darkTextSecondary]}>
-                    {communityDetails[community.id]?.memberCount !== undefined
-                      ? `${communityDetails[community.id].memberCount} members`
-                      : 'Loading members...'}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
         )}
       </ScrollView>
 
@@ -166,8 +179,8 @@ const Hub = (props: Props) => {
         activeOpacity={0.8}
         onPress={() => router.push('/joinCommunity')  }
       >
-        <Text style={styles.joinButtonText}>Join Community</Text>
-        <FontAwesome5 name="plus" size={20} color="#00FF80" />
+        <Text style={[styles.joinButtonText, theme === 'dark' && styles.darkJoinButtonText]}>Join Community</Text>
+        <FontAwesome5 name="plus" size={20} color={theme === 'dark' ? '#000' : '#00FF80'} />
       </TouchableOpacity>
     </View>
   )
@@ -181,7 +194,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   darkContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0D0D0D',
   },
   headerNav: {
     marginTop: 50,
@@ -241,10 +254,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi',
   },
   communitiesContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-    gap:10,
-    flexWrap: 'wrap',
+    paddingBottom: 100,
+  },
+  communityCardWrapper: {
+    width: '100%',
+    marginBottom: 12,
   },
   communityCard: {
     backgroundColor: '#FFFFFF',
@@ -265,27 +279,30 @@ const styles = StyleSheet.create({
   communityCardContent: {
     flexDirection: 'column',
     gap: 4,
+    flex: 1,
   },
   communityCardTitle: {
     fontFamily: 'Satoshi',
     fontSize: 16,
     fontWeight: '600',
+    flexShrink: 1,
   },
   communityLastMessage: {
     fontFamily: 'Satoshi',
     fontSize: 14,
     fontWeight: '400',
     color: '#61728C',
+    flexShrink: 1,
   },
   darkCommunityCard: {
-    backgroundColor: '#1E1E1E',
+    backgroundColor: '#131313',
     borderColor: '#2E3033',
   },
   darkText: {
-    color: '#FFFFFF',
+    color: '#E0E0E0',
   },
   darkTextSecondary: {
-    color: '#B0B0B0',
+    color: '#B3B3B3',
   },
   communitiesScrollView: {
     flex: 1,
@@ -371,23 +388,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 16,
     gap: 8,
-    shadowColor: '#00FF80',
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 25,
-    elevation: 12,
     height: 48,
   },
   darkJoinButton: {
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#00FF80',
   },
   joinButtonText: {
     color: '#00FF80',
-    fontFamily: 'Satoshi',
+    fontFamily: 'Satoshi-Regular',
     fontSize: 16,
     fontWeight: '600',
+
+  },
+  darkJoinButtonText: {
+    color: '#000',
   },
 })

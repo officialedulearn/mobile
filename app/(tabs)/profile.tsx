@@ -6,7 +6,6 @@ import { getUserMetrics } from "@/utils/utils";
 import React, { useEffect, useState, useRef } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import Modal from "react-native-modal";
 import { WalletService } from "@/services/wallet.service";
@@ -335,7 +334,6 @@ const Profile = (props: Props) => {
             <TouchableOpacity
               onPress={() => {
                 router.push("/wallet");
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
               style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}
             >
@@ -355,7 +353,6 @@ const Profile = (props: Props) => {
                   onPress={async (e) => {
                     e.stopPropagation();
                     await Clipboard.setStringAsync(user?.address || "");
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   style={styles.copyButton}
                 >
@@ -381,7 +378,6 @@ const Profile = (props: Props) => {
                     onPress={(e) => {
                       e.stopPropagation();
                       router.push("/wallet");
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
                   >
                     <Text style={styles.buyButtonIcon}>+</Text>

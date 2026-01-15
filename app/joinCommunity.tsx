@@ -14,6 +14,7 @@ const communityService = new CommunityService()
 
 const joinCommunity = () => {
     const user = useUserStore(s => s.user)
+    const theme = useUserStore(s => s.theme)
     const [code, setCode] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState(false)
@@ -135,22 +136,22 @@ const joinCommunity = () => {
 
   return (
     <>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, theme === 'dark' && styles.darkContainer]} showsVerticalScrollIndicator={false}>
       <View style={styles.topNav}>
         <BackButton />
-        <Text style={styles.headerTitle}>Join Community</Text>
+        <Text style={[styles.headerTitle, theme === 'dark' && styles.darkText]}>Join Community</Text>
         
       </View>
       <View style={styles.joinCommunity}>
-        <Text style={styles.joinCommunityTitle}>Connect with groups that match your learning interests.</Text>
+        <Text style={[styles.joinCommunityTitle, theme === 'dark' && styles.darkSecondaryText]}>Connect with groups that match your learning interests.</Text>
         <View style={styles.inviteContainer}>
-          <Text style={styles.inviteTitle}>Community Invite Code</Text>
+          <Text style={[styles.inviteTitle, theme === 'dark' && styles.darkSecondaryText]}>Community Invite Code</Text>
 
               <View style={styles.inputContainer}>
               <TextInput
-                style={[styles.input, error && { borderColor: '#FF0000' }]}
-                placeholder={error ? errorMessage : 'Enter invite code'}
-                placeholderTextColor={error ? '#FF0000' : '#61728C'}
+                style={[styles.input, error && { borderColor: '#FF0000' }, theme === 'dark' && styles.darkInput]}
+                placeholder={error ? errorMessage : 'Enter Invite Code'}
+                placeholderTextColor={error ? '#FF0000' : (theme === 'dark' ? '#E0E0E0' : 'rgba(45, 60, 82, 0.5)')}
                 value={code}
                 onChangeText={(text) => {
                   setCode(text)
@@ -162,11 +163,11 @@ const joinCommunity = () => {
                 onSubmitEditing={confirmJoin}
               />
               <TouchableOpacity 
-                style={styles.button} 
+                style={[styles.button, theme === 'dark' && styles.darkButton]} 
                 onPress={confirmJoin}
                 disabled={isLoading}
               >
-                  {isLoading ? <ActivityIndicator size="small" color="#00FF80"  /> : <Text style={styles.buttonText}>Join</Text>}
+                  {isLoading ? <ActivityIndicator size="small" color="#000" /> : <Text style={[styles.buttonText, theme === 'dark' && styles.darkButtonText]}>Join</Text>}
               </TouchableOpacity>
               </View>
               {error && errorMessage && (
@@ -179,36 +180,36 @@ const joinCommunity = () => {
 
       <View style={styles.otherCommunities}>
         <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.otherCommunitiesTitle}>Or Explore</Text>
-          <View style={styles.dividerLine} />
+          <View style={[styles.dividerLine, theme === 'dark' && styles.darkDivider]} />
+          <Text style={[styles.otherCommunitiesTitle, theme === 'dark' && styles.darkSecondaryText]}>Or Explore</Text>
+          <View style={[styles.dividerLine, theme === 'dark' && styles.darkDivider]} />
         </View>
 
-        <Text style={styles.otherCommunitiesDescription}>Recommended Communities</Text>
+        <Text style={[styles.otherCommunitiesDescription, theme === 'dark' && styles.darkText]}>Recommended Communities</Text>
 
         {loadingPublic ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#000" />
+            <ActivityIndicator size="large" color="#00FF80" />
           </View>
         ) : publicCommunities.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No public communities available</Text>
+            <Text style={[styles.emptyText, theme === 'dark' && styles.darkText]}>No public communities available</Text>
           </View>
         ) : (
           <View style={styles.otherCommunitiesList}>
           {publicCommunities.map((community) => (
-            <View key={community.id} style={styles.communityCard}>
+            <View key={community.id} style={[styles.communityCard, theme === 'dark' && styles.darkCard]}>
               <View style={styles.communityCardTop}>
                 <Image 
                   source={{ uri: community.imageUrl || 'https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png' }} 
                   style={styles.communityCardImage} 
                 />
                 <View style={styles.communityCardContent}>
-                  <Text style={styles.communityCardTitle}>{community.title}</Text>
-                  <Text style={styles.communityCardDescription} numberOfLines={1}>
+                  <Text style={[styles.communityCardTitle, theme === 'dark' && styles.darkText]}>{community.title}</Text>
+                  <Text style={[styles.communityCardDescription, theme === 'dark' && styles.darkSecondaryText]} numberOfLines={1}>
                     Join {community.title} to connect with like-minded learners and grow together
                   </Text>
-                  <Text style={styles.communityCardMembers}>
+                  <Text style={[styles.communityCardMembers, theme === 'dark' && styles.darkSecondaryText]}>
                     {communityDetails[community.id]?.memberCount !== undefined
                       ? `${communityDetails[community.id].memberCount} members`
                       : 'Loading members...'}
@@ -217,14 +218,14 @@ const joinCommunity = () => {
               </View>
               
               <View style={styles.communityCardActions}>
-                <TouchableOpacity style={styles.viewButton}>
-                  <Text style={styles.viewButtonText}>View</Text>
+                <TouchableOpacity style={[styles.viewButton, theme === 'dark' && styles.darkViewButton]}>
+                  <Text style={[styles.viewButtonText, theme === 'dark' && styles.darkViewButtonText]}>View</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={styles.joinCardButton}
+                  style={[styles.joinCardButton, theme === 'dark' && styles.darkButton]}
                   onPress={() => handleOpenBottomSheet(community)}
                 >
-                  <Text style={styles.joinCardButtonText}>Join</Text>
+                  <Text style={[styles.joinCardButtonText, theme === 'dark' && styles.darkButtonText]}>Join Now</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -239,8 +240,8 @@ const joinCommunity = () => {
         index={0}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
-        backgroundStyle={styles.bottomSheetBackground}
-        handleIndicatorStyle={styles.bottomSheetIndicator}
+        backgroundStyle={[styles.bottomSheetBackground, theme === 'dark' && styles.darkBottomSheet]}
+        handleIndicatorStyle={[styles.bottomSheetIndicator, theme === 'dark' && styles.darkIndicator]}
         enablePanDownToClose={true}
         enableDismissOnClose={true}
         style={{ zIndex: 9999 }}
@@ -250,8 +251,8 @@ const joinCommunity = () => {
             <>
               <View style={styles.bottomSheetHeader}>
                 <View>
-                  <Text style={styles.bottomSheetTitle}>Request to Join Community</Text>
-                  <Text style={styles.bottomSheetDescription}>You are about to request access to join community. You'll be allowed to join once a moderator approves your request. Do you want to continue?</Text>
+                    <Text style={[styles.bottomSheetTitle, theme === 'dark' && styles.darkText]}>Request to Join Community</Text>
+                    <Text style={[styles.bottomSheetDescription, theme === 'dark' && styles.darkSecondaryText]}>You are about to request access to join community. You'll be allowed to join once a moderator approves your request. Do you want to continue?</Text>
                 </View>
               </View>
 
@@ -262,16 +263,16 @@ const joinCommunity = () => {
                     style={styles.bottomSheetCommunityImage} 
                   />
                   <View style={styles.bottomSheetCommunityDetails}>
-                    <Text style={styles.bottomSheetCommunityTitle}>
+                    <Text style={[styles.bottomSheetCommunityTitle, theme === 'dark' && styles.darkText]}>
                       {selectedCommunity.title}
                     </Text>
-                    <Text style={styles.bottomSheetCommunityDescription}>
+                    <Text style={[styles.bottomSheetCommunityDescription, theme === 'dark' && styles.darkSecondaryText]}>
                       {selectedCommunity.visibility === 'public' ? '🌐 Public Community' : '🔒 Private Community'}
                     </Text>
                     <View style={styles.bottomSheetCommunityStats}>
                       <View style={styles.statItem}>
-                        <FontAwesome5 name="globe" size={14} color="#61728C" />
-                        <Text style={styles.statText}>{selectedCommunity.visibility}</Text>
+                        <FontAwesome5 name="globe" size={14} color={theme === 'dark' ? '#B3B3B3' : '#61728C'} />
+                        <Text style={[styles.statText, theme === 'dark' && styles.darkSecondaryText]}>{selectedCommunity.visibility}</Text>
                       </View>
                     </View>
                   </View>
@@ -280,24 +281,24 @@ const joinCommunity = () => {
 
               <View style={styles.bottomSheetActions}>
                 <TouchableOpacity 
-                  style={styles.bottomSheetCancelButton}
+                  style={[styles.bottomSheetCancelButton, theme === 'dark' && styles.darkViewButton]}
                   onPress={handleCloseBottomSheet}
                 >
-                  <Text style={styles.bottomSheetCancelButtonText}>Cancel</Text>
+                  <Text style={[styles.bottomSheetCancelButtonText, theme === 'dark' && styles.darkViewButtonText]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={styles.bottomSheetJoinButton}
+                  style={[styles.bottomSheetJoinButton, theme === 'dark' && styles.darkButton]}
                   onPress={handleJoinRequest}
                 >
-                  <Text style={styles.bottomSheetJoinButtonText}>Confirm</Text>
+                  <Text style={[styles.bottomSheetJoinButtonText, theme === 'dark' && styles.darkButtonText]}>Confirm</Text>
                 </TouchableOpacity>
               </View>
             </>
           )}
           {bottomSheetStep === 'processing' && (
             <View style={styles.processingContainer}>
-              <ActivityIndicator size="large" color="#000" />
-              <Text style={styles.processingText}>Sending request...</Text>
+              <ActivityIndicator size="large" color="#00FF80" />
+              <Text style={[styles.processingText, theme === 'dark' && styles.darkText]}>Sending request...</Text>
             </View>
           )}
           {bottomSheetStep === 'success' && selectedCommunity && (
@@ -309,13 +310,13 @@ const joinCommunity = () => {
           style={styles.successBadgeImage}
         />
                 </View>
-                <Text style={styles.successMessage}>
-                  Your request to join <Text style={styles.communityNameBold}>{selectedCommunity.title}</Text> has been submitted. You'll be allowed to join once a moderator approves your request.
+                <Text style={[styles.successMessage, theme === 'dark' && styles.darkSecondaryText]}>
+                  Your request to join <Text style={[styles.communityNameBold, theme === 'dark' && styles.darkText]}>{selectedCommunity.title}</Text> has been submitted. You'll be allowed to join once a moderator approves your request.
                 </Text>
               </View>
 
               <TouchableOpacity 
-                style={styles.doneButton}
+                style={[styles.doneButton, theme === 'dark' && styles.darkButton]}
                 onPress={() => {
                   handleCloseBottomSheet()
                   setBottomSheetStep('confirm')
@@ -327,7 +328,7 @@ const joinCommunity = () => {
                   router.back()
                 }}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text style={[styles.doneButtonText, theme === 'dark' && styles.darkButtonText]}>Done</Text>
               </TouchableOpacity>
             </>
           )}
@@ -378,9 +379,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderColor: '#EDF3FC',
     color: '#2D3C52',
-    lineHeight: 24,
+    lineHeight: 16,
     fontFamily: 'Satoshi',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '500',
     flex: 1,
   },
@@ -406,7 +407,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   inviteContainer: {
-    
     gap: 8,
   },
   inviteTitle: {
@@ -800,5 +800,45 @@ const styles = StyleSheet.create({
   successBadgeImage: {
     width: 120,
     height: 120,
+  },
+  darkContainer: {
+    backgroundColor: '#0D0D0D',
+  },
+  darkSecondaryText: {
+    color: '#B3B3B3',
+  },
+  darkText: {
+    color: '#E0E0E0',
+  },
+  darkButton: {
+    backgroundColor: '#00FF80',
+  },
+  darkButtonText: {
+    color: '#000',
+  },
+  darkInput: {
+    backgroundColor: '#131313',
+    borderColor: '#2E3033',
+    color: '#E0E0E0',
+  },
+  darkCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  darkViewButton: {
+    backgroundColor: 'transparent',
+    borderColor: '#00FF80',
+  },
+  darkViewButtonText: {
+    color: '#00FF80',
+  },
+  darkDivider: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  darkBottomSheet: {
+    backgroundColor: '#1b1818',
+  },
+  darkIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
 })

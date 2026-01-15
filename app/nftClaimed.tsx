@@ -2,8 +2,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Pla
 import React, { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { RewardsService } from "@/services/rewards.service";
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import { CardSharingService } from "@/services/cardSharing.service";
 import useUserStore from "@/core/userState";
 
 type Props = {};
@@ -15,6 +14,9 @@ const nftClaimed = (props: Props) => {
   const { rewardId } = useLocalSearchParams();
   const rewardsService = new RewardsService();
   const theme = useUserStore(state => state.theme);
+  const user = useUserStore(state => state.user);
+
+  const cardSharingService = new CardSharingService();
 
   useEffect(() => {
     const fetchReward = async () => {
@@ -57,34 +59,7 @@ const nftClaimed = (props: Props) => {
     }
   
     try {
-      const nftName = (reward.title || reward.name || 'nft-image')
-        .replace(/[^a-z0-9]/gi, '-')
-        .toLowerCase()
-        .substring(0, 50);
-      const fileName = `${nftName}.png`;
-      const cacheDir = (FileSystem as any).cacheDirectory || (FileSystem as any).documentDirectory || '';
-      const fileUri = cacheDir + fileName;
-      const downloadResult = await FileSystem.downloadAsync(
-        reward.imageUrl,
-        fileUri
-      );
-  
-      if (downloadResult.status !== 200) {
-        alert('Failed to download the image');
-        return;
-      }
-  
-      if (!(await Sharing.isAvailableAsync())) {
-        alert("Sharing isn't available on this device");
-        return;
-      }
-  
-      await Sharing.shareAsync(fileUri, {
-        mimeType: "image/png",
-        dialogTitle: "Share Your NFT Achievement",
-        UTI: "public.png",
-      });
-  
+      await cardSharingService.shareNFTMintCard(user?.id as string, reward.title || "your badge", reward.imageUrl);
     } catch (error) {
       console.error('Error sharing NFT:', error);
       alert('Failed to share NFT');

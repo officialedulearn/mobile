@@ -18,6 +18,14 @@ const RoomInfo = () => {
   const user = useUserStore(s => s.user)
   const { id } = useLocalSearchParams<{ id: string }>()
   
+  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+    if (!url || typeof url !== 'string') return undefined;
+    return url
+      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
+      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+  };
+  
   const [activeTab, setActiveTab] = useState<'members' | 'pending'>('members')
   const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(null)
   const [showMemberModal, setShowMemberModal] = useState(false)
@@ -118,7 +126,7 @@ const RoomInfo = () => {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centerContainer]}>
+      <View style={[styles.container, styles.centerContainer, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
         <ActivityIndicator size="large" color={theme === 'dark' ? '#00FF80' : '#000'} />
         <Text style={[styles.loadingText, theme === 'dark' && { color: '#E0E0E0' }]}>
           Loading community info...
@@ -172,16 +180,16 @@ const RoomInfo = () => {
             Share this code to invite others. to the Community
           </Text>
 
-          <View style={[styles.referralCodeContainer, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}>
+          <View style={[styles.referralCodeContainer, theme === "dark" && styles.darkReferralCodeContainer]}>
             <Text style={[styles.referralCode, theme === "dark" && { color: "#E0E0E0" }]}>{community.inviteCode}</Text>
             <TouchableOpacity
               onPress={async () => {
                 await Clipboard.setStringAsync(community.inviteCode);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
               }}
-              style={{flexDirection: "row", alignItems: "center", gap: 8}}
+              style={[styles.copyCodeButton, theme === "dark" && styles.darkCopyCodeButton]}
             >
-              <Text style={[styles.copyCodeText, theme === "dark" && { color: "#B3B3B3" }]}>Copy Code</Text>
+              <Text style={[styles.copyCodeText, theme === "dark" && styles.darkCopyCodeText]}>Copy Code</Text>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/copy.png") : require("@/assets/images/icons/copy.png")}
                 style={{ width: 16, height: 16 }}
@@ -192,7 +200,7 @@ const RoomInfo = () => {
 
         {isMod && (
           <View style={[styles.tabsContainer, theme === 'dark' && { backgroundColor: '#131313' }]}>
-            <View style={styles.tabs}>
+            <View style={[styles.tabs, theme === 'dark' && styles.darkTabBorder]}>
               <TouchableOpacity onPress={() => setActiveTab('members')} style={styles.tabButton}>
                 <Text
                   style={[
@@ -224,26 +232,30 @@ const RoomInfo = () => {
         {activeTab === 'members' && (
           <View style={[styles.membersContainer, theme === 'dark' && styles.darkMembersContainer]}>
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <Text style={[styles.sectionTitle, theme === 'dark' && styles.darkSectionTitle]}>
                 Moderators - {moderator ? 1 : 0}
               </Text>
               {moderator && (
                 <View style={[styles.memberCard, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
                   <Image
-                    source={require('@/assets/images/memoji.png')}
+                    source={
+                      getHighQualityImageUrl(moderator.user.profilePictureURL)
+                        ? { uri: getHighQualityImageUrl(moderator.user.profilePictureURL) }
+                        : require('@/assets/images/memoji.png')
+                    }
                     style={styles.memberAvatar}
                   />
                   <Text style={[styles.memberName, theme === 'dark' && { color: '#E0E0E0' }]}>
                     {moderator.user.name}
                   </Text>
-                  <View style={styles.modBadge}>
-                    <Text style={styles.modBadgeText}>MOD</Text>
+                  <View style={[styles.modBadge, theme === 'dark' && styles.darkModBadge]}>
+                    <Text style={[styles.modBadgeText, theme === 'dark' && styles.darkModBadgeText]}>MOD</Text>
                   </View>
                 </View>
               )}
             </View>
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <Text style={[styles.sectionTitle, theme === 'dark' && styles.darkSectionTitle]}>
                 Members - {members.length}
               </Text>
               {members.filter(m => m.user.id !== moderator?.user.id).map((member) => (
@@ -260,7 +272,7 @@ const RoomInfo = () => {
                     {member.user.name}
                   </Text>
                   {isMod && (
-                    <FontAwesome5 name="chevron-right" size={16} color="#61728C" style={styles.chevronIcon} />
+                    <FontAwesome5 name="chevron-right" size={16} color={theme === 'dark' ? '#b3b3b3' : '#61728C'} style={styles.chevronIcon} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -271,7 +283,7 @@ const RoomInfo = () => {
         {isMod && activeTab === 'pending' && (
           <View style={[styles.membersContainer, theme === 'dark' && styles.darkMembersContainer]}>
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <Text style={[styles.sectionTitle, theme === 'dark' && styles.darkSectionTitle]}>
                 Pending Requests - {pendingRequests.length}
               </Text>
               {pendingRequests.length === 0 ? (
@@ -323,7 +335,7 @@ const RoomInfo = () => {
         style={styles.bottomModal}
       >
         <View style={[styles.modalContent, theme === 'dark' && { backgroundColor: '#131313' }]}>
-          <View style={styles.modalHandle} />
+          <View style={[styles.modalHandle, theme === 'dark' && styles.darkModalHandle]} />
           
           <TouchableOpacity 
             style={styles.modalOption}
@@ -398,8 +410,6 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#EDF3FC',
     },
     communityDetails: {
         flexDirection: 'column',
@@ -457,6 +467,10 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
         paddingLeft: 24,
     },
+    darkReferralCodeContainer: {
+        backgroundColor: '#0d0d0d',
+        borderColor: '#2e3033',
+    },
     referralCode: {
         color: '#2D3C52',
         fontFamily: 'Satoshi',
@@ -468,6 +482,24 @@ const styles = StyleSheet.create({
         fontFamily: 'Urbanist',
         fontSize: 16,
         lineHeight: 26,
+    },
+    darkCopyCodeText: {
+        color: '#e0e0e0',
+    },
+    copyCodeButton: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#EDF3FC',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    darkCopyCodeButton: {
+        backgroundColor: '#131313',
+        borderColor: '#2e3033',
     },
     tabsContainer: {
         marginTop: 20,
@@ -506,6 +538,9 @@ const styles = StyleSheet.create({
         color: '#00FF80',
         borderBottomColor: '#00FF80',
     },
+    darkTabBorder: {
+        borderBottomColor: '#2e3033',
+    },
     membersContainer: {
         backgroundColor: '#FFFFFF',
         borderBottomLeftRadius: 16,
@@ -525,6 +560,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#2D3C52',
         marginBottom: 12,
+    },
+    darkSectionTitle: {
+        color: '#00FF80',
     },
     memberCard: {
         flexDirection: 'row',
@@ -562,14 +600,28 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         marginLeft: 8,
     },
+    darkModBadge: {
+        backgroundColor: '#00FF80',
+    },
     modBadgeText: {
         color: '#00FF80',
         fontFamily: 'Satoshi',
         fontSize: 12,
         fontWeight: '700',
     },
+    darkModBadgeText: {
+        color: '#000000',
+    },
     chevronIcon: {
         marginLeft: 8,
+    },
+    memberDivider: {
+        height: 1,
+        backgroundColor: '#EDF3FC',
+        marginVertical: 8,
+    },
+    darkMemberDivider: {
+        backgroundColor: '#2e3033',
     },
   centerContainer: {
     flex: 1,
@@ -660,6 +712,9 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         alignSelf: 'center',
         marginBottom: 20,
+    },
+    darkModalHandle: {
+        backgroundColor: '#2e3033',
     },
     modalOption: {
         flexDirection: 'row',

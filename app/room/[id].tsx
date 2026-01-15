@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, ScrollView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Animated } from 'react-native'
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import BackButton from '@/components/backButton'
 import useUserStore from '@/core/userState'
@@ -22,19 +22,6 @@ type MessageWithUI = RoomMessage & {
   userName?: string
   isMod?: boolean
   message?: string
-}
-
-const groupMessagesByDate = (messages: MessageWithUI[]) => {
-  const grouped: { [key: string]: MessageWithUI[] } = {}
-  
-  messages.forEach((msg) => {
-    if (!grouped[msg.date]) {
-      grouped[msg.date] = []
-    }
-    grouped[msg.date].push(msg)
-  })
-  
-  return grouped
 }
 
 const parseMentions = (text: string): string[] => {
@@ -83,18 +70,20 @@ const Room = () => {
   const [community, setCommunity] = useState<Community | null>(null)
   const [messages, setMessages] = useState<MessageWithUI[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isSending, setIsSending] = useState(false)
   const [isMod, setIsMod] = useState(false)
   const [moderatorId, setModeratorId] = useState<string | null>(null)
   const [onlineCount, setOnlineCount] = useState(1)
-  const scrollViewRef = useRef<ScrollView>(null)
+  const [hasMoreMessages, setHasMoreMessages] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [messageOffset, setMessageOffset] = useState(0)
+  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const flatListRef = useRef<FlatList>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typingOpacity = useRef(new Animated.Value(0)).current
   
   const messageActionSheetRef = useRef<BottomSheetModal>(null)
   const [selectedMessage, setSelectedMessage] = useState<MessageWithUI | null>(null)
   const snapPoints = useMemo(() => ['50%'], [])
-
-  const groupedMessages = useMemo(() => groupMessagesByDate(messages), [messages])
 
   useEffect(() => {
     if (!id || !user?.id) return
@@ -148,6 +137,10 @@ const Room = () => {
         })
 
         communityService.onNewMessage(async (event: NewMessageEvent) => {
+          if (event.user.id === user?.id) {
+            return
+          }
+          
           try {
             const reactions = await communityService.getMessageReactions(event.id)
             const reactionCounts: { [key: string]: number } = {}
@@ -155,18 +148,55 @@ const Room = () => {
               reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1
             })
             const newMessage = processMessage({ ...event, reactionCounts })
-            setMessages(prev => [...prev, newMessage])
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true })
-            }, 100)
+            setMessages(prev => {
+              if (prev.some(msg => msg.id === newMessage.id)) {
+                return prev
+              }
+              return [newMessage, ...prev]
+            })
           } catch (error) {
             console.error('Error processing new message:', error)
             const newMessage = processMessage({ ...event })
-            setMessages(prev => [...prev, newMessage])
-            setTimeout(() => {
-              scrollViewRef.current?.scrollToEnd({ animated: true })
-            }, 100)
+            setMessages(prev => {
+              if (prev.some(msg => msg.id === newMessage.id)) {
+                return prev
+              }
+              return [newMessage, ...prev]
+            })
           }
+        })
+
+        communityService.onUserTyping((event) => {
+          if (event.userId !== user?.id) {
+            setTypingUsers(prev => {
+              if (!prev.includes(event.username)) {
+                const newUsers = [...prev, event.username]
+                if (newUsers.length === 1) {
+                  Animated.timing(typingOpacity, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                  }).start()
+                }
+                return newUsers
+              }
+              return prev
+            })
+          }
+        })
+
+        communityService.onUserStoppedTyping((event) => {
+          setTypingUsers(prev => {
+            const newUsers = prev.filter(u => u !== event.username)
+            if (newUsers.length === 0) {
+              Animated.timing(typingOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }).start()
+            }
+            return newUsers
+          })
         })
 
         communityService.onReactionAdded((event: ReactionEvent) => {
@@ -227,7 +257,7 @@ const Room = () => {
       setIsLoading(true)
       const [communityData, messagesData] = await Promise.all([
         communityService.getCommunityById(communityId),
-        communityService.getRoomMessages(communityId, 50, 0, user.id)
+        communityService.getRoomMessages(communityId, 20, 0, user.id)
       ])
 
       setCommunity(communityData)
@@ -260,16 +290,49 @@ const Room = () => {
         })
       )
 
-      const processedMessages = messagesWithReactions.reverse().map(processMessage)
+      const processedMessages = messagesWithReactions.map(processMessage)
       setMessages(processedMessages)
-      
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: false })
-      }, 100)
+      setHasMoreMessages(messagesData.length === 20)
+      setMessageOffset(20)
     } catch (error) {
       console.error('Error loading community data:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const loadMoreMessages = async () => {
+    const communityId = Array.isArray(id) ? id[0] : id
+    if (!communityId || !user?.id || !hasMoreMessages || isLoadingMore) return
+    
+    try {
+      setIsLoadingMore(true)
+      const messagesData = await communityService.getRoomMessages(communityId, 20, messageOffset, user.id)
+      
+      const messagesWithReactions = await Promise.all(
+        messagesData.map(async (msg) => {
+          try {
+            const reactions = await communityService.getMessageReactions(msg.id)
+            const reactionCounts: { [key: string]: number } = {}
+            reactions.forEach(r => {
+              reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1
+            })
+            return { ...msg, reactionCounts, isMod: moderatorId === msg.user.id }
+          } catch (error) {
+            console.error(`Error fetching reactions for message ${msg.id}:`, error)
+            return { ...msg, reactionCounts: {}, isMod: moderatorId === msg.user.id }
+          }
+        })
+      )
+
+      const processedMessages = messagesWithReactions.map(processMessage)
+      setMessages(prev => [...prev, ...processedMessages])
+      setHasMoreMessages(messagesData.length === 20)
+      setMessageOffset(prev => prev + 20)
+    } catch (error) {
+      console.error('Error loading more messages:', error)
+    } finally {
+      setIsLoadingMore(false)
     }
   }
 
@@ -297,19 +360,44 @@ const Room = () => {
 
   const handleSendMessage = async () => {
     const communityId = Array.isArray(id) ? id[0] : id
-    if (!message.trim() || !communityId || !user?.id || isSending) return
+    if (!message.trim() || !communityId || !user?.id) return
 
     const messageContent = message.trim()
+    const tempId = `temp-${Date.now()}`
+    
     setMessage('')
-    setIsSending(true)
 
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+    communityService.stopTyping(communityId)
+
+    const optimisticMessage: MessageWithUI = {
+      id: tempId,
+      content: messageContent,
+      createdAt: new Date().toISOString(),
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name || user.username,
+        profilePictureURL: user.profilePictureURL || null,
+      },
+      date: formatMessageDate(new Date()),
+      time: formatMessageTime(new Date()),
+      isCurrentUser: true,
+      reactions: {},
+      userAvatar: user.profilePictureURL || undefined,
+      userName: `@${user.username}`,
+      isMod: isMod,
+      message: messageContent,
+    }
+
+    setMessages(prev => [optimisticMessage, ...prev])
+    console.log('📤 Sending message:', { tempId, content: messageContent, communityId })
+    
     try {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
-      }
-      communityService.stopTyping(communityId)
-
       if (!communityService.isConnected()) {
+        console.log('🔄 WebSocket not connected, reconnecting...')
         await communityService.connectWebSocket()
         communityService.joinRoom(communityId, user.id)
         await new Promise(resolve => setTimeout(resolve, 200))
@@ -327,9 +415,24 @@ const Room = () => {
         }
       }
 
-      communityService.sendMessage(communityId, messageContent, mentionedUserIds.length > 0 ? mentionedUserIds : undefined, user.id, (response) => {
+      console.log('🚀 Emitting send_message event')
+      
+      let callbackReceived = false
+      
+      setTimeout(() => {
+        if (!callbackReceived) {
+          console.warn('⏱️ Message callback timeout - keeping optimistic message')
+        }
+      }, 5000)
+      
+      communityService.sendMessage(communityId, messageContent, mentionedUserIds.length > 0 ? mentionedUserIds : undefined, user.id, async (response) => {
+        callbackReceived = true
+        console.log('📨 Message callback received:', response)
+        
         if (response?.error) {
           console.error('Error sending message:', response.error)
+          
+          setMessages(prev => prev.filter(m => m.id !== tempId))
           setMessage(messageContent)
           
           const errorMessage = response.error === 'Database connection error. Please try again.' 
@@ -338,20 +441,32 @@ const Room = () => {
           
           console.error('Error details:', errorMessage)
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-          
-          if (response.retryable) {
-            console.log('Error is retryable, user can try again')
+        } else if (response?.message) {
+          console.log('✅ Message sent successfully, replacing temp message')
+          try {
+            const reactions = await communityService.getMessageReactions(response.message.id)
+            const reactionCounts: { [key: string]: number } = {}
+            reactions.forEach(r => {
+              reactionCounts[r.reaction] = (reactionCounts[r.reaction] || 0) + 1
+            })
+            const realMessage = processMessage({ ...response.message, reactionCounts })
+            
+            setMessages(prev => prev.map(m => m.id === tempId ? realMessage : m))
+          } catch (error) {
+            console.error('Error processing sent message:', error)
+            const realMessage = processMessage(response.message)
+            setMessages(prev => prev.map(m => m.id === tempId ? realMessage : m))
           }
-        } else {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        } else {
+          console.warn('⚠️ Callback received but no message or error in response:', response)
         }
-        setIsSending(false)
       })
     } catch (error) {
       console.error('Error sending message:', error)
+      setMessages(prev => prev.filter(m => m.id !== tempId))
       setMessage(messageContent)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
-      setIsSending(false)
     }
   }
 
@@ -508,26 +623,47 @@ const Room = () => {
           />
         </AnimatedPressable>
       </View>
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-        >
-        {Object.keys(groupedMessages).sort().map((date) => (
-          <View key={date}>
-            <View style={styles.dateDivider}>
-              <View style={styles.dateDividerLine} />
-              <Text style={styles.dateDividerText}>{formatDateHeader(date)}</Text>
-              <View style={styles.dateDividerLine} />
+      
+      <FlatList 
+        ref={flatListRef}
+        data={messages}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
+        style={[styles.messagesContainer, theme === 'dark' && styles.darkMessagesContainer]}
+        contentContainerStyle={styles.messagesContent}
+        inverted
+        onEndReached={loadMoreMessages}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.loadingMoreContainer}>
+              <ActivityIndicator size="small" color={theme === 'dark' ? '#00FF80' : '#000'} />
             </View>
-
-            {groupedMessages[date].map((msg) => (
-              <View key={msg.id} style={styles.messageWrapper}>
+          ) : null
+        }
+        renderItem={({ item: msg, index }) => {
+          const nextMsg = messages[index + 1]
+          const showDateDivider = !nextMsg || msg.date !== nextMsg.date
+          
+          return (
+            <View>
+              {showDateDivider && (
+                <View style={styles.dateDivider}>
+                  <View style={[styles.dateDividerLine, theme === 'dark' && styles.darkDateDividerLine]} />
+                  <Text style={[styles.dateDividerText, theme === 'dark' && styles.darkDateDividerText]}>{formatDateHeader(msg.date)}</Text>
+                  <View style={[styles.dateDividerLine, theme === 'dark' && styles.darkDateDividerLine]} />
+                </View>
+              )}
+              
+              <View style={styles.messageWrapper}>
                 {msg.isCurrentUser ? (
                   <>
                     <View style={styles.currentUserMessageContainer}>
                       <AnimatedPressable 
-                        style={styles.currentUserMessage}
+                        style={[
+                          styles.currentUserMessage,
+                          theme === 'dark' && styles.darkCurrentUserMessage,
+                          msg.id.startsWith('temp-') && styles.tempMessage
+                        ]}
                         onLongPress={() => handleMessageLongPress(msg)}
                         scale={0.98}
                         hapticFeedback={true}
@@ -541,9 +677,9 @@ const Room = () => {
                       <View style={styles.currentUserReactionsContainer}>
                         <View style={styles.currentUserReactions}>
                           {Object.entries(msg.reactions).map(([emoji, count]) => (
-                            <View key={emoji} style={styles.reactionBadge}>
+                            <View key={emoji} style={[styles.reactionBadge, theme === 'dark' && styles.darkReactionBadge]}>
                               <Text style={styles.reactionEmoji}>{emoji}</Text>
-                              <Text style={styles.reactionCount}>{count}</Text>
+                              <Text style={[styles.reactionCount, theme === 'dark' && styles.darkReactionCount]}>{String(count)}</Text>
                             </View>
                           ))}
                         </View>
@@ -555,7 +691,7 @@ const Room = () => {
                     <View style={styles.otherUserMessageContainer}>
                       <Image source={{ uri: msg.userAvatar || msg.user.profilePictureURL || 'https://i.pravatar.cc/150' }} style={styles.userAvatar} />
                       <AnimatedPressable 
-                        style={styles.otherUserMessage}
+                        style={[styles.otherUserMessage, theme === 'dark' && styles.darkOtherUserMessage]}
                         onLongPress={() => handleMessageLongPress(msg)}
                         scale={0.98}
                         hapticFeedback={true}
@@ -563,25 +699,25 @@ const Room = () => {
                       >
                         <View style={styles.messageHeader}>
                           <View style={styles.userNameRow}>
-                            <Text style={styles.userName}>{msg.userName || `@${msg.user.username}`}</Text>
+                            <Text style={[styles.userName, theme === 'dark' && styles.darkUserName]}>{msg.userName || `@${msg.user.username}`}</Text>
                             {msg.isMod && (
-                              <View style={styles.modBadge}>
-                                <Text style={styles.modBadgeText}>MOD</Text>
+                              <View style={[styles.modBadge, theme === 'dark' && styles.darkModBadge]}>
+                                <Text style={[styles.modBadgeText, theme === 'dark' && styles.darkModBadgeText]}>MOD</Text>
                               </View>
                             )}
                             <Text style={styles.timestamp}> • {msg.time}</Text>
                           </View>
                         </View>
-                        <Text style={styles.messageText}>{msg.message || msg.content}</Text>
+                        <Text style={[styles.messageText, theme === 'dark' && styles.darkMessageText]}>{msg.message || msg.content}</Text>
                       </AnimatedPressable>
                     </View>
                     {Object.keys(msg.reactions).length > 0 && (
                       <View style={styles.otherUserReactionsContainer}>
                         <View style={styles.reactions}>
                           {Object.entries(msg.reactions).map(([emoji, count]) => (
-                            <View key={emoji} style={styles.reactionBadge}>
+                            <View key={emoji} style={[styles.reactionBadge, theme === 'dark' && styles.darkReactionBadge]}>
                               <Text style={styles.reactionEmoji}>{emoji}</Text>
-                              <Text style={styles.reactionCount}>{count}</Text>
+                              <Text style={[styles.reactionCount, theme === 'dark' && styles.darkReactionCount]}>{String(count)}</Text>
                             </View>
                           ))}
                         </View>
@@ -590,33 +726,43 @@ const Room = () => {
                   </>
                 )}
               </View>
-            ))}
-          </View>
-        ))}
-      </ScrollView>
+            </View>
+          )
+        }}
+      />
+
+      {typingUsers.length > 0 && (
+        <Animated.View style={[
+          styles.typingIndicatorContainer,
+          theme === 'dark' && styles.darkTypingIndicatorContainer,
+          { opacity: typingOpacity }
+        ]}>
+          <Text style={[styles.typingIndicatorText, theme === 'dark' && styles.darkTypingIndicatorText]}>
+            {typingUsers.length === 1 
+              ? `${typingUsers[0]} is typing...` 
+              : `${typingUsers.slice(0, 2).join(', ')}${typingUsers.length > 2 ? ` and ${typingUsers.length - 2} others` : ''} are typing...`}
+          </Text>
+        </Animated.View>
+      )}
 
       <View style={[styles.inputContainer, theme === 'dark' && styles.darkInputContainer]}>
         <TextInput
           style={[styles.input, theme === 'dark' && styles.darkInput]}
           placeholder="Type a message..."
-          placeholderTextColor="#A0AEC0"
+          placeholderTextColor={theme === 'dark' ? '#b3b3b3' : '#A0AEC0'}
           value={message}
           onChangeText={handleTyping}
           multiline
-          editable={!isSending}
         />
         <AnimatedPressable 
-          style={[styles.sendButton, isSending && styles.sendButtonDisabled]} 
+          style={styles.sendButton} 
           scale={0.85} 
           hapticFeedback={true} 
           hapticStyle="medium"
           onPress={handleSendMessage}
-          disabled={isSending || !message.trim()}
+          disabled={!message.trim()}
         >
-          {isSending ? (
-            <ActivityIndicator size="small" color="#718096" />
-          ) : (
-            <Image
+          <Image
             source={
               theme === "dark"
                 ? require("@/assets/images/icons/dark/send-2.png")
@@ -624,7 +770,6 @@ const Room = () => {
             }
             style={styles.messageActionIcon}
           />
-          )}
         </AnimatedPressable>
       </View>
 
@@ -633,8 +778,8 @@ const Room = () => {
         index={0}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
-        backgroundStyle={styles.bottomSheetBackground}
-        handleIndicatorStyle={styles.bottomSheetIndicator}
+        backgroundStyle={[styles.bottomSheetBackground, theme === 'dark' && styles.darkBottomSheetBackground]}
+        handleIndicatorStyle={[styles.bottomSheetIndicator, theme === 'dark' && styles.darkBottomSheetIndicator]}
         enablePanDownToClose={true}
       >
         <BottomSheetView style={styles.bottomSheetContent}>
@@ -644,17 +789,17 @@ const Room = () => {
             scale={0.85}
             hapticFeedback={true}
           >
-            <FontAwesome5 name="times" size={20} color="#61728C" />
+            <FontAwesome5 name="times" size={20} color={theme === 'dark' ? '#b3b3b3' : '#61728C'} />
           </AnimatedPressable>
 
           <View style={styles.reactingToSection}>
             <View style={styles.reactingToHeader}>
-              <Entypo name="emoji-happy" size={16} color="#61728C" />
-              <Text style={styles.reactingToText}>Reacting to</Text>
+              <Entypo name="emoji-happy" size={16} color={theme === 'dark' ? '#b3b3b3' : '#61728C'} />
+              <Text style={[styles.reactingToText, theme === 'dark' && styles.darkReactingToText]}>Reacting to</Text>
             </View>
-            <View style={styles.reactingToMessageBox}>
-              <Text style={styles.reactingToMessage}>
-                <Text style={styles.mentionText}>{selectedMessage?.userName || `@${selectedMessage?.user.username}` || '@user'}</Text>
+            <View style={[styles.reactingToMessageBox, theme === 'dark' && styles.darkReactingToMessageBox]}>
+              <Text style={[styles.reactingToMessage, theme === 'dark' && styles.darkReactingToMessage]}>
+                <Text style={[styles.mentionText, theme === 'dark' && styles.darkMentionText]}>{selectedMessage?.userName || `@${selectedMessage?.user.username}` || '@user'}</Text>
                 {' '}
                 {selectedMessage?.message || selectedMessage?.content}
               </Text>
@@ -682,13 +827,13 @@ const Room = () => {
           </View>
           <View style={styles.actionButtonsContainer}>
             <AnimatedPressable style={styles.actionButton} scale={0.97} hapticFeedback={true}>
-              <FontAwesome5 name="copy" size={18} color="#4A5568" />
-              <Text style={styles.actionButtonText}>Copy Text</Text>
+              <FontAwesome5 name="copy" size={18} color={theme === 'dark' ? '#b3b3b3' : '#4A5568'} />
+              <Text style={[styles.actionButtonText, theme === 'dark' && styles.darkActionButtonText]}>Copy Text</Text>
             </AnimatedPressable>
 
             <AnimatedPressable style={styles.actionButton} scale={0.97} hapticFeedback={true}>
-              <FontAwesome5 name="user" size={18} color="#4A5568" />
-              <Text style={styles.actionButtonText}>View Profile</Text>
+              <FontAwesome5 name="user" size={18} color={theme === 'dark' ? '#b3b3b3' : '#4A5568'} />
+              <Text style={[styles.actionButtonText, theme === 'dark' && styles.darkActionButtonText]}>View Profile</Text>
             </AnimatedPressable>
 
             {isMod && (
@@ -736,7 +881,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FBFC',
   },
   darkContainer: {
-    backgroundColor: '#000000',
+    backgroundColor: '#0d0d0d',
   },
   topNav: {
     flexDirection: 'row',
@@ -812,6 +957,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FBFC',
   },
+  darkMessagesContainer: {
+    backgroundColor: '#0d0d0d',
+  },
   messagesContent: {
     paddingHorizontal: 16,
     paddingVertical: 20,
@@ -827,11 +975,17 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E2E8F0',
   },
+  darkDateDividerLine: {
+    backgroundColor: '#2e3033',
+  },
   dateDividerText: {
     fontSize: 12,
     fontWeight: '500',
     color: '#A0AEC0',
     fontFamily: 'Satoshi',
+  },
+  darkDateDividerText: {
+    color: '#b3b3b3',
   },
   messageWrapper: {
     marginBottom: 12,
@@ -859,6 +1013,11 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     flexGrow: 0,
   },
+  darkOtherUserMessage: {
+    backgroundColor: '#131313',
+    borderWidth: 1,
+    borderColor: '#2e3033',
+  },
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -869,6 +1028,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D3C52',
     fontFamily: 'Satoshi',
+  },
+  darkUserName: {
+    color: '#e0e0e0',
   },
   timestamp: {
     fontSize: 11,
@@ -882,6 +1044,9 @@ const styles = StyleSheet.create({
     color: '#4A5568',
     fontFamily: 'Satoshi',
     lineHeight: 20,
+  },
+  darkMessageText: {
+    color: '#e0e0e0',
   },
   reactionsContainer: {
     marginTop: 6,
@@ -907,6 +1072,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     gap: 4,
+    borderWidth: 0.5,
+    borderColor: '#EDF3FC',
+  },
+  darkReactionBadge: {
+    backgroundColor: '#131313',
+    borderColor: '#2e3033',
   },
   reactionEmoji: {
     fontSize: 14,
@@ -916,6 +1087,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#4A5568',
     fontFamily: 'Satoshi',
+  },
+  darkReactionCount: {
+    color: '#b3b3b3',
   },
   messageActionButton: {
     padding: 4,
@@ -936,6 +1110,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#131313',
     borderRadius: 12,
     padding: 12,
+  },
+  darkCurrentUserMessage: {
+    backgroundColor: '#131313',
+    borderWidth: 1,
+    borderColor: '#2e3033',
+  },
+  tempMessage: {
+    opacity: 0.7,
+  },
+  loadingMoreContainer: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  typingIndicatorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F7FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#EDF3FC',
+  },
+  darkTypingIndicatorContainer: {
+    backgroundColor: '#131313',
+    borderTopColor: '#2e3033',
+  },
+  typingIndicatorText: {
+    fontSize: 13,
+    fontFamily: 'Satoshi',
+    color: '#61728C',
+    fontStyle: 'italic',
+  },
+  darkTypingIndicatorText: {
+    color: '#B3B3B3',
   },
   currentUserMessageHeader: {
     flexDirection: 'row',
@@ -972,11 +1178,17 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginLeft: 4,
   },
+  darkModBadge: {
+    backgroundColor: '#00FF80',
+  },
   modBadgeText: {
     fontSize: 10,
     fontWeight: '700',
     color: '#00FF80',
     fontFamily: 'Satoshi',
+  },
+  darkModBadgeText: {
+    color: '#000000',
   },
   currentUserTimestamp: {
     fontSize: 11,
@@ -1037,8 +1249,10 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   darkInput: {
-    backgroundColor: '#1F2937',
-    color: '#FFFFFF',
+    backgroundColor: '#0d0d0d',
+    color: '#e0e0e0',
+    borderWidth: 0.688,
+    borderColor: '#2e3033',
   },
   sendButton: {
     width: 36,
@@ -1089,10 +1303,16 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
+  darkBottomSheetBackground: {
+    backgroundColor: '#131313',
+  },
   bottomSheetIndicator: {
     backgroundColor: '#EDF3FC',
     width: 40,
     height: 4,
+  },
+  darkBottomSheetIndicator: {
+    backgroundColor: '#2e3033',
   },
   bottomSheetContent: {
     paddingHorizontal: 24,
@@ -1121,10 +1341,18 @@ const styles = StyleSheet.create({
     color: '#61728C',
     fontFamily: 'Satoshi',
   },
+  darkReactingToText: {
+    color: '#b3b3b3',
+  },
   reactingToMessageBox: {
     backgroundColor: '#C8F4DD',
     borderRadius: 12,
     padding: 12,
+  },
+  darkReactingToMessageBox: {
+    backgroundColor: '#131313',
+    borderWidth: 1,
+    borderColor: '#2e3033',
   },
   reactingToMessage: {
     fontSize: 13,
@@ -1133,9 +1361,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Satoshi',
     lineHeight: 18,
   },
+  darkReactingToMessage: {
+    color: '#e0e0e0',
+  },
   mentionText: {
     fontWeight: '600',
     color: '#2D3C52',
+  },
+  darkMentionText: {
+    color: '#00FF80',
   },
   emojiReactionsRow: {
     flexDirection: 'row',
@@ -1163,6 +1397,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#4A5568',
     fontFamily: 'Satoshi',
+  },
+  darkActionButtonText: {
+    color: '#b3b3b3',
   },
   actionButtonDanger: {
   },
