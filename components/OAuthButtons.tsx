@@ -184,7 +184,6 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
           styles.googleButton,
           isDark && styles.googleButtonDark,
           loading !== null && styles.buttonDisabled,
-          Platform.OS === 'ios' && { display: 'none' },
         ]}
         onPress={handleGoogleLogin}
         disabled={loading !== null}
