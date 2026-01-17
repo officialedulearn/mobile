@@ -78,7 +78,7 @@ const FreeTrialIntro = () => {
   };
 
   const handleSkip = () => {
-    router.push("/(tabs)");
+    router.back()
   };
 
   return (
@@ -106,7 +106,6 @@ const FreeTrialIntro = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroSection}>
-          <Image source={require("@/assets/images/eddie/freeTrial.gif")} style={{ width: 150, height: 150 }} />
           <Text style={[styles.heroTitle, theme === "dark" && styles.heroTitleDark]}>
             Unlock the Full Eddy Experience
           </Text>

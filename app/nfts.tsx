@@ -7,6 +7,7 @@ import {
   FlatList,
   ImageSourcePropType,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { BlurView } from "expo-blur";
@@ -16,6 +17,7 @@ import useUserStore from "@/core/userState";
 import { format } from "date-fns";
 import Modal from "react-native-modal";
 import { router } from "expo-router";
+import Purchases from "react-native-purchases";
 
 type Props = {};
 interface UserRewardWithDetails {
@@ -99,18 +101,77 @@ const NFT = (props: Props) => {
       setIsLoading(true);
       setError(null);
 
-      await rewardService.claimReward(user.id as unknown as string, rewardId);
+      await Purchases.logIn(user.id as unknown as string);
+      console.log("🔐 RevenueCat user identified for badge claim:", user.id);
+
+      const productIdentifier = "rc_badge_claim1";
+      const products = await Purchases.getProducts([productIdentifier]);
+
+      if (products.length === 0) {
+        throw new Error("Badge claim product not found. Please contact support.");
+      }
+
+      const product = products[0];
+      console.log("💳 Initiating badge claim purchase:", productIdentifier);
+
+      let purchaseResult;
+      try {
+        purchaseResult = await Purchases.purchaseStoreProduct(product);
+        console.log("✅ Purchase successful! Webhook will process NFT minting...");
+      } catch (purchaseError: any) {
+        console.error("Purchase error:", purchaseError.message);
+
+        if (purchaseError.userCancelled) {
+          throw new Error("Purchase cancelled");
+        }
+
+        throw new Error(purchaseError.message || "Purchase failed. Please try again.");
+      }
+
+      console.log("⏳ Waiting for NFT to be minted by webhook...");
+      
+      let attempts = 0;
+      const maxAttempts = 20;
+      let claimed = false;
+
+      while (attempts < maxAttempts && !claimed) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        try {
+          const status = await rewardService.getClaimStatus(
+            user.id as unknown as string,
+            rewardId
+          );
+          
+          if (status.claimed && status.signature) {
+            console.log("✅ NFT successfully minted! Signature:", status.signature);
+            claimed = true;
+            break;
+          }
+        } catch (statusError) {
+          console.error("Error checking claim status:", statusError);
+        }
+        
+        attempts++;
+        console.log(`🔄 Checking claim status... (${attempts}/${maxAttempts})`);
+      }
+
+      if (!claimed) {
+        throw new Error(
+          "NFT is being processed. Please check back in a few moments."
+        );
+      }
 
       const userRewards = await rewardService.getUserRewards(
         user.id as unknown as string
       );
-      const claimed = userRewards.filter((reward) => reward.signature);
-      const unclaimed = userRewards.filter((reward) => !reward.signature);
+      const claimedRewards = userRewards.filter((reward) => reward.signature);
+      const unclaimedRewards = userRewards.filter((reward) => !reward.signature);
 
-      setClaimedRewards(claimed);
-      setUnclaimedRewards(unclaimed);
+      setClaimedRewards(claimedRewards);
+      setUnclaimedRewards(unclaimedRewards);
 
-      if (unclaimed.length === 0) {
+      if (unclaimedRewards.length === 0) {
         setActiveTab("claimed");
       }
 
@@ -121,23 +182,12 @@ const NFT = (props: Props) => {
         });
       }
     } catch (error: any) {
-      console.error("Failed to claim reward:", error);
+      console.error("❌ Failed to claim badge:", error);
       
-      let errorMessage = "Failed to claim badge";
+      let errorMessage = "Failed to claim badge. Please try again.";
       
       if (error?.message) {
-        if (error.message.includes("insufficient funds for rent")) {
-          errorMessage = "Your wallet doesn't have enough SOL to pay for transaction fees";
-        } else if (error.message.includes("Transaction simulation failed")) {
-          errorMessage = "Transaction failed. Please try again later";
-          
-          const logs = error.logs || error.getLogs?.();
-          if (logs && Array.isArray(logs)) {
-            console.log("Transaction error logs:", logs);
-          }
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
       
       setError(errorMessage);

@@ -4,7 +4,7 @@ export default {
     name: "EduLearn",
     displayName: "EduLearn",
     slug: "edulearn",
-    version: "2.0.0",
+    version: "2.5.0",
     owner: "edulearn",
     scheme: "edulearnv2",
     newArchEnabled: true,
@@ -25,12 +25,14 @@ export default {
       icon: "./assets/images/mainlogo.png",
       bundleIdentifier: "com.edulearnv2.app",
       supportsTablet: true,
+      usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-      },
-      permissions: {
         NSUserNotificationsUsageDescription: "Allow EduLearn to send you notifications about quizzes, achievements, and learning reminders.",
-      },
+        NSPhotoLibraryUsageDescription: "EduLearn needs access to your photo library so you can upload profile images and learning-related content.",
+        NSPhotoLibraryAddUsageDescription: "EduLearn saves selected images to your photo library when you choose to download or share content.",
+        NSCameraUsageDescription: "EduLearn uses the camera so you can take photos for your profile and learning activities."
+      }
     },
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -55,6 +57,7 @@ export default {
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
+      "expo-apple-authentication",
       [
         "expo-notifications",
         {

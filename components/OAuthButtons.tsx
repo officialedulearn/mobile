@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-// import * as AppleAuthentication from 'expo-apple-authentication';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/utils/supabase';
 import { router } from 'expo-router';
@@ -33,6 +33,12 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
     const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
     
     try {
+      console.log('Calling OAuth callback with:', { 
+        supabaseUserId: supabaseUser.id, 
+        email: supabaseUser.email,
+        provider 
+      });
+
       const response = await fetch(`${API_URL}/auth/oauth/callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,14 +52,19 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OAuth callback failed:', errorText);
         throw new Error('Failed to process OAuth callback');
       }
 
       const { user: backendUser, isNewUser, needsUsername } = await response.json();
+      console.log('OAuth callback response:', { isNewUser, needsUsername });
 
       if (needsUsername) {
+        console.log('User needs username, redirecting to setup...');
         router.push('/auth/setupUsername' as any);
       } else {
+        console.log('User profile complete, setting user state...');
         await useUserStore.getState().setUserAsync();
         router.push('/(tabs)');
       }
@@ -116,52 +127,52 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
     }
   };
 
-  // const handleAppleLogin = async () => {
-  //   if (Platform.OS !== 'ios') {
-  //     Alert.alert('Not Available', 'Apple Sign-In is only available on iOS');
-  //     return;
-  //   }
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'Apple Sign-In is only available on iOS');
+      return;
+    }
 
-  //   setLoading('apple');
-  //   onLoadingChange?.(true);
+    setLoading('apple');
+    onLoadingChange?.(true);
 
-  //   try {
-  //     const credential = await AppleAuthentication.signInAsync({
-  //       requestedScopes: [
-  //         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-  //         AppleAuthentication.AppleAuthenticationScope.EMAIL,
-  //       ],
-  //     });
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
 
-  //     if (credential.identityToken) {
-  //       const { data, error } = await supabase.auth.signInWithIdToken({
-  //         provider: 'apple',
-  //         token: credential.identityToken,
+      if (credential.identityToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
 
-  //       });
+        });
 
-  //       if (error) {
-  //         console.error('Apple Sign-In Supabase error:', error);
-  //         Alert.alert('Authentication Error', error.message);
-  //         return;
-  //       }
+        if (error) {
+          console.error('Apple Sign-In Supabase error:', error);
+          Alert.alert('Authentication Error', error.message);
+          return;
+        }
 
-  //       if (data?.user) {
-  //         await handleOAuthCallback(data.user, 'apple', credential.user);
-  //       }
-  //     }
-  //   } catch (e: any) {
-  //     if (e.code === 'ERR_REQUEST_CANCELED') {
-  //       console.log('User canceled Apple Sign-In');
-  //     } else {
-  //       console.error('Apple Sign-In error:', e);
-  //       Alert.alert('Error', 'Failed to sign in with Apple');
-  //     }
-  //   } finally {
-  //     setLoading(null);
-  //     onLoadingChange?.(false);
-  //   }
-  // };
+        if (data?.user) {
+          await handleOAuthCallback(data.user, 'apple', credential.user);
+        }
+      }
+    } catch (e: any) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        console.log('User canceled Apple Sign-In');
+      } else {
+        console.error('Apple Sign-In error:', e);
+        Alert.alert('Error', 'Failed to sign in with Apple');
+      }
+    } finally {
+      setLoading(null);
+      onLoadingChange?.(false);
+    }
+  };
 
   const isDark = theme === 'dark';
 
@@ -173,7 +184,6 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
           styles.googleButton,
           isDark && styles.googleButtonDark,
           loading !== null && styles.buttonDisabled,
-          Platform.OS === 'ios' && { display: 'none' },
         ]}
         onPress={handleGoogleLogin}
         disabled={loading !== null}
@@ -188,7 +198,7 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
         </Text>
       </TouchableOpacity>
 
-      {/* {Platform.OS === 'ios' && (
+      {Platform.OS === 'ios' && (
         <AppleAuthentication.AppleAuthenticationButton
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
           buttonStyle={
@@ -200,7 +210,7 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
           style={styles.appleButton}
           onPress={handleAppleLogin}
         />
-      )} */}
+      )}
     </View>
   );
 }

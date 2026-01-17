@@ -214,7 +214,7 @@ const index = (props: Props) => {
             activeOpacity={0.7}
           >
             <Image
-              source={require("@/assets/images/icons/notification.png")}
+              source={theme === "dark" ? require("@/assets/images/icons/dark/notification.png") : require("@/assets/images/icons/notification.png")}
               style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
