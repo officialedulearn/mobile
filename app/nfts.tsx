@@ -102,11 +102,8 @@ const NFT = (props: Props) => {
       setError(null);
 
       await Purchases.logIn(user.id as unknown as string);
-      console.log("RevenueCat user identified for badge claim:", user.id);
+      console.log("🔐 RevenueCat user identified for badge claim:", user.id);
 
-      // IMPORTANT: The product "rc_badge_claim" MUST be configured as CONSUMABLE
-      // in both the App Store/Play Store AND RevenueCat dashboard.
-      // Non-consumable products can only be purchased once per user.
       const productIdentifier = "rc_badge_claim1";
       const products = await Purchases.getProducts([productIdentifier]);
 
@@ -115,65 +112,66 @@ const NFT = (props: Props) => {
       }
 
       const product = products[0];
-      console.log("Purchasing badge claim product:", productIdentifier);
+      console.log("💳 Initiating badge claim purchase:", productIdentifier);
 
       let purchaseResult;
       try {
         purchaseResult = await Purchases.purchaseStoreProduct(product);
-        console.log("RevenueCat purchase successful, finalizing on-chain...");
+        console.log("✅ Purchase successful! Webhook will process NFT minting...");
       } catch (purchaseError: any) {
-        console.error("Purchase error details:", {
-          code: purchaseError.code,
-          message: purchaseError.message,
-          userCancelled: purchaseError.userCancelled,
-        });
+        console.error("Purchase error:", purchaseError.message);
 
         if (purchaseError.userCancelled) {
-          throw purchaseError;
+          throw new Error("Purchase cancelled");
         }
 
-        if (purchaseError.code === 'PURCHASE_NOT_ALLOWED' || 
-            purchaseError.message?.includes('already purchased') ||
-            purchaseError.message?.includes('already own') ||
-            purchaseError.message?.includes('This in-app purchase has already been bought')) {
-          console.log("Product appears to be non-consumable or already owned. Attempting workaround...");
-          
-          await Purchases.restorePurchases();
-          
-          try {
-            purchaseResult = await Purchases.purchaseStoreProduct(product);
-            console.log("RevenueCat purchase successful after restore, finalizing on-chain...");
-          } catch (retryError: any) {
-            throw new Error(
-              "Unable to purchase badge claim. The product may be configured as non-consumable. " +
-              "Please ensure 'rc_badge_claim' is set as a consumable product in both the App Store/Play Store and RevenueCat dashboard. " +
-              `Error: ${retryError.message || purchaseError.message}`
-            );
-          }
-        } else {
-          throw purchaseError;
-        }
+        throw new Error(purchaseError.message || "Purchase failed. Please try again.");
       }
 
-      await rewardService.claimRewardAdmin(
-        user.id as unknown as string,
-        rewardId
-      );
-
-      console.log("On-chain transaction finalized successfully");
-
+      console.log("⏳ Waiting for NFT to be minted by webhook...");
       
+      let attempts = 0;
+      const maxAttempts = 20;
+      let claimed = false;
+
+      while (attempts < maxAttempts && !claimed) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        try {
+          const status = await rewardService.getClaimStatus(
+            user.id as unknown as string,
+            rewardId
+          );
+          
+          if (status.claimed && status.signature) {
+            console.log("✅ NFT successfully minted! Signature:", status.signature);
+            claimed = true;
+            break;
+          }
+        } catch (statusError) {
+          console.error("Error checking claim status:", statusError);
+        }
+        
+        attempts++;
+        console.log(`🔄 Checking claim status... (${attempts}/${maxAttempts})`);
+      }
+
+      if (!claimed) {
+        throw new Error(
+          "NFT is being processed. Please check back in a few moments."
+        );
+      }
 
       const userRewards = await rewardService.getUserRewards(
         user.id as unknown as string
       );
-      const claimed = userRewards.filter((reward) => reward.signature);
-      const unclaimed = userRewards.filter((reward) => !reward.signature);
+      const claimedRewards = userRewards.filter((reward) => reward.signature);
+      const unclaimedRewards = userRewards.filter((reward) => !reward.signature);
 
-      setClaimedRewards(claimed);
-      setUnclaimedRewards(unclaimed);
+      setClaimedRewards(claimedRewards);
+      setUnclaimedRewards(unclaimedRewards);
 
-      if (unclaimed.length === 0) {
+      if (unclaimedRewards.length === 0) {
         setActiveTab("claimed");
       }
 
@@ -184,25 +182,12 @@ const NFT = (props: Props) => {
         });
       }
     } catch (error: any) {
-      console.error("Failed to claim reward:", error);
+      console.error("❌ Failed to claim badge:", error);
       
-      let errorMessage = "Failed to claim badge";
+      let errorMessage = "Failed to claim badge. Please try again.";
       
-      if (error?.userCancelled) {
-        errorMessage = "Purchase cancelled";
-      } else if (error?.message) {
-        if (error.message.includes("insufficient funds for rent")) {
-          errorMessage = "Your wallet doesn't have enough SOL to pay for transaction fees";
-        } else if (error.message.includes("Transaction simulation failed")) {
-          errorMessage = "Transaction failed. Please try again later";
-          
-          const logs = error.logs || error.getLogs?.();
-          if (logs && Array.isArray(logs)) {
-            console.log("Transaction error logs:", logs);
-          }
-        } else {
-          errorMessage = error.message;
-        }
+      if (error?.message) {
+        errorMessage = error.message;
       }
       
       setError(errorMessage);

@@ -91,27 +91,43 @@ export default function SetupUsername() {
         return;
       }
 
+      console.log('Submitting username:', username, 'for user:', user.id);
+
       const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-      const response = await fetch(`${API_URL}auth/complete-profile`, {
+      const requestBody = {
+        userId: user.id,
+        username: username
+      };
+
+      console.log('API URL:', `${API_URL}/auth/complete-profile`);
+      console.log('Request body:', requestBody);
+
+      const response = await fetch(`${API_URL}/auth/complete-profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({
-          userId: user.id,
-          username: username
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error(errorData.message || 'Failed to update profile');
       }
+
+      const responseData = await response.json();
+      console.log('Success response:', responseData);
+
+      await useUserStore.getState().setUserAsync();
 
       Alert.alert('Success', 'Profile updated successfully!');
       router.push('/auth/identity');
     } catch (error: any) {
+      console.error('Username submission error:', error);
       Alert.alert('Update failed', error.message || 'Please try again');
     } finally {
       setLoading(false);
@@ -224,6 +240,7 @@ const styles = StyleSheet.create({
   },
   topNav: {
     marginBottom: 30,
+    marginTop: 50,
   },
   contentContainer: {
     paddingHorizontal: 4,

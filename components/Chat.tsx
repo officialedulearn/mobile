@@ -639,11 +639,20 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     );
 
                     const quizLimit = user?.quizLimit ?? 0;
-                    const credits = user?.credits ?? 0;
+                    const currentCredits = Number(user?.credits) || 0;
+                    console.log(
+                      "Current credits (raw):",
+                      user?.credits,
+                      "Parsed:",
+                      currentCredits,
+                    );
 
-                    const hasAccess = quizLimit > 0 && credits > 0;
+                    const hasAccess = quizLimit > 0 && currentCredits > 0.5;
 
                     if (!hasAccess) {
+                      console.log(
+                        "User has insufficient credits or quiz limit, redirecting to freeTrialIntro",
+                      );
                       router.push("/freeTrialIntro");
                       return;
                     }

@@ -33,6 +33,12 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
     const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
     
     try {
+      console.log('Calling OAuth callback with:', { 
+        supabaseUserId: supabaseUser.id, 
+        email: supabaseUser.email,
+        provider 
+      });
+
       const response = await fetch(`${API_URL}/auth/oauth/callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,14 +52,19 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OAuth callback failed:', errorText);
         throw new Error('Failed to process OAuth callback');
       }
 
       const { user: backendUser, isNewUser, needsUsername } = await response.json();
+      console.log('OAuth callback response:', { isNewUser, needsUsername });
 
       if (needsUsername) {
+        console.log('User needs username, redirecting to setup...');
         router.push('/auth/setupUsername' as any);
       } else {
+        console.log('User profile complete, setting user state...');
         await useUserStore.getState().setUserAsync();
         router.push('/(tabs)');
       }

@@ -32,11 +32,58 @@ export class RewardsService {
 
   async claimRewardAdmin(userId: string, rewardId: string): Promise<any> {
     try {
+      console.log('🔄 Calling /rewards/claim/admin endpoint...', {
+        userId,
+        rewardId,
+        timestamp: new Date().toISOString(),
+      });
+
       const response = await httpClient.post('/rewards/claim/admin', { userId, rewardId });
+      
+      console.log('✅ /rewards/claim/admin response:', {
+        status: response.status,
+        data: response.data,
+      });
+
       return response.data;
     } catch (error: any) {
-      console.error(`Error claiming reward ${rewardId} for user ${userId}:`, error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to claim reward';
+      console.error('❌ Error calling /rewards/claim/admin:', {
+        userId,
+        rewardId,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        errorData: error?.response?.data,
+        errorMessage: error?.message,
+        fullError: error,
+      });
+      
+      let errorMessage = 'Failed to claim badge. Please try again.';
+      
+      if (error?.response?.data?.message) {
+        const apiMessage = error.response.data.message;
+        
+        if (apiMessage.includes('insufficient') || apiMessage.includes('Insufficient')) {
+          errorMessage = apiMessage.replace(/claim/g, 'process').replace(/admin/gi, '');
+        } else if (apiMessage.includes('already been claimed')) {
+          errorMessage = 'This badge has already been claimed.';
+        } else if (apiMessage.includes('has not been awarded')) {
+          errorMessage = 'You need to earn this badge before claiming it.';
+        } else if (apiMessage.includes('wallet')) {
+          errorMessage = 'There was an issue with your wallet. Please contact support.';
+        } else if (apiMessage.includes('network') || apiMessage.includes('timeout')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          // Generic sanitized message for other errors
+          errorMessage = apiMessage.replace(/\/rewards\/claim\/admin/gi, 'the server')
+                                    .replace(/claim\/admin/gi, 'process')
+                                    .replace(/admin/gi, '');
+        }
+      } else if (error?.message) {
+        errorMessage = error.message.replace(/\/rewards\/claim\/admin/gi, 'the server')
+                                    .replace(/claim\/admin/gi, 'process')
+                                    .replace(/admin/gi, '');
+      }
+      
       throw new Error(errorMessage);
     }
   }
@@ -160,6 +207,21 @@ export class RewardsService {
     } catch (error: any) {
       console.error(`Error fetching users with reward ${rewardId}:`, error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch reward recipients';
+      throw new Error(errorMessage);
+    }
+  }
+
+  async getClaimStatus(userId: string, rewardId: string): Promise<{
+    claimed: boolean;
+    signature?: string;
+    awarded: boolean;
+  }> {
+    try {
+      const response = await httpClient.get(`/rewards/claim-status/${userId}/${rewardId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error fetching claim status for reward ${rewardId}:`, error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch claim status';
       throw new Error(errorMessage);
     }
   }
