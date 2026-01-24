@@ -20,8 +20,6 @@ import { StatusBar } from "expo-status-bar";
 import * as StoreReview from 'expo-store-review';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type Props = {};
-
 type Question = {
   question: string;
   options: string[];
@@ -36,7 +34,281 @@ type UserAnswer = {
   isCorrect: boolean;
 };
 
-const Quiz = (props: Props) => {
+type Theme = "light" | "dark";
+
+const LoadingScreen = ({ theme }: { theme: Theme }) => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#00FF80" />
+    <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>
+      Loading quiz questions...
+    </Text>
+  </View>
+);
+
+const ErrorScreen = ({ error, theme, onRetry }: { error: string; theme: Theme; onRetry: () => void }) => (
+  <View style={styles.loadingContainer}>
+    <Text style={[styles.errorText, theme === "dark" && { color: "#B3B3B3" }]}>{error}</Text>
+    <View style={styles.errorButtonsContainer}>
+      <TouchableOpacity
+        style={[styles.errorButton, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+        onPress={onRetry}
+      >
+        <Text style={[styles.errorButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Retry</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.errorButton, styles.errorButtonPrimary, theme === "dark" && { backgroundColor: "#00FF80" }]}
+        onPress={() => router.back()}
+      >
+        <Text style={[styles.errorButtonText, styles.errorButtonTextPrimary, theme === "dark" && { color: "#000" }]}>
+          Return to Quizzes
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+
+const EmptyQuestionsScreen = ({ theme }: { theme: Theme }) => (
+  <View style={styles.loadingContainer}>
+    <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>
+      No questions available. Please try again later.
+    </Text>
+    <TouchableOpacity
+      style={[styles.returnButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
+      onPress={() => router.back()}
+    >
+      <Text style={[styles.returnButtonText, theme === "dark" && { color: "#000" }]}>Return to Quizzes</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+const ScoreBreakdown = ({ score, totalQuestions, theme }: { score: number; totalQuestions: number; theme: Theme }) => {
+  const isPassing = score >= totalQuestions / 2;
+  
+  return (
+    <>
+      <Text style={[styles.quizResult, { marginBottom: 15 }, theme === "dark" && { color: "#E0E0E0" }]}>
+        Quiz Result
+      </Text>
+      <Image
+        source={
+          isPassing
+            ? require("@/assets/images/eddie/congrats.png")
+            : require("@/assets/images/eddie/failed.png")
+        }
+        style={styles.medalImage}
+      />
+      <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>
+        {isPassing ? "Congratulations" : "Don't worry, learning is a journey."}
+      </Text>
+
+      <Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
+        {isPassing
+          ? "You're one step closer to your next badge. Keep the momentum going! Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
+          : `You got ${score} out of ${totalQuestions}, which means there's room to grow. You still earned ${score} XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!`}
+      </Text>
+
+      <Text style={[styles.scoreText, { marginTop: 10 }, theme === "dark" && { color: "#E0E0E0" }]}>
+        Your Score
+      </Text>
+
+      <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
+        {isPassing ? <Text style={{ color: "#00FF80" }}>{score}</Text> : score}/{totalQuestions}
+      </Text>
+
+      <Text style={[styles.scoreText, theme === "dark" && { color: "#E0E0E0" }]}>Earned XP</Text>
+      <View style={styles.xpContainer}>
+        <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.xpImage} />
+        <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>+{score} XP</Text>
+      </View>
+    </>
+  );
+};
+
+const AnswersReview = ({ userAnswers, theme }: { userAnswers: UserAnswer[]; theme: Theme }) => (
+  <View style={[styles.fullScreenAnswers, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+    <Text style={[styles.answersTitle, theme === "dark" && { color: "#E0E0E0" }]}>Your Answers:</Text>
+    <ScrollView style={styles.answersList} contentContainerStyle={styles.answersListContent}>
+      {userAnswers.map((answer, index) => (
+        <View key={index} style={[styles.answerItem, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
+          <Text style={[styles.answerQuestion, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={2}>
+            {index + 1}. {answer.question}
+          </Text>
+          <View style={styles.answerDetails}>
+            <Text
+              style={[
+                styles.answerText,
+                answer.isCorrect ? styles.correctAnswer : styles.wrongAnswer,
+              ]}
+            >
+              Your answer: {answer.selectedAnswer ? answer.selectedAnswer : <Text style={{ fontStyle: 'italic', opacity: 0.6 }}>Not answered</Text>}
+            </Text>
+            {!answer.isCorrect && (
+              <Text style={styles.correctAnswerText}>
+                Correct answer: {answer.correctAnswer}
+              </Text>
+            )}
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  </View>
+);
+
+const ResultsScreen = ({
+  reviewAnswers,
+  score,
+  totalQuestions,
+  userAnswers,
+  theme,
+  onToggleReview,
+  onReturnToQuizzes,
+}: {
+  reviewAnswers: boolean;
+  score: number;
+  totalQuestions: number;
+  userAnswers: UserAnswer[];
+  theme: Theme;
+  onToggleReview: () => void;
+  onReturnToQuizzes: () => void;
+}) => (
+  <View style={styles.resultsContainer}>
+    {!reviewAnswers && <ScoreBreakdown score={score} totalQuestions={totalQuestions} theme={theme} />}
+    {reviewAnswers && <AnswersReview userAnswers={userAnswers} theme={theme} />}
+
+    <View style={[styles.bottomButtonsContainer, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+      <View style={styles.navigationButtons}>
+        <TouchableOpacity
+          style={[
+            styles.resultsButton,
+            theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }
+          ]}
+          onPress={onToggleReview}
+        >
+          <Text style={[styles.resultsButtonText, theme === "dark" && { color: "#E0E0E0" }]}>
+            {reviewAnswers ? "Hide Answers" : "Review Answers"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.resultsButton,
+            styles.resultsButtonPrimary,
+            theme === "dark" && { backgroundColor: "#00FF80", borderColor: "#00FF80" }
+          ]}
+          onPress={onReturnToQuizzes}
+        >
+          <Text style={[styles.resultsButtonText, styles.resultsButtonTextPrimary, theme === "dark" && { color: "#000" }]}>
+            Return to Quizzes
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+);
+
+const QuestionView = ({
+  question,
+  selectedOption,
+  currentIndex,
+  totalQuestions,
+  isSubmitting,
+  theme,
+  onSelectOption,
+  onPrevious,
+  onNext,
+  onFinish,
+}: {
+  question: Question;
+  selectedOption: string | null;
+  currentIndex: number;
+  totalQuestions: number;
+  isSubmitting: boolean;
+  theme: Theme;
+  onSelectOption: (option: string) => void;
+  onPrevious: () => void;
+  onNext: () => void;
+  onFinish: () => void;
+}) => {
+  const isLastQuestion = currentIndex === totalQuestions - 1;
+  
+  return (
+    <View style={styles.questionContainer}>
+      <Text style={[styles.question, theme === "dark" && { color: "#E0E0E0" }]}>
+        {question.question}
+      </Text>
+
+      <View style={styles.options}>
+        {question.options.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.optionItem,
+              theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
+              selectedOption === option && [
+                styles.selectedOption,
+                theme === "dark" && { backgroundColor: "rgba(0, 255, 128, 0.1)", borderColor: "#00FF80" }
+              ],
+            ]}
+            onPress={() => onSelectOption(option)}
+          >
+            <View
+              style={[
+                styles.radioButton,
+                theme === "dark" && { borderColor: "#B3B3B3" },
+                selectedOption === option && styles.radioButtonSelected,
+              ]}
+            >
+              {selectedOption === option && <View style={styles.radioButtonInner} />}
+            </View>
+            <Text
+              style={[
+                styles.optionText,
+                theme === "dark" && { color: "#E0E0E0" },
+                selectedOption === option && styles.selectedOptionText,
+              ]}
+            >
+              {option}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={[styles.bottomButtonsContainer, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+        <View style={styles.navigationButtons}>
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              styles.prevButton,
+              theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
+              currentIndex === 0 && styles.disabledButton,
+            ]}
+            onPress={onPrevious}
+            disabled={currentIndex === 0}
+          >
+            <Text style={[styles.navButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Previous</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              styles.nextButton,
+              theme === "dark" && { backgroundColor: "#00FF80" },
+              (!selectedOption || isSubmitting) && styles.disabledButton,
+            ]}
+            disabled={!selectedOption || isSubmitting}
+            onPress={isLastQuestion ? onFinish : onNext}
+          >
+            <Text style={[styles.navButtonText, styles.nextButtonText, theme === "dark" && { color: "#000" }]}>
+              {isSubmitting ? "Submitting..." : isLastQuestion ? "Finish Quiz" : "Next"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const Quiz = () => {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
   const [questions, setQuestions] = React.useState<Array<Question>>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
@@ -261,167 +533,28 @@ const Quiz = (props: Props) => {
 
   const renderQuizContent = () => {
     if (loading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00FF80" />
-          <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>Loading quiz questions...</Text>
-        </View>
-      );
+      return <LoadingScreen theme={theme} />;
     }
 
     if (error) {
-      return (
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>{error}</Text>
-          <TouchableOpacity
-            style={[styles.returnButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
-            onPress={handleRetry}
-          >
-            <Text style={[styles.returnButtonText, theme === "dark" && { color: "#000" }]}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.returnButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
-            onPress={() => router.back()}
-          >
-            <Text style={[styles.returnButtonText, theme === "dark" && { color: "#000" }]}>Return to Quizzes</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return <ErrorScreen error={error} theme={theme} onRetry={handleRetry} />;
     }
 
     if (questions.length === 0 && !loading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>
-            No questions available. Please try again later.
-          </Text>
-          <TouchableOpacity
-            style={[styles.returnButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
-            onPress={() => router.back()}
-          >
-            <Text style={[styles.returnButtonText, theme === "dark" && { color: "#000" }]}>Return to Quizzes</Text>
-          </TouchableOpacity>
-        </View>
-      );
+      return <EmptyQuestionsScreen theme={theme} />;
     }
 
     if (quizCompleted) {
       return (
-        <View style={styles.resultsContainer}>
-          {!reviewAnswers && (
-            <>
-              <Text style={[styles.quizResult, { marginBottom: 15 }, theme === "dark" && { color: "#E0E0E0" }]}>
-                Quiz Result
-              </Text>
-              <Image
-                source={
-                  score >= questions.length / 2
-                    ? require("@/assets/images/eddie/congrats.png")
-                    : require("@/assets/images/eddie/failed.png")
-                }
-                style={styles.medalImage}
-              />
-              {score >= questions.length / 2 ? (
-                <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>Congratulations</Text>
-              ) : (
-                <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>
-                  Don't worry, learning is a journey.
-                </Text>
-              )}
-
-<Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
-                {score >= questions.length / 2
-                  ? "You're one step closer to your next badge. Keep the momentum going! Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
-                  : "You got" +
-                    score +
-                    " out of 1o, which means there's room to grow. You still earned 2 XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!"}
-              </Text>
-
-              <Text style={[styles.scoreText, { marginTop: 10 }, theme === "dark" && { color: "#E0E0E0" }]}>
-                Your Score
-              </Text>
-
-              <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
-                {score >= questions.length / 2 ? (
-                  <Text style={{ color: "#00FF80" }}>{score}</Text>
-                ) : (
-                  score
-                )}
-                /{questions.length}
-              </Text>
-
-              <Text style={[styles.scoreText, theme === "dark" && { color: "#E0E0E0" }]}>Earned XP</Text>
-              <View style={styles.xpContainer}>
-                <Image
-                  source={require("@/assets/images/icons/medal-05.png")}
-                  style={styles.xpImage}
-                />
-
-                <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>+{score}XP</Text>
-              </View>
-            </>
-          )}
-          {reviewAnswers && (
-            <View style={[styles.fullScreenAnswers, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
-              <Text style={[styles.answersTitle, theme === "dark" && { color: "#E0E0E0" }]}>Your Answers:</Text>
-              <ScrollView style={styles.answersList} contentContainerStyle={styles.answersListContent}>
-                {userAnswers.map((answer, index) => (
-                  <View key={index} style={[styles.answerItem, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
-                    <Text style={[styles.answerQuestion, theme === "dark" && { color: "#E0E0E0" }]} numberOfLines={2}>
-                      {index + 1}. {answer.question}
-                    </Text>
-                    <View style={styles.answerDetails}>
-                      <Text
-                        style={[
-                          styles.answerText,
-                          answer.isCorrect
-                            ? styles.correctAnswer
-                            : styles.wrongAnswer,
-                        ]}
-                      >
-                        Your answer: {answer.selectedAnswer ? answer.selectedAnswer : <Text style={{ fontStyle: 'italic', opacity: 0.6 }}>Not answered</Text>}
-                      </Text>
-                      {!answer.isCorrect && (
-                        <Text style={styles.correctAnswerText}>
-                          Correct answer: {answer.correctAnswer}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          <View style={[styles.bottomButtonsContainer, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-            <View style={styles.navigationButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.resultsButton,
-                  theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }
-                ]}
-                onPress={() => setReviewAnswers(!reviewAnswers)}
-              >
-                <Text style={[styles.resultsButtonText, theme === "dark" && { color: "#E0E0E0" }]}>
-                  {reviewAnswers ? "Hide Answers" : "Review Answers"}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.resultsButton, 
-                  styles.resultsButtonPrimary,
-                  theme === "dark" && { backgroundColor: "#00FF80", borderColor: "#00FF80" }
-                ]}
-                onPress={() => router.back()}
-              >
-                <Text style={[styles.resultsButtonText, styles.resultsButtonTextPrimary, theme === "dark" && { color: "#000" }]}>
-                  Return to Quizzes
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <ResultsScreen 
+          reviewAnswers={reviewAnswers}
+          score={score}
+          totalQuestions={questions.length}
+          userAnswers={userAnswers}
+          theme={theme}
+          onToggleReview={() => setReviewAnswers(!reviewAnswers)}
+          onReturnToQuizzes={() => router.back()}
+        />
       );
     }
     const currentQuestion = questions[currentQuestionIndex];
@@ -434,87 +567,18 @@ const Quiz = (props: Props) => {
     }
 
     return (
-      <View style={styles.questionContainer}>
-        <Text style={[styles.question, theme === "dark" && { color: "#E0E0E0" }]}>{currentQuestion.question}</Text>
-
-        <View style={styles.options}>
-          {currentQuestion.options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.optionItem,
-                theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
-                selectedOption === option ? [
-                  styles.selectedOption,
-                  theme === "dark" && { backgroundColor: "rgba(0, 255, 128, 0.1)", borderColor: "#00FF80" }
-                ] : {},
-              ]}
-              onPress={() => handleSelectOption(option)}
-            >
-              <View
-                style={[
-                  styles.radioButton,
-                  theme === "dark" && { borderColor: "#B3B3B3" },
-                  selectedOption === option ? styles.radioButtonSelected : {},
-                ]}
-              >
-                {selectedOption === option && (
-                  <View style={styles.radioButtonInner} />
-                )}
-              </View>
-              <Text
-                style={[
-                  styles.optionText,
-                  theme === "dark" && { color: "#E0E0E0" },
-                  selectedOption === option ? styles.selectedOptionText : {},
-                ]}
-              >
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={[styles.bottomButtonsContainer, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-          <View style={styles.navigationButtons}>
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                styles.prevButton,
-                theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
-                currentQuestionIndex === 0 ? styles.disabledButton : {},
-              ]}
-              onPress={handlePreviousQuestion}
-              disabled={currentQuestionIndex === 0}
-            >
-              <Text style={[styles.navButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Previous</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                styles.nextButton,
-                theme === "dark" && { backgroundColor: "#00FF80" },
-                (!selectedOption || isSubmitting) ? styles.disabledButton : {},
-              ]}
-              disabled={!selectedOption || isSubmitting}
-              onPress={
-                currentQuestionIndex < questions.length - 1
-                  ? handleNextQuestion
-                  : handleFinishQuiz
-              }
-            >
-              <Text style={[styles.navButtonText, styles.nextButtonText, theme === "dark" && { color: "#000" }]}>
-                {isSubmitting 
-                  ? "Submitting..." 
-                  : currentQuestionIndex < questions.length - 1
-                    ? "Next"
-                    : "Finish Quiz"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <QuestionView
+        question={currentQuestion}
+        selectedOption={selectedOption}
+        currentIndex={currentQuestionIndex}
+        totalQuestions={questions.length}
+        isSubmitting={isSubmitting}
+        theme={theme}
+        onSelectOption={handleSelectOption}
+        onPrevious={handlePreviousQuestion}
+        onNext={handleNextQuestion}
+        onFinish={handleFinishQuiz}
+      />
     );
   };
 
@@ -735,11 +799,55 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   loadingText: {
     fontFamily: "Satoshi-Regular",
     fontSize: 16,
     color: "#61728C",
+    textAlign: "center",
+    marginTop: 15,
+  },
+  errorText: {
+    fontFamily: "Satoshi-Regular",
+    fontSize: 16,
+    color: "#61728C",
+    textAlign: "center",
+    marginBottom: 30,
+    paddingHorizontal: 20,
+  },
+  errorButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+    maxWidth: 400,
+    paddingHorizontal: 20,
+  },
+  errorButton: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#EDF3FC",
+  },
+  errorButtonPrimary: {
+    backgroundColor: "#00FF80",
+    borderColor: "#00FF80",
+  },
+  errorButtonText: {
+    fontFamily: "Satoshi-Regular",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
+    color: "#2D3C52",
+    textAlign: "center",
+  },
+  errorButtonTextPrimary: {
+    color: "#000000",
   },
   resultsContainer: {
     flex: 1,
