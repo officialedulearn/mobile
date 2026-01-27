@@ -9,14 +9,14 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { BlurView } from "expo-blur";
 import BackButton from "@/components/backButton";
 import { RewardsService } from "@/services/rewards.service";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
 import Modal from "react-native-modal";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import Purchases from "react-native-purchases";
 
 type Props = {};
@@ -62,36 +62,41 @@ const NFT = (props: Props) => {
     }
   };
 
-  useEffect(() => {
-    const loadAllRewards = async () => {
-      try {
-        setIsLoading(true);
-        const rewards = await rewardService.getAllRewards();
-        const userRewards = await rewardService.getUserRewards(
-          user?.id as unknown as string
-        );
+  const loadAllRewards = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      const rewards = await rewardService.getAllRewards();
+      const userRewards = await rewardService.getUserRewards(
+        user?.id as unknown as string
+      );
 
-        setAllRewards(rewards);
+      setAllRewards(rewards);
 
-        const claimed = userRewards.filter((reward) => reward.signature);
-        const unclaimed = userRewards.filter((reward) => !reward.signature);
+      const claimed = userRewards.filter((reward) => reward.signature);
+      const unclaimed = userRewards.filter((reward) => !reward.signature);
 
-        setClaimedRewards(claimed);
-        setUnclaimedRewards(unclaimed);
+      setClaimedRewards(claimed);
+      setUnclaimedRewards(unclaimed);
 
-        const userRewardIds = new Set(userRewards.map((reward) => reward.id));
-        const locked = rewards.filter(
-          (reward) => !userRewardIds.has(reward.id)
-        );
-        setLockedRewards(locked);
-      } catch (error) {
-        console.error("Failed to load rewards:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadAllRewards();
+      const userRewardIds = new Set(userRewards.map((reward) => reward.id));
+      const locked = rewards.filter(
+        (reward) => !userRewardIds.has(reward.id)
+      );
+      setLockedRewards(locked);
+    } catch (error) {
+      console.error("Failed to load rewards:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAllRewards();
+    }, [loadAllRewards])
+  );
 
   const handleClaimReward = async (rewardId: string) => {
     if (!user?.id) return;
@@ -156,24 +161,16 @@ const NFT = (props: Props) => {
         console.log(`🔄 Checking claim status... (${attempts}/${maxAttempts})`);
       }
 
+      await loadAllRewards();
+
       if (!claimed) {
-        throw new Error(
-          "NFT is being processed. Please check back in a few moments."
-        );
-      }
-
-      const userRewards = await rewardService.getUserRewards(
-        user.id as unknown as string
-      );
-      const claimedRewards = userRewards.filter((reward) => reward.signature);
-      const unclaimedRewards = userRewards.filter((reward) => !reward.signature);
-
-      setClaimedRewards(claimedRewards);
-      setUnclaimedRewards(unclaimedRewards);
-
-      if (unclaimedRewards.length === 0) {
+        console.log("⚠️ Polling timed out, but NFT may still be processing");
         setActiveTab("claimed");
+        toggleModal();
+        return;
       }
+
+      setActiveTab("claimed");
 
       if (selectedReward) {
         router.push({
@@ -405,7 +402,7 @@ const NFT = (props: Props) => {
         <View style={[styles.modalContent, theme === "dark" && styles.darkModalContent]}>
           {error ? (
             <>
-              <Text style={[styles.errorTitle, theme === "dark" && styles.darkErrorTitle]}>Error Claiming NFT</Text>
+              <Text style={[styles.errorTitle, theme === "dark" && styles.darkErrorTitle]}>Error Claiming Badge</Text>
               <Image 
                 source={require("@/assets/images/icons/error.png")} 
                 style={styles.errorIcon}
