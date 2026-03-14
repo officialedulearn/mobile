@@ -44,7 +44,7 @@ export default function SetupUsername() {
       setChecking(true);
       try {
         const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-        const response = await fetch(`${API_URL}auth/check-availability`, {
+        const response = await fetch(`${API_URL}/auth/check-availability`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username })

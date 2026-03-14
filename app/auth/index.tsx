@@ -18,6 +18,7 @@ import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Route } from "expo-router/build/Route";
 import OAuthButtons from "@/components/OAuthButtons";
+import { UserService } from "@/services/auth.service";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
@@ -111,10 +112,10 @@ const Auth = () => {
 
       if (!isSignUp && formData.email !== "playreview@edulearn.com") {
         try {
-          const { UserService } = await import('@/services/auth.service');
           const userService = new UserService();
           const availabilityResult = await userService.checkAvailability(
-            formData.email
+            formData.email,
+            ""
           );
 
           if (availabilityResult.emailAvailable) {
@@ -148,7 +149,6 @@ const Auth = () => {
 
       if (isSignUp && formData.email !== "playreview@edulearn.com") {
         try {
-          const { UserService } = await import('@/services/auth.service');
           const userService = new UserService();
           const availabilityResult = await userService.checkAvailability(
             formData.email,
@@ -437,13 +437,13 @@ const Auth = () => {
           </TouchableOpacity>
 
           
-          <View style={styles.dividerContainer}>
+          {/* <View style={styles.dividerContainer}>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
             <Text style={[styles.dividerText, theme === "dark" && styles.dividerTextDark]}>OR</Text>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
           </View>
 
-          <OAuthButtons onLoadingChange={setOauthLoading} />
+          <OAuthButtons onLoadingChange={setOauthLoading} /> */}
           {isSignUp && (
             <View style={styles.privacyContainer}>
               <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>

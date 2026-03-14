@@ -14,6 +14,7 @@ import Markdown from "react-native-markdown-display";
 import { Message } from "@/interface/Chat";
 import useUserStore from "@/core/userState";
 import AnimatedPressable from "./AnimatedPressable";
+import RoadmapCard from "./RoadmapCard";
 
 type Props = {
   message: Message;
@@ -100,18 +101,56 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
     return "";
   };
 
+  const extractRoadmapId = (content: string): string | null => {
+    const match = content.match(/\[ROADMAP_CARD:([a-f0-9-]+)\]/);
+    return match ? match[1] : null;
+  };
+
+  const renderContentWithRoadmap = (content: string) => {
+    const roadmapId = extractRoadmapId(content);
+    
+    if (!roadmapId) {
+      return (
+        <Markdown style={markdownStyles}>
+          {content}
+        </Markdown>
+      );
+    }
+
+    const parts = content.split(/\[ROADMAP_CARD:[a-f0-9-]+\]/);
+    
+    return (
+      <View>
+        {parts[0] && parts[0].trim() && (
+          <Markdown style={markdownStyles}>
+            {parts[0].trim()}
+          </Markdown>
+        )}
+        
+        <RoadmapCard roadmapId={roadmapId} />
+        
+        {parts[1] && parts[1].trim() && (
+          <Markdown style={markdownStyles}>
+            {parts[1].trim()}
+          </Markdown>
+        )}
+      </View>
+    );
+  };
+
   const markdownStyles = {
     body: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Urbanist",
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 22,
     },
     heading1: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Satoshi-Regular",
       fontSize: 18,
       fontWeight: "700" as const,
+      marginTop: 12,
       marginBottom: 8,
     },
     heading2: {
@@ -119,14 +158,15 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
       fontFamily: "Satoshi-Regular",
       fontSize: 16,
       fontWeight: "700" as const,
+      marginTop: 10,
       marginBottom: 8,
     },
     paragraph: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Urbanist",
       fontSize: 14,
-      lineHeight: 20,
-      marginBottom: 8,
+      lineHeight: 22,
+      marginBottom: 10,
     },
     strong: {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
@@ -140,23 +180,26 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
       fontFamily: "Urbanist",
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 22,
+      marginBottom: 4,
     },
     code_inline: {
       backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
       color: theme === "dark" ? "#00FF80" : "#2D3C52",
-      padding: 4,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
       borderRadius: 4,
       fontFamily: "Urbanist",
-      fontSize: 14,
+      fontSize: 13,
     },
     code_block: {
       backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
       color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-      padding: 10,
+      padding: 12,
       borderRadius: 8,
       fontFamily: "Urbanist",
-      fontSize: 14,
+      fontSize: 13,
+      marginVertical: 8,
     },
   };
 
@@ -248,11 +291,7 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
                 
                 const withCursor = content + (isStreaming && !isUser ? ' ▊' : '');
                 
-                return (
-                  <Markdown style={markdownStyles}>
-                    {withCursor}
-                  </Markdown>
-                );
+                return renderContentWithRoadmap(withCursor);
               } catch (error) {
                 console.error('Error rendering markdown:', error);
                 const content = getMessageContent() || '';
@@ -378,7 +417,7 @@ const styles = StyleSheet.create({
   messageBubble: {
     maxWidth: "75%",
     borderRadius: 16,
-    padding: 12,
+    padding: 16,
     marginBottom: 4,
   },
   userBubble: {
