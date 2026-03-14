@@ -96,36 +96,6 @@ const TabLayout = (props: Props) => {
       keyboardDidShowListener?.remove();
     };
   }, []);
-
-  if (supportsNativeTabs) {
-    return (
-      <SlideTransitionContext.Provider value={{ direction }}>
-        <NativeTabs>
-          <NativeTabs.Trigger name="index">
-            <Label>Home</Label>
-            <Icon sf="house.fill" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="hub">
-            <Label>Hub</Label>
-            <Icon sf="square.grid.2x2.fill" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="chat">
-            <Label>Chat</Label>
-            <Icon sf="message.fill" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="rewards">
-            <Label>Rewards</Label>
-            <Icon sf="gift.fill" />
-          </NativeTabs.Trigger>
-          <NativeTabs.Trigger name="profile">
-            <Label>Profile</Label>
-            <Icon sf="person.fill" />
-          </NativeTabs.Trigger>
-        </NativeTabs>
-      </SlideTransitionContext.Provider>
-    );
-  }
-
   return (
     <SlideTransitionContext.Provider value={{ direction }}>
       <View style={{ flex: 1, backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' }}>

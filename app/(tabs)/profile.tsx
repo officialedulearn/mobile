@@ -331,7 +331,12 @@ const Profile = (props: Props) => {
                 <Text style={[styles.xpText, theme === "dark" && {color: "#000"}]}>{user?.xp} XP</Text>
               </View>
             </View>
-            {/* <View style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}>
+            <TouchableOpacity
+              onPress={() => {
+                router.push("/wallet");
+              }}
+              style={[styles.walletCard, { padding: 12, gap: 12 }, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}
+            >
               <View style={styles.walletInfoContainer}>
                 <Image 
                   source={theme === "dark" ? require("@/assets/images/icons/dark/wallet.png") : require("@/assets/images/icons/wallet.png")} 
@@ -345,7 +350,8 @@ const Profile = (props: Props) => {
                   {user?.address}
                 </Text>
                 <TouchableOpacity
-                  onPress={async () => {
+                  onPress={async (e) => {
+                    e.stopPropagation();
                     await Clipboard.setStringAsync(user?.address || "");
                   }}
                   style={styles.copyButton}
@@ -369,7 +375,10 @@ const Profile = (props: Props) => {
                   
                   <TouchableOpacity 
                     style={styles.buyButton}
-                    onPress={toggleBuyModal}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      router.push("/wallet");
+                    }}
                   >
                     <Text style={styles.buyButtonIcon}>+</Text>
                   </TouchableOpacity>
@@ -382,7 +391,7 @@ const Profile = (props: Props) => {
                   </View>
                 </View>
               </View>
-            </View> */}
+            </TouchableOpacity>
           </View>
 
           <View style={[styles.achievements, { marginTop: 12 }, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>

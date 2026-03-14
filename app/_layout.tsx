@@ -7,7 +7,7 @@ import { StyleSheet, Platform, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import useUserStore from "@/core/userState";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
+// import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { supabase } from "@/utils/supabase";
@@ -34,43 +34,43 @@ export default function RootLayout() {
     return null;
   };
 
-  useEffect(() => {
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+  // useEffect(() => {
+  //   Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
 
-    if (Platform.OS === "ios") {
-      Purchases.configure({
-        apiKey: process.env
-          .EXPO_PUBLIC_REVENUECAT_PROJECT_APPLE_API_KEY as string,
-      });
-    } else if (Platform.OS === "android") {
-      Purchases.configure({
-        apiKey: process.env
-          .EXPO_PUBLIC_REVENUECAT_PROJECT_GOOGLE_API_KEY as string,
-      });
-    }
-  }, []);
+  //   if (Platform.OS === "ios") {
+  //     Purchases.configure({
+  //       apiKey: process.env
+  //         .EXPO_PUBLIC_REVENUECAT_PROJECT_APPLE_API_KEY as string,
+  //     });
+  //   } else if (Platform.OS === "android") {
+  //     Purchases.configure({
+  //       apiKey: process.env
+  //         .EXPO_PUBLIC_REVENUECAT_PROJECT_GOOGLE_API_KEY as string,
+  //     });
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    const identifyUser = async () => {
-      if (user?.id) {
-        try {
-          await Purchases.logIn(user.id);
-          console.log("RevenueCat user identified:", user.id);
-        } catch (error) {
-          console.error("Failed to identify user in RevenueCat:", error);
-        }
-      } else {
-        try {
-          await Purchases.logOut();
-          console.log("RevenueCat user logged out");
-        } catch (error) {
-          console.error("Failed to log out from RevenueCat:", error);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const identifyUser = async () => {
+  //     if (user?.id) {
+  //       try {
+  //         await Purchases.logIn(user.id);
+  //         console.log("RevenueCat user identified:", user.id);
+  //       } catch (error) {
+  //         console.error("Failed to identify user in RevenueCat:", error);
+  //       }
+  //     } else {
+  //       try {
+  //         await Purchases.logOut();
+  //         console.log("RevenueCat user logged out");
+  //       } catch (error) {
+  //         console.error("Failed to log out from RevenueCat:", error);
+  //       }
+  //     }
+  //   };
 
-    identifyUser();
-  }, [user?.id]);
+  //   identifyUser();
+  // }, [user?.id]);
 
   useEffect(() => {
     SplashScreen.preventAutoHideAsync();
@@ -253,6 +253,15 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="subscription"
+              options={{
+                headerShown: false,
+                animation: "slide_from_right",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="wallet"
               options={{
                 headerShown: false,
                 animation: "slide_from_right",

@@ -10,13 +10,14 @@ import {
   Platform,
   Linking,
 } from "react-native";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BackButton from "@/components/backButton";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
-import Purchases from "react-native-purchases";
 import { router } from "expo-router";
+import { WalletService } from "@/services/wallet.service";
 const { width } = Dimensions.get("window");
 
 const planData = [
@@ -149,72 +150,90 @@ const Subscription = () => {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      await Purchases.logIn(user.id);
-      console.log('📢 Logged in user:', user.id);
+    const planAmount = isAnnual ? 50 : 5;
+    const planType = isAnnual ? 'Annual' : 'Monthly';
 
-      let productIdentifier: string;
-      
-      if (Platform.OS === 'android') {
-        productIdentifier = isAnnual 
-          ? 'premium_yearly' 
-          : 'premium_monthly';
-      } else {
-        productIdentifier = isAnnual 
-          ? 'rc_4999_edulearn'
-          : 'rc_499_edulearn';
-      }
-      
-      const products = await Purchases.getProducts([productIdentifier]);
-      
-      if (products.length === 0) {
-        Alert.alert('Error', 'Product not found. Please check your product identifiers.');
-        setIsLoading(false);
-        return;
-      }
-
-      const product = products[0];
-      
-      const { customerInfo } = await Purchases.purchaseStoreProduct(product);
-      
-      console.log('📢 Purchase successful, customer info:', customerInfo);
-      console.log('📢 Active entitlements:', customerInfo.entitlements.active);
-
-      const isPremium = Object.keys(customerInfo.entitlements.active).length > 0;
-      console.log('📢 User is premium:', isPremium);
-      
+    const confirmed = await new Promise<boolean>((resolve) => {
       Alert.alert(
-        'Success!',
-        'Premium upgrade successful! The app will now reload.',
+        'Confirm Upgrade',
+        `Are you sure you want to upgrade to Premium ${planType} plan for $${planAmount} USDC?`,
         [
           {
-            text: 'OK',
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => resolve(false),
+          },
+          {
+            text: 'Confirm',
             style: 'default',
-            onPress: async () => {
-              try {
-                router.reload()
-              } catch (error) {
-                console.log('📢 Error reloading app:', error);
-              }
-            },
+            onPress: () => resolve(true),
           },
         ]
       );
-    } catch (e: any) {
-      console.log('📢 Purchase error:', e);
+    });
+
+    if (!confirmed) return;
+
+    setIsLoading(true);
+    const walletService = new WalletService();
+
+    try {
+      const result = await walletService.upgradeToPremium(user.id, planAmount);
+      
+      const signature = result?.result?.signature || result?.signature || 'N/A';
+      const subscriptionType = result?.subscriptionType || (isAnnual ? 'annual' : 'monthly');
+      const transactionLink = signature !== 'N/A' 
+        ? `https://solscan.io/tx/${signature}` 
+        : null;
+
+      const buttons: Array<{ text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }> = [];
+      
+      if (transactionLink) {
+        buttons.push({
+          text: 'View Transaction',
+          style: 'default',
+          onPress: () => {
+            Linking.openURL(transactionLink).catch(err => {
+              console.error('Failed to open transaction link:', err);
+            });
+          },
+        });
+      }
+      
+      buttons.push({
+        text: 'OK',
+        style: 'default',
+        onPress: async () => {
+          try {
+            router.reload();
+          } catch (error) {
+            console.error('Error reloading app:', error);
+          }
+        },
+      });
+
+      Alert.alert(
+        'Success!',
+        `✅ Premium upgrade successful!\n\n` +
+        `Subscription: ${subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1)}\n` +
+        `Amount: $${planAmount} USDC\n` +
+        (signature !== 'N/A' ? `Transaction: ${signature.substring(0, 20)}...` : ''),
+        buttons
+      );
+    } catch (error: any) {
+      console.error('Premium upgrade error:', error);
       
       let errorMessage = 'Failed to process premium upgrade. Please try again.';
       
-      if (e.userCancelled) {
-        errorMessage = 'Purchase cancelled.';
-      } else if (e.message) {
-        errorMessage = e.message;
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
       }
       
       Alert.alert(
-        'Purchase Failed', 
-        errorMessage,
+        'Upgrade Failed',
+        `❌ ${errorMessage}`,
         [
           {
             text: 'OK',
@@ -227,57 +246,9 @@ const Subscription = () => {
     }
   };
 
-  const restorePurchases = async () => {
-    try {
-      setIsLoading(true);
-      const customerInfo = await Purchases.restorePurchases();
-      console.log('Restored purchases:', customerInfo);
-      
-      const isPremium = Object.keys(customerInfo.entitlements.active).length > 0;
-      
-      if (isPremium) {
-        Alert.alert(
-          'Success!',
-          'Purchases restored successfully! The app will now reload.',
-          [
-            {
-              text: 'OK',
-              style: 'default',
-              onPress: async () => {
-                try {
-                  router.reload()
-                } catch (error) {
-                  console.log('📢 Error reloading app:', error);
-                }
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert('No Purchases Found', 'No previous purchases were found to restore.');
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Unable to restore purchases. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const fetchCustomerInfo = async () => {
-      try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        console.log("📢 Customer info:", customerInfo.originalAppUserId.toString());
-      } catch (error) {
-        console.log('📢 Error fetching customer info:', error);
-      }
-    };
-    fetchCustomerInfo();
-  }, []);
 
   return (
-    <View style={[styles.container, theme === "dark" && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark]} edges={['top']}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />  
       
       <View style={styles.topNav}>
@@ -367,7 +338,7 @@ const Subscription = () => {
         </View>
       </View>
 
-      <View style={styles.bottomSection}>
+      <SafeAreaView style={styles.bottomSection} edges={['bottom']}>
         <TouchableOpacity 
           style={[
             styles.upgradeButton, 
@@ -411,22 +382,8 @@ const Subscription = () => {
             </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity 
-          onPress={restorePurchases}
-          disabled={isLoading}
-          style={styles.restoreButton}
-        >
-          <Text style={[
-            styles.restoreButtonText,
-            theme === "dark" && styles.restoreButtonTextDark,
-            isLoading && styles.restoreButtonTextDisabled
-          ]}>
-            Restore Purchases
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </SafeAreaView>
+    </SafeAreaView>
   );
 };
 
@@ -445,7 +402,7 @@ const styles = StyleSheet.create({
     gap: 16,
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 10,
     marginBottom: 16,
     position: "relative",
     zIndex: 1,

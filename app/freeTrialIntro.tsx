@@ -12,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import Purchases from "react-native-purchases";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const trialFeatures = [
   {
@@ -77,8 +78,15 @@ const FreeTrialIntro = () => {
     router.push("/subscription");
   };
 
-  const handleSkip = () => {
-    router.back()
+  const handleSkip = async () => {
+    const previousScreen = await AsyncStorage.getItem("previousScreen");
+    await AsyncStorage.removeItem("previousScreen");
+    
+    if (previousScreen === "welcome") {
+      router.push("/(tabs)");
+    } else {
+      router.back();
+    }
   };
 
   return (

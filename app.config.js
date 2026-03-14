@@ -12,6 +12,7 @@ export default {
     icon: "./assets/images/mainlogo.png",
     android: {
       package: "com.edulearnv2.app",
+      versionCode: 23,
       adaptiveIcon: {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000",

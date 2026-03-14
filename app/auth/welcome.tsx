@@ -2,7 +2,7 @@ import useUserStore from "@/core/userState";
 import { router } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View, useColorScheme} from "react-native";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 type Props = {};
 
 const Welcome = (props: Props) => {
@@ -12,7 +12,17 @@ const Welcome = (props: Props) => {
     if(user?.isPremium) {
       router.push("/(tabs)");
     } else {
-      router.push("/freeTrialIntro");
+      const lastTrialPrompt = await AsyncStorage.getItem("lastTrialPrompt");
+      const now = Date.now();
+      const oneDayInMs = 24 * 60 * 60 * 1000;
+      
+      if (!lastTrialPrompt || now - parseInt(lastTrialPrompt) >= oneDayInMs) {
+        await AsyncStorage.setItem("lastTrialPrompt", now.toString());
+        await AsyncStorage.setItem("previousScreen", "welcome");
+        router.push("/freeTrialIntro");
+      } else {
+        router.push("/(tabs)");
+      }
     }
   };
 
