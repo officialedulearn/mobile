@@ -4,6 +4,10 @@ import httpClient from "@/utils/httpClient";
 import { supabase } from "@/utils/supabase";
 import EventSource from "react-native-sse";
 
+function scheduleAfterReactRender(fn: () => void) {
+  setTimeout(fn, 0);
+}
+
 export class AIService {
     async getTitle(message: Message) {
         try {
@@ -162,12 +166,14 @@ export class AIService {
                   streamCompleted = true;
                   eventSource.close();
                   
-                  onComplete({
-                    id: data.id || responseId || generateUUID(),
-                    role: 'assistant',
-                    content: fullResponse,
-                    createdAt: new Date(),
-                    chatId: dto.chatId,
+                  scheduleAfterReactRender(() => {
+                    onComplete({
+                      id: data.id || responseId || generateUUID(),
+                      role: 'assistant',
+                      content: fullResponse,
+                      createdAt: new Date(),
+                      chatId: dto.chatId,
+                    });
                   });
                   return;
                 }
@@ -175,7 +181,11 @@ export class AIService {
               
               if (data.token) {
                 fullResponse += data.token;
-                onToken(data.token, data.type);
+                const token = data.token;
+                const tokenType = data.type;
+                scheduleAfterReactRender(() => {
+                  onToken(token, tokenType);
+                });
               }
             } catch (parseError) {
               console.error('Error parsing SSE data:', parseError);
@@ -186,21 +196,23 @@ export class AIService {
             console.error('SSE error:', error);
             eventSource.close();
             
-            if (streamCompleted) {
-              return;
-            }
-            
-            if (fullResponse) {
-              onComplete({
-                id: responseId || generateUUID(),
-                role: 'assistant',
-                content: fullResponse,
-                createdAt: new Date(),
-                chatId: dto.chatId,
-              });
-            } else {
-              onError(new Error('Connection error during streaming. Please try again.'));
-            }
+            scheduleAfterReactRender(() => {
+              if (streamCompleted) {
+                return;
+              }
+              
+              if (fullResponse) {
+                onComplete({
+                  id: responseId || generateUUID(),
+                  role: 'assistant',
+                  content: fullResponse,
+                  createdAt: new Date(),
+                  chatId: dto.chatId,
+                });
+              } else {
+                onError(new Error('Connection error during streaming. Please try again.'));
+              }
+            });
           });
       
           return () => {
@@ -218,7 +230,9 @@ export class AIService {
             errorMessage = error.message;
           }
           
-          onError(new Error(errorMessage));
+          scheduleAfterReactRender(() => {
+            onError(new Error(errorMessage));
+          });
         }
     }
 

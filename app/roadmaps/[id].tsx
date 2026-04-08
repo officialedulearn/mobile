@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import BackButton from "@/components/backButton";
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { RoadmapWithSteps, RoadmapStep } from "@/interface/Roadmap";
+import useRoadmapStore from "@/core/roadmapState";
 import { RoadmapService } from "@/services/roadmap.service";
 import useUserStore from "@/core/userState";
 import { CardSharingService } from "@/services/cardSharing.service";
@@ -15,16 +16,24 @@ const Roadmap = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [startingStep, setStartingStep] = useState<string | null>(null);
 
+  const { roadmapWithStepsById, fetchRoadmapById } = useRoadmapStore();
   const roadmapService = new RoadmapService();
   const cardSharingService = new CardSharingService();
+
   const fetchRoadmap = async () => {
     if (!id) return;
-    
+
+    const cached = roadmapWithStepsById[id as string];
+    if (cached) {
+      setRoadmapData(cached);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
-    
     try {
-      const data = await roadmapService.getRoadmapById(id as string);
-      setRoadmapData(data);
+      const data = await fetchRoadmapById(id as string);
+      setRoadmapData(data ?? null);
     } catch (error: any) {
       console.error("Failed to fetch roadmap:", error);
       Alert.alert("Error", error.message || "Failed to load roadmap");

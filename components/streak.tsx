@@ -1,7 +1,8 @@
 import useUserStore from '@/core/userState';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { router } from 'expo-router';
 
 const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -13,6 +14,13 @@ interface StreakProps {
 const DailyCheckInStreak: React.FC<StreakProps> = ({ streak, noBorder = false }) => {
   const { user, theme } = useUserStore();
   const currentStreak = streak !== undefined ? streak : (user?.streak || 0);
+  const [showWarning, setShowWarning] = useState(false);
+
+  useEffect(() => {
+    const lastLogin = new Date(user?.lastLoggedIn || Date.now());
+    const hoursSinceLogin = (Date.now() - lastLogin.getTime()) / (1000 * 60 * 60);
+    setShowWarning(hoursSinceLogin > 20 && currentStreak >= 3);
+  }, [user?.lastLoggedIn, currentStreak]);
 
   const getActiveDays = (streak: number) => {
     const todayIndex = new Date().getDay(); 
@@ -34,6 +42,17 @@ const DailyCheckInStreak: React.FC<StreakProps> = ({ streak, noBorder = false })
       theme === "dark" && {backgroundColor: 'transparent', borderColor: "transparent"},
       noBorder && { borderWidth: 0, padding: 12, marginTop: 0, backgroundColor: 'transparent' }
     ]}>
+      {showWarning && (
+        <TouchableOpacity
+          style={[styles.warningBanner, theme === "dark" && styles.warningBannerDark]}
+          onPress={() => router.push("/streakShield")}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.warningText, theme === "dark" && styles.warningTextDark]}>
+            Your {currentStreak}-day streak expires soon! Get Streak Shield
+          </Text>
+        </TouchableOpacity>
+      )}
       <Text style={[styles.heading, theme === "dark" && {color: "#E0E0E0"}]}>Daily Check-in Streak</Text>
       <View style={[styles.row, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
         {days.map((day, index) => {
@@ -117,6 +136,29 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#2D3C52',
     fontFamily: 'Satoshi',
+  },
+  warningBanner: {
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#FFE0B2',
+  },
+  warningBannerDark: {
+    backgroundColor: '#3E2723',
+    borderColor: '#5D4037',
+  },
+  warningText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E65100',
+    fontFamily: 'Satoshi',
+    textAlign: 'center',
+  },
+  warningTextDark: {
+    color: '#FFAB91',
   },
 });
 

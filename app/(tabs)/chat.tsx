@@ -1,7 +1,7 @@
-import Chat from "@/components/Chat";
+import Chat from "@/components/chat/Chat";
 import useUserStore from "@/core/userState";
+import useChatStore from "@/core/chatState";
 import { Chat as chatInterface, Message } from "@/interface/Chat";
-import { ChatService } from "@/services/chat.service";
 import { generateUUID } from "@/utils/constants";
 import { useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -21,8 +21,9 @@ const ChatScreen = (props: Props) => {
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
   const theme = useUserStore((state) => state.theme);
+  const { fetchMessages, fetchChatById } = useChatStore();
 
-  const [currentChatId, setCurrentChatId] = useState<string>(() => 
+  const [currentChatId, setCurrentChatId] = useState<string>(() =>
     chatIdFromNav || generateUUID()
   );
 
@@ -33,26 +34,30 @@ const ChatScreen = (props: Props) => {
   }, [chatIdFromNav]);
 
   useEffect(() => {
-    const fetchChatAndMessages = async () => {
+    const loadChatAndMessages = async () => {
       if (!currentChatId) {
         setChat(undefined);
         setInitialMessages([]);
         return;
       }
 
+      const state = useChatStore.getState();
+      const cached = state.messagesByChatId[currentChatId];
+      const cachedChat = state.chatById[currentChatId];
+
+      if (cached && cached.length > 0) {
+        setInitialMessages(cached);
+        setChat(cachedChat);
+        return;
+      }
+
       try {
-        const chatService = new ChatService();
-          
-        const messages = await chatService.getMessagesInChat(currentChatId);
+        const messages = await fetchMessages(currentChatId);
         setInitialMessages(messages || []);
-        
+
         if (messages && messages.length > 0) {
-          try {
-            const chatData = await chatService.getChatById(currentChatId);
-            setChat(chatData);
-          } catch {
-            setChat(undefined);
-          }
+          const chatData = await fetchChatById(currentChatId);
+          setChat(chatData);
         } else {
           setChat(undefined);
         }
@@ -63,7 +68,7 @@ const ChatScreen = (props: Props) => {
       }
     };
 
-    fetchChatAndMessages();
+    loadChatAndMessages();
   }, [currentChatId]);
 
   return (

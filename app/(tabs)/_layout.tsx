@@ -1,5 +1,5 @@
 import useUserStore from "@/core/userState";
-import { Tabs, usePathname } from "expo-router";
+import { Tabs, usePathname, useSegments } from "expo-router";
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import React, { useEffect, useState, useRef, createContext, useContext } from "react";
 import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View, Dimensions } from "react-native";
@@ -64,7 +64,9 @@ const TabLayout = (props: Props) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const segments = useSegments();
   const previousPathRef = useRef(pathname);
+  const isChatTab = segments.includes("chat");
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
@@ -116,9 +118,9 @@ const TabLayout = (props: Props) => {
             borderColor: theme === 'dark' ? '#0d0d0d' : "#F9FBFC",
             borderWidth: 1,
           },
-          (isKeyboardVisible || streakModalVisible) && {
-            display: 'none',
-          }
+          (isKeyboardVisible || streakModalVisible || isChatTab) && {
+            display: "none",
+          },
         ],
         tabBarLabelStyle: {
           fontSize: 12,

@@ -13,8 +13,10 @@ import * as Clipboard from 'expo-clipboard';
 import Markdown from "react-native-markdown-display";
 import { Message } from "@/interface/Chat";
 import useUserStore from "@/core/userState";
-import AnimatedPressable from "./AnimatedPressable";
+import AnimatedPressable from "../AnimatedPressable";
 import RoadmapCard from "./RoadmapCard";
+import Toast from "../Toast";
+import { useToast } from "@/contexts/ToastContext";
 
 type Props = {
   message: Message;
@@ -32,14 +34,15 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
   
   const isUser = message.role === "user";
   const isLoading = false;
+  const {show} = useToast();
 
   const handleCopyMessage = async () => {
     try {
       const messageText = getMessageContent();
       await Clipboard.setStringAsync(messageText);
-      Alert.alert("Success", "Message copied to clipboard!");
+      show("success", "Message copied to clipboard!");
     } catch (error) {
-      Alert.alert("Error", "Failed to copy message");
+      show("error", "Failed to copy message");
     }
   };
 
@@ -457,7 +460,7 @@ const styles = StyleSheet.create({
   editIcon: {
     width: 16,
     height: 16,
-    tintColor: "#61728C",
+    tintColor:  "#E0E0E0",
   },
   messageActionContainer: {
     flexDirection: "row",

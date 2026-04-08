@@ -20,7 +20,7 @@ import DailyCheckInStreak from "@/components/streak";
 import * as StoreReview from "expo-store-review";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { RoadmapService } from "@/services/roadmap.service";
+import useRoadmapStore from "@/core/roadmapState";
 import { CardSharingService } from "@/services/cardSharing.service";
 
 
@@ -32,8 +32,14 @@ const index = (props: Props) => {
   const theme = useUserStore(s => s.theme);
   const streakModalVisible = useUserStore(s => s.streakModalVisible);
   const setStreakModalVisible = useUserStore(s => s.setStreakModalVisible);
-  const [latestRoadmap, setLatestRoadmap] = useState<any>(null);
-  const [roadmapProgress, setRoadmapProgress] = useState({ completed: 0, total: 0 });
+  const { roadmaps, roadmapWithStepsById, fetchRoadmaps, fetchRoadmapById } = useRoadmapStore();
+  const latestRoadmap = roadmaps.length > 0 ? roadmapWithStepsById[roadmaps[0].id] : null;
+  const roadmapProgress = latestRoadmap
+    ? {
+        completed: latestRoadmap.steps.filter((s) => s.done).length,
+        total: latestRoadmap.steps.length,
+      }
+    : { completed: 0, total: 0 };
   const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
     if (!url || typeof url !== 'string') return undefined;
     return url
@@ -43,32 +49,21 @@ const index = (props: Props) => {
   };
 
   useEffect(() => {
-    if (user?.id) {
+    const load = async () => {
+      if (!user?.id) return;
       fetchActivities(user.id);
-      fetchLatestRoadmap();
-    }
-  }, [user?.id, fetchActivities]);
-
-  const fetchLatestRoadmap = async () => {
-    if (!user?.id) return;
-    try {
-      const roadmapService = new RoadmapService();
-      const roadmaps = await roadmapService.getUserRoadmaps(user.id);
-      
-      if (roadmaps && roadmaps.length > 0) {
-        const latest = roadmaps[0];
-        const roadmapWithSteps = await roadmapService.getRoadmapById(latest.id);
-        
-        const completedSteps = roadmapWithSteps.steps.filter(step => step.done).length;
-        const totalSteps = roadmapWithSteps.steps.length;
-        
-        setLatestRoadmap(roadmapWithSteps);
-        setRoadmapProgress({ completed: completedSteps, total: totalSteps });
+      try {
+        await fetchRoadmaps(user.id);
+        const state = useRoadmapStore.getState();
+        if (state.roadmaps.length > 0) {
+          await fetchRoadmapById(state.roadmaps[0].id);
+        }
+      } catch (error) {
+        console.log("Error fetching roadmap:", error);
       }
-    } catch (error) {
-      console.log("Error fetching roadmap:", error);
-    }
-  };
+    };
+    load();
+  }, [user?.id, fetchActivities, fetchRoadmaps, fetchRoadmapById]);
 
   useEffect(() => {
     const checkAndShowModal = async () => {

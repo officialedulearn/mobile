@@ -53,6 +53,17 @@ export interface RoomMessage {
   mentionedUserIds?: string[];
 }
 
+export interface RoomMessageWithUI extends RoomMessage {
+  date: string;
+  time: string;
+  isCurrentUser: boolean;
+  reactions: { [key: string]: number };
+  userAvatar?: string;
+  userName?: string;
+  isMod?: boolean;
+  message?: string;
+}
+
 export interface MessageReaction {
   id: string;
   reaction: string;

@@ -16,7 +16,7 @@ import {
 import { levels } from "@/utils/constants";
 import useUserStore from "@/core/userState";
 import { ProgressBar, DataTable } from "react-native-paper";
-import { RewardsService } from "@/services/rewards.service";
+import useRewardsStore from "@/core/rewardsState";
 import { StatusBar } from "expo-status-bar";
 import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
@@ -28,7 +28,6 @@ type Props = {};
 const rewards = (props: Props) => {
   const user = useUserStore((s) => s.user);
   const fetchWalletBalance = useUserStore((s) => s.fetchWalletBalance);
-  const [rewards, setRewards] = useState<any[]>([]);
   const [userEarnings, setUserEarnings] = useState<{ sol: number; edln: number; hasEarnings: boolean }>({
     sol: 0,
     edln: 0,
@@ -44,7 +43,8 @@ const rewards = (props: Props) => {
   const [numberOfItemsPerPageList] = useState([10, 15, 20]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
   
-  const rewardService = new RewardsService();
+  const { userRewardsByUserId, fetchUserRewards } = useRewardsStore();
+  const rewards = userRewardsByUserId[user?.id as string] ?? [];
   const walletService = new WalletService();
   const screenWidth = Dimensions.get("window").width;
   const itemWidth = (screenWidth - 48) / 2;
@@ -116,17 +116,6 @@ const rewards = (props: Props) => {
   }, [itemsPerPage]);
 
   useEffect(() => {
-    const fetchRewards = async () => {
-      try {
-        const userRewards = await rewardService.getUserRewards(
-          user?.id as unknown as string
-        );
-        setRewards(userRewards);
-      } catch (error) {
-        console.error("Error fetching rewards:", error);
-      }
-    };
-
     const fetchEarnings = async () => {
       if (!user?.id) return;
 
@@ -142,11 +131,11 @@ const rewards = (props: Props) => {
     };
 
     if (user?.id) {
-      fetchRewards();
+      fetchUserRewards(user.id as unknown as string);
       fetchActivities(user.id);
       fetchEarnings();
     }
-  }, [user?.id]);
+  }, [user?.id, fetchUserRewards, fetchActivities]);
 
   const handleClaimEDLN = async () => {
     if (!user?.id) return;

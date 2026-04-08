@@ -1,7 +1,7 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, Share } from "react-native";
 import React, { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import { RewardsService } from "@/services/rewards.service";
+import useRewardsStore from "@/core/rewardsState";
 import { CardSharingService } from "@/services/cardSharing.service";
 import useUserStore from "@/core/userState";
 
@@ -12,26 +12,31 @@ const nftClaimed = (props: Props) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const { rewardId } = useLocalSearchParams();
-  const rewardsService = new RewardsService();
+  const { fetchRewardById } = useRewardsStore();
   const theme = useUserStore(state => state.theme);
   const user = useUserStore(state => state.user);
 
   const cardSharingService = new CardSharingService();
 
   useEffect(() => {
-    const fetchReward = async () => {
+    const loadReward = async () => {
       if (!rewardId) {
         setError("No reward ID provided");
         setIsLoading(false);
         return;
       }
 
+      const cached = useRewardsStore.getState().rewardById[rewardId as string];
+      if (cached) {
+        setReward(cached);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
-        const rewardData = await rewardsService.getRewardById(
-          rewardId as string
-        );
-        
+        const rewardData = await fetchRewardById(rewardId as string);
+
         if (!rewardData) {
           setError("Reward not found");
         } else {
@@ -45,7 +50,7 @@ const nftClaimed = (props: Props) => {
       }
     };
 
-    fetchReward();
+    loadReward();
   }, [rewardId]);
 
   const handleViewNFTs = () => {

@@ -7,8 +7,9 @@ import { UserService } from "@/services/auth.service";
 import DailyCheckInStreak from "@/components/streak";
 import { getUserMetrics } from "@/utils/utils";
 import { ActivityService } from "@/services/activity.service";
-import { RewardsService } from "@/services/rewards.service";
-import { SocialService, NotificationPreferences } from "@/services/social.service";
+import useRewardsStore from "@/core/rewardsState";
+import useSocialStore from "@/core/socialState";
+import { NotificationPreferences } from "@/services/social.service";
 import useUserStore from "@/core/userState";
 import * as Haptics from "expo-haptics";
 
@@ -53,15 +54,9 @@ const User = (props: Props) => {
     nfts: 0,
     xp: 0,
   });
-  const [isFollowing, setIsFollowing] = React.useState<boolean>(false);
   const [isFollowLoading, setIsFollowLoading] = React.useState<boolean>(false);
   const [isCheckingFollow, setIsCheckingFollow] = React.useState<boolean>(true);
   const [showNotificationSettings, setShowNotificationSettings] = React.useState<boolean>(false);
-  const [notificationPreferences, setNotificationPreferences] = React.useState<NotificationPreferences>({
-    emailNotifications: true,
-    pushNotifications: true,
-    inAppNotifications: true,
-  });
   const [isLoadingPreferences, setIsLoadingPreferences] = React.useState<boolean>(false);
 
   const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
@@ -75,15 +70,37 @@ const User = (props: Props) => {
     totalQuestionsAnswered: 0,
     accuracyRate: 0,
   });
-  const [userRewards, setUserRewards] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const screenWidth = Dimensions.get("window").width;
   const itemWidth = (screenWidth - 48) / 2;
 
   const userService = new UserService();
   const activityService = new ActivityService();
-  const rewardsService = new RewardsService();
-  const socialService = new SocialService();
+  const { userRewardsByUserId, fetchUserRewards } = useRewardsStore();
+  const {
+    isFollowingByKey,
+    notificationPrefsByUserId,
+    checkIsFollowing,
+    fetchNotificationPreferences,
+    followUser,
+    unfollowUser,
+    updateNotificationPreferences,
+    setFollowingCache,
+    setNotificationPrefsCache,
+  } = useSocialStore();
+
+  const followKey = currentUser?.id && id ? `${currentUser.id}-${id}` : "";
+  const cachedFollowing = followKey ? isFollowingByKey[followKey] : undefined;
+  const cachedPrefs = id ? notificationPrefsByUserId[id] : undefined;
+
+  const isFollowing = cachedFollowing ?? false;
+  const notificationPreferences = cachedPrefs ?? {
+    emailNotifications: true,
+    pushNotifications: true,
+    inAppNotifications: true,
+  };
+
+  const userRewards = userRewardsByUserId[id ?? ""] ?? [];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -103,7 +120,7 @@ const User = (props: Props) => {
   }, [id]);
 
   useEffect(() => {
-    const checkFollowStatus = async () => {
+    const loadFollowStatus = async () => {
       if (!currentUser?.id || !id || currentUser.id === id) {
         setIsCheckingFollow(false);
         return;
@@ -111,15 +128,12 @@ const User = (props: Props) => {
 
       try {
         setIsCheckingFollow(true);
-        const following = await socialService.isFollowing(id);
-        setIsFollowing(following);
-        
-        // Load notification preferences if following
+        const following = await checkIsFollowing(currentUser.id as unknown as string, id);
+
         if (following) {
           setIsLoadingPreferences(true);
           try {
-            const prefs = await socialService.getNotificationPreferences(id);
-            setNotificationPreferences(prefs);
+            await fetchNotificationPreferences(id);
           } catch (error) {
             console.error("Failed to load notification preferences:", error);
           } finally {
@@ -128,32 +142,29 @@ const User = (props: Props) => {
         }
       } catch (error) {
         console.error("Failed to check follow status:", error);
-        setIsFollowing(false);
+        setFollowingCache(currentUser.id as unknown as string, id, false);
       } finally {
         setIsCheckingFollow(false);
       }
     };
 
-    checkFollowStatus();
+    loadFollowStatus();
   }, [id, currentUser?.id]);
 
   useEffect(() => {
-    const fetchUserRewards = async () => {
-      if (id) {
-        setIsLoading(true);
-        try {
-          const rewards = await rewardsService.getUserRewards(id);
-          setUserRewards(rewards);
-        } catch (error) {
-          console.error("Failed to fetch user rewards:", error);
-        } finally {
-          setIsLoading(false);
-        }
+    const load = async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+        await fetchUserRewards(id);
+      } catch (error) {
+        console.error("Failed to fetch user rewards:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    fetchUserRewards();
-  }, [id]);
+    load();
+  }, [id, fetchUserRewards]);
 
   useEffect(() => {
     async function fetchMetrics() {
@@ -194,25 +205,17 @@ const User = (props: Props) => {
     key: keyof NotificationPreferences,
     value: boolean
   ) => {
+    const updatedPreferences = { ...notificationPreferences, [key]: value };
+    setNotificationPrefsCache(id, updatedPreferences);
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
-      const updatedPreferences = {
-        ...notificationPreferences,
-        [key]: value,
-      };
-      
-      setNotificationPreferences(updatedPreferences);
-      
-      await socialService.updateNotificationPreferences(id, { [key]: value });
-      
+      await updateNotificationPreferences(id, { [key]: value });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Failed to update notification preference:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      
-      // Revert on error
-      setNotificationPreferences(notificationPreferences);
+      setNotificationPrefsCache(id, notificationPreferences);
     }
   };
 
@@ -261,13 +264,13 @@ const User = (props: Props) => {
                   setIsFollowLoading(true);
                   
                   if (isFollowing) {
-                    await socialService.unfollowUser(id);
-                    setIsFollowing(false);
+                    await unfollowUser(id);
+                    setFollowingCache(currentUser.id as unknown as string, id, false);
                     setShowNotificationSettings(false);
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                   } else {
-                    await socialService.followUser(id);
-                    setIsFollowing(true);
+                    await followUser(id);
+                    setFollowingCache(currentUser.id as unknown as string, id, true);
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                   }
                 } catch (error) {

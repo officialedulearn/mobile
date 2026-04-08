@@ -12,12 +12,13 @@ import {
 import React, { useEffect, useState, useCallback } from "react";
 import { BlurView } from "expo-blur";
 import BackButton from "@/components/backButton";
-import { RewardsService } from "@/services/rewards.service";
+import useRewardsStore from "@/core/rewardsState";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
 import Modal from "react-native-modal";
 import { router, useFocusEffect } from "expo-router";
 import Purchases from "react-native-purchases";
+import { RewardsService } from "@/services/rewards.service";
 
 type Props = {};
 interface UserRewardWithDetails {
@@ -33,22 +34,26 @@ const NFT = (props: Props) => {
   const [activeTab, setActiveTab] = useState<
     "claimed" | "unclaimed" | "locked"
   >("claimed");
-  const [allRewards, setAllRewards] = useState<any[]>([]);
-  const [claimedRewards, setClaimedRewards] = useState<UserRewardWithDetails[]>(
-    []
-  );
-  const [unclaimedRewards, setUnclaimedRewards] = useState<
-    UserRewardWithDetails[]
-  >([]);
-  const [lockedRewards, setLockedRewards] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [selectedReward, setSelectedReward] = useState<UserRewardWithDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const rewardService = new RewardsService();
 
   const { user, theme } = useUserStore();
+  const {
+    allRewards,
+    userRewardsByUserId,
+    isLoading,
+    fetchAllRewards,
+    fetchUserRewards,
+    fetchClaimStatus,
+  } = useRewardsStore();
+
+  const userRewards = user?.id ? (userRewardsByUserId[user.id] ?? []) : [];
+  const claimedRewards = userRewards.filter((r) => r.signature);
+  const unclaimedRewards = userRewards.filter((r) => !r.signature);
+  const userRewardIds = new Set(userRewards.map((r) => r.id));
+  const lockedRewards = allRewards.filter((r) => !userRewardIds.has(r.id));
 
   const toggleModal = (reward?: UserRewardWithDetails) => {
     if (reward) {
@@ -64,33 +69,11 @@ const NFT = (props: Props) => {
 
   const loadAllRewards = useCallback(async () => {
     if (!user?.id) return;
-    
-    try {
-      setIsLoading(true);
-      const rewards = await rewardService.getAllRewards();
-      const userRewards = await rewardService.getUserRewards(
-        user?.id as unknown as string
-      );
-
-      setAllRewards(rewards);
-
-      const claimed = userRewards.filter((reward) => reward.signature);
-      const unclaimed = userRewards.filter((reward) => !reward.signature);
-
-      setClaimedRewards(claimed);
-      setUnclaimedRewards(unclaimed);
-
-      const userRewardIds = new Set(userRewards.map((reward) => reward.id));
-      const locked = rewards.filter(
-        (reward) => !userRewardIds.has(reward.id)
-      );
-      setLockedRewards(locked);
-    } catch (error) {
-      console.error("Failed to load rewards:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
+    await Promise.all([
+      fetchAllRewards(),
+      fetchUserRewards(user.id as unknown as string),
+    ]);
+  }, [user?.id, fetchAllRewards, fetchUserRewards]);
 
   useFocusEffect(
     useCallback(() => {
@@ -103,12 +86,26 @@ const NFT = (props: Props) => {
 
     try {
       setClaimingId(rewardId);
-      setIsLoading(true);
       setError(null);
 
-      await Purchases.logIn(user.id as unknown as string);
-      console.log("🔐 RevenueCat user identified for badge claim:", user.id);
+      if (Platform.OS === "android") {
+        const rewardsService = new RewardsService();
+        const result = await rewardsService.claimReward(
+          user.id as unknown as string,
+          rewardId
+        );
+        await loadAllRewards();
+        setActiveTab("claimed");
+        if (selectedReward && result?.signature) {
+          router.push({
+            pathname: "/nftClaimed",
+            params: { rewardId: selectedReward.id },
+          });
+        }
+        return;
+      }
 
+      await Purchases.logIn(user.id as unknown as string);
       const productIdentifier = "rc_badge_claim1";
       const products = await Purchases.getProducts([productIdentifier]);
 
@@ -117,61 +114,45 @@ const NFT = (props: Props) => {
       }
 
       const product = products[0];
-      console.log("💳 Initiating badge claim purchase:", productIdentifier);
-
-      let purchaseResult;
       try {
-        purchaseResult = await Purchases.purchaseStoreProduct(product);
-        console.log("✅ Purchase successful! Webhook will process NFT minting...");
+        await Purchases.purchaseStoreProduct(product);
       } catch (purchaseError: any) {
-        console.error("Purchase error:", purchaseError.message);
-
         if (purchaseError.userCancelled) {
           throw new Error("Purchase cancelled");
         }
-
         throw new Error(purchaseError.message || "Purchase failed. Please try again.");
       }
 
-      console.log("⏳ Waiting for NFT to be minted by webhook...");
-      
       let attempts = 0;
       const maxAttempts = 20;
       let claimed = false;
 
       while (attempts < maxAttempts && !claimed) {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
         try {
-          const status = await rewardService.getClaimStatus(
+          const status = await fetchClaimStatus(
             user.id as unknown as string,
             rewardId
           );
-          
           if (status.claimed && status.signature) {
-            console.log("✅ NFT successfully minted! Signature:", status.signature);
             claimed = true;
             break;
           }
         } catch (statusError) {
           console.error("Error checking claim status:", statusError);
         }
-        
         attempts++;
-        console.log(`🔄 Checking claim status... (${attempts}/${maxAttempts})`);
       }
 
       await loadAllRewards();
 
       if (!claimed) {
-        console.log("⚠️ Polling timed out, but NFT may still be processing");
         setActiveTab("claimed");
         toggleModal();
         return;
       }
 
       setActiveTab("claimed");
-
       if (selectedReward) {
         router.push({
           pathname: "/nftClaimed",
@@ -195,7 +176,6 @@ const NFT = (props: Props) => {
         setModalVisible(true);
       }, 300);
     } finally {
-      setIsLoading(false);
       setClaimingId(null);
     }
   };
@@ -361,7 +341,7 @@ const NFT = (props: Props) => {
               <View style={styles.lockedOverlay}>
                 <Image
                   style={styles.lockedImage}
-                  source={getImageSource(item.imageUrl)}
+                  source={getImageSource(item.imageUrl ?? "")}
                 />
                 <BlurView
                   intensity={20}

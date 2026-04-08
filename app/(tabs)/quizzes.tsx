@@ -1,7 +1,7 @@
 import useActivityStore from "@/core/activityState";
 import useUserStore from "@/core/userState";
+import useChatStore from "@/core/chatState";
 import { Chat } from "@/interface/Chat";
-import { ChatService } from "@/services/chat.service";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
@@ -21,17 +21,26 @@ import { DataTable } from "react-native-paper";
 type Props = {};
 
 const quizzes = (props: Props) => {
-  const [chats, setChats] = React.useState<Array<Chat>>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const [page, setPage] = useState<number>(0);
   const [numberOfItemsPerPageList] = useState([10, 15, 20]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
-  
-  const chatService = new ChatService();
-  const {updateUserCredits, theme, user} = useUserStore()
+
+  const { updateUserCredits, theme, user } = useUserStore();
+  const { chatList, fetchChatList } = useChatStore();
   const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
+  const chats = React.useMemo(
+    () =>
+      chatList
+        .filter((c) => !c.tested)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ),
+    [chatList]
+  );
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth * 0.75;
 
@@ -43,27 +52,10 @@ const quizzes = (props: Props) => {
   }, [itemsPerPage]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (!user?.id) return;
-        
-        const userId = user.id;
-        const chatList = await chatService.getHistory(userId);
-        setChats(
-          chatList.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          ).filter(chat => !chat.tested)
-        );
-
-        fetchQuizActivities(userId);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-  }, [user?.id, fetchQuizActivities]);
+    if (!user?.id) return;
+    fetchChatList(user.id as unknown as string);
+    fetchQuizActivities(user.id as unknown as string);
+  }, [user?.id, fetchChatList, fetchQuizActivities]);
 
   const startQuiz = (chatId: string) => {
 

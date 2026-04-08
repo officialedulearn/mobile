@@ -11,7 +11,7 @@ import Modal from "react-native-modal";
 import { WalletService } from "@/services/wallet.service";
 import { UserService } from "@/services/auth.service";
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { RoadmapService } from "@/services/roadmap.service";
+import useRoadmapStore from "@/core/roadmapState";
 import { Roadmap } from "@/interface/Roadmap";
 
 type Props = {};
@@ -79,12 +79,11 @@ const Profile = (props: Props) => {
   const popoverOpacity = useRef(new Animated.Value(0)).current;
   const popoverTranslateY = useRef(new Animated.Value(-20)).current;
   const { width } = useWindowDimensions();
-  const [roadmaps, setRoadmaps] = React.useState<Roadmap[]>([]);
-  const [isLoadingRoadmaps, setIsLoadingRoadmaps] = React.useState(false);
 
   const walletService = new WalletService()
   const authService = new UserService()
-  const roadmapService = new RoadmapService()
+  const { roadmaps, fetchRoadmaps, isLoading: isLoadingRoadmaps } = useRoadmapStore();
+
   useEffect(() => {
     async function fetchMetrics() {
       const userId = user?.id || "";
@@ -104,21 +103,10 @@ const Profile = (props: Props) => {
   }, [user?.id, fetchWalletBalance]);
 
   useEffect(() => {
-    async function fetchRoadmaps() {
-      if (!user?.id) return;
-      
-      setIsLoadingRoadmaps(true);
-      try {
-        const userRoadmaps = await roadmapService.getUserRoadmaps(user.id);
-        setRoadmaps(userRoadmaps);
-      } catch (error) {
-        console.error("Failed to fetch roadmaps:", error);
-      } finally {
-        setIsLoadingRoadmaps(false);
-      }
+    if (user?.id) {
+      fetchRoadmaps(user.id);
     }
-    fetchRoadmaps();
-  }, [user?.id]);
+  }, [user?.id, fetchRoadmaps]);
 
   useEffect(() => {
     if (
@@ -331,7 +319,8 @@ const Profile = (props: Props) => {
                 <Text style={[styles.xpText, theme === "dark" && {color: "#000"}]}>{user?.xp} XP</Text>
               </View>
             </View>
-            <TouchableOpacity
+            {Platform.OS === "android" && (
+              <TouchableOpacity
               onPress={() => {
                 router.push("/wallet");
               }}
@@ -392,6 +381,7 @@ const Profile = (props: Props) => {
                 </View>
               </View>
             </TouchableOpacity>
+            )}
           </View>
 
           <View style={[styles.achievements, { marginTop: 12 }, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>

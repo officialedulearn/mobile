@@ -4,6 +4,13 @@ import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
 import { create } from "zustand";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import useChatStore from "./chatState";
+import useRewardsStore from "./rewardsState";
+import useSocialStore from "./socialState";
+import useCommunityStore from "./communityState";
+import useRoadmapStore from "./roadmapState";
+import useActivityStore from "./activityState";
+import useNotificationsStore from "./notificationsState";
 
 interface UserState {
   user: User | null; 
@@ -117,9 +124,6 @@ const useUserStore = create<UserState>((set, get) => ({
         return;
       }
 
-      console.log("Loading user data for:", authUser.email);
-      console.log("Last logged in from DB:", userFromDB.lastLoggedIn);
-
       const updatedStreak = await calculateAndUpdateStreak(
         userFromDB,
         userFromDB.lastLoggedIn
@@ -220,6 +224,13 @@ const useUserStore = create<UserState>((set, get) => ({
       await supabase.auth.signOut();
       await AsyncStorage.removeItem('isReviewer');
       set({ user: null, walletBalance: null, isLoading: false, walletBalanceLoading: false });
+      useChatStore.getState().resetState();
+      useRewardsStore.getState().resetState();
+      useSocialStore.getState().resetState();
+      useCommunityStore.getState().resetState();
+      useRoadmapStore.getState().resetState();
+      useActivityStore.getState().resetState();
+      useNotificationsStore.getState().resetState();
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -234,14 +245,21 @@ const useUserStore = create<UserState>((set, get) => ({
         'lastReviewRequest',
         'theme'
       ]);
-      
-      set({ 
-        user: null, 
-        walletBalance: null, 
-        isLoading: false, 
+
+      set({
+        user: null,
+        walletBalance: null,
+        isLoading: false,
         walletBalanceLoading: false,
-        theme: 'light' 
+        theme: 'light'
       });
+      useChatStore.getState().resetState();
+      useRewardsStore.getState().resetState();
+      useSocialStore.getState().resetState();
+      useCommunityStore.getState().resetState();
+      useRoadmapStore.getState().resetState();
+      useActivityStore.getState().resetState();
+      useNotificationsStore.getState().resetState();
     } catch (error) {
       console.error("Clear all user data failed:", error);
       throw error;

@@ -8,6 +8,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
 import { CommunityService } from '@/services/community.service'
 import type { Community } from '@/interface/Community'
 import useUserStore from '@/core/userState'
+import useCommunityStore from '@/core/communityState'
 import { router } from 'expo-router'
 
 const communityService = new CommunityService()
@@ -15,6 +16,13 @@ const communityService = new CommunityService()
 const joinCommunity = () => {
     const user = useUserStore(s => s.user)
     const theme = useUserStore(s => s.theme)
+    const {
+      publicCommunities,
+      communityDetailsById: communityDetails,
+      isLoading: loadingPublic,
+      fetchPublicCommunities,
+    } = useCommunityStore()
+
     const [code, setCode] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState(false)
@@ -22,42 +30,13 @@ const joinCommunity = () => {
     const [success, setSuccess] = useState(false)
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null)
     const [bottomSheetStep, setBottomSheetStep] = useState<'confirm' | 'processing' | 'success'>('confirm')
-    const [publicCommunities, setPublicCommunities] = useState<Community[]>([])
-    const [communityDetails, setCommunityDetails] = useState<{ [key: string]: { memberCount: number } }>({})
-    const [loadingPublic, setLoadingPublic] = useState(true)
-    
+
     const bottomSheetModalRef = useRef<BottomSheetModal>(null)
     const snapPoints = useMemo(() => ['60%'], [])
 
     useEffect(() => {
       fetchPublicCommunities()
-    }, [])
-
-    const fetchPublicCommunities = async () => {
-      try {
-        setLoadingPublic(true)
-        const data = await communityService.getPublicCommunities()
-        setPublicCommunities(data)
-        
-        const details: { [key: string]: { memberCount: number } } = {}
-        await Promise.all(
-          data.map(async (community) => {
-            try {
-              const countData = await communityService.getMemberCount(community.id)
-              details[community.id] = { memberCount: countData.count }
-            } catch (err) {
-              console.error(`Error fetching member count for ${community.id}:`, err)
-              details[community.id] = { memberCount: 0 }
-            }
-          })
-        )
-        setCommunityDetails(details)
-      } catch (err) {
-        console.error('Error fetching public communities:', err)
-      } finally {
-        setLoadingPublic(false)
-      }
-    }
+    }, [fetchPublicCommunities])
 
     const renderBackdrop = useCallback(
       (props: any) => (

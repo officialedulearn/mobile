@@ -1,6 +1,6 @@
 import useUserStore from "@/core/userState";
+import useChatStore from "@/core/chatState";
 import { Chat } from "@/interface/Chat";
-import { ChatService } from "@/services/chat.service";
 import { useChatNavigation } from "@/contexts/ChatContext";
 import { BlurView } from "expo-blur";
 import * as React from "react";
@@ -42,11 +42,9 @@ const groupChatsByRecency = (chats: Chat[]) => {
 const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
   const user = useUserStore((s) => s.user);
   const theme = useUserStore((s) => s.theme);
-  const { isNavigating, navigateToChat, createNewChat, chatListVersion } = useChatNavigation();
-  const chatService = new ChatService();
-  const [chats, setChats] = React.useState<Array<Chat>>([]);
+  const { isNavigating, navigateToChat, createNewChat } = useChatNavigation();
+  const { chatList: chats, isLoading, fetchChatList } = useChatStore();
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(true);
 
   const translateX = useSharedValue(-300);
   const backdropOpacity = useSharedValue(0);
@@ -139,27 +137,10 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
     });
 
   React.useEffect(() => {
-    const fetchChats = async () => {
-      setIsLoading(true);
-      try {
-        const chatList = await chatService.getHistory(
-          user?.id as unknown as string
-        );
-        setChats(chatList.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ));
-      } catch (error) {
-        console.error("Error fetching chats:", error);
-        setChats([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (user?.id) {
-      fetchChats();
+      fetchChatList(user.id as unknown as string);
     }
-  }, [user?.id, chatListVersion]);
+  }, [user?.id, fetchChatList]);
 
   const renderChatSection = (title: string, sectionChats: Chat[]) => {
     if (sectionChats.length === 0) return null;

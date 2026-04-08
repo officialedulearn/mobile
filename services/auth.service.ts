@@ -104,6 +104,26 @@ export class UserService {
         }
     }
 
+    async getWeeklyLeaderboard(week?: string): Promise<User[]> {
+        try {
+            const url = week
+                ? `/auth/weekly-leaderboard?week=${encodeURIComponent(week)}`
+                : '/auth/weekly-leaderboard';
+            const response = await httpClient.get(url);
+            const data = Array.isArray(response.data) ? response.data : [];
+            return data.map((r: any) => ({
+                id: r.userId,
+                name: r.name || 'Unknown',
+                xp: r.xpEarned ?? r.xp ?? 0,
+                level: r.level || 'novice',
+                profilePictureURL: r.profilePictureURL,
+            }));
+        } catch (error) {
+            console.error("Error fetching leaderboard:", error);
+            throw error;
+        }
+    }
+
     async searchUsers(username: string, limit: number = 10): Promise<User[]> {
         try {
             const response = await httpClient.get(`/auth/search?username=${encodeURIComponent(username)}&limit=${limit}`);

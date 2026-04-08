@@ -1,7 +1,8 @@
 import BackButton from "@/components/backButton";
+import QuizRefreshModal from "@/components/QuizRefreshModal";
 import useUserStore from "@/core/userState";
 import { AIService } from "@/services/ai.service";
-import { ChatService } from "@/services/chat.service";
+import useChatStore from "@/core/chatState";
 import { ActivityService } from "@/services/activity.service";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -322,13 +323,14 @@ const Quiz = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [showQuizRefreshModal, setShowQuizRefreshModal] = useState(false);
 
   const [questionAnswers, setQuestionAnswers] = useState<(string | null)[]>([]);
   const [timerStarted, setTimerStarted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const aiService = new AIService();
-  const chatService = new ChatService();
+  const { fetchChatById } = useChatStore();
   const activityService = new ActivityService();
 
   const { user, updateUserPointsFromQuiz, theme } = useUserStore();
@@ -378,7 +380,7 @@ const Quiz = () => {
         setError(null);
 
         try {
-          const chat = await chatService.getChatById(chatId);
+          const chat = await fetchChatById(chatId);
           if (chat && chat.title) {
             setChatTitle(chat.title);
           } else {
@@ -406,8 +408,11 @@ const Quiz = () => {
       } catch (error: any) {
         console.error("Error fetching quiz questions:", error);
         setLoading(false);
-        
-        if (error.name === 'QuizGenerationError' && error.message) {
+
+        const msg = error?.message || "";
+        if (msg.includes("quiz limit") || msg.includes("No quiz attempts")) {
+          setShowQuizRefreshModal(true);
+        } else if (error.name === 'QuizGenerationError' && error.message) {
           setError(error.message);
         } else {
           setError("Something went wrong while generating your quiz. Please try again later.");
@@ -635,6 +640,16 @@ const Quiz = () => {
       )}
 
       {renderQuizContent()}
+
+      <QuizRefreshModal
+        visible={showQuizRefreshModal}
+        onClose={() => setShowQuizRefreshModal(false)}
+        onSuccess={() => {
+          setShowQuizRefreshModal(false);
+          useUserStore.getState().setUserAsync();
+          setRetryCount((c) => c + 1);
+        }}
+      />
     </View>
   );
 };

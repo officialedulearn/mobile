@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useUserStore from '@/core/userState';
+import Design from '@/utils/design';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -114,9 +115,8 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
   };
 
   const config = getToastConfig();
-  const backgroundColor = theme === 'light' ? '#0A0A0A' : '#FFFFFF';
-  const textColor = theme === 'light' ? '#FFFFFF' : '#000000';
-  const closeIconColor = theme === 'light' ? '#888' : '#61728C';
+  const backgroundColor = "#00FF80";
+  const textColor = "#fff";
 
   if (!visible) return null;
 
@@ -132,9 +132,7 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
             <Animated.View style={[styles.content, contentAnimatedStyle]}>
               <Ionicons name={config.icon} size={22} color={config.accentColor} />
               <Text style={[styles.message, { color: textColor }]}>{message}</Text>
-              <Pressable onPress={handleDismiss} hitSlop={8}>
-                <Ionicons name="close" size={18} color={closeIconColor} />
-              </Pressable>
+    
             </Animated.View>
           </View>
         </Pressable>
@@ -161,13 +159,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 50,
-    borderWidth: 0.5,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     minWidth: 280,
   },
   content: {

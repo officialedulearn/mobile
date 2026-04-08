@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { generateUUID } from '@/utils/constants';
+import useChatStore from '@/core/chatState';
 
 interface ChatContextType {
   isNavigating: boolean;
   navigateToChat: (chatId: string) => void;
   createNewChat: () => void;
   refreshChatList: () => void;
-  chatListVersion: number;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -23,7 +23,6 @@ export const useChatNavigation = () => {
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
-  const [chatListVersion, setChatListVersion] = useState(0);
 
   const navigateToChat = useCallback((chatId: string) => {
     setIsNavigating(true);
@@ -31,7 +30,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       pathname: "/(tabs)/chat",
       params: { chatIdFromNav: chatId },
     });
-    // Reset after navigation animation completes
     setTimeout(() => setIsNavigating(false), 300);
   }, [router]);
 
@@ -41,7 +39,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, [navigateToChat]);
 
   const refreshChatList = useCallback(() => {
-    setChatListVersion(prev => prev + 1);
+    useChatStore.getState().refreshChatList();
   }, []);
 
   return (
@@ -51,7 +49,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         navigateToChat,
         createNewChat,
         refreshChatList,
-        chatListVersion,
       }}
     >
       {children}

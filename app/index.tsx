@@ -12,7 +12,6 @@ export default function Index() {
   const { setTheme, setUserAsync} = useUserStore();
   const colorScheme = useColorScheme();
   
-  const { expoPushToken } = useNotifications();
   
   useEffect(() => {
     const initializeApp = async () => {
@@ -25,14 +24,14 @@ export default function Index() {
         if (supabaseUser.data.user) {
           await setUserAsync();
           setTimeout(() => {
-            router.push("/(tabs)");
+            router.replace("/(tabs)");
           }, 100);
         } else {  
-          router.push("/onboarding");
+          router.replace("/onboarding");
         }
       } catch (error) {
         console.error("Authentication error:", error);
-        router.push("/onboarding");
+        router.replace("/onboarding");
       }
     };
 

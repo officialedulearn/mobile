@@ -7,9 +7,9 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import AnimatedPressable from "./AnimatedPressable";
+import AnimatedPressable from "../AnimatedPressable";
 import useUserStore from "@/core/userState";
-import { RoadmapService } from "@/services/roadmap.service";
+import useRoadmapStore from "@/core/roadmapState";
 import { RoadmapWithSteps } from "@/interface/Roadmap";
 
 type Props = {
@@ -22,23 +22,28 @@ const RoadmapCard = ({ roadmapId }: Props) => {
   const [roadmapData, setRoadmapData] = useState<RoadmapWithSteps | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const roadmapService = new RoadmapService()
+  const { roadmapWithStepsById, fetchRoadmapById } = useRoadmapStore();
 
   useEffect(() => {
-    loadRoadmap();
+    const load = async () => {
+      const cached = roadmapWithStepsById[roadmapId];
+      if (cached) {
+        setRoadmapData(cached);
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await fetchRoadmapById(roadmapId);
+        setRoadmapData(data ?? null);
+      } catch (error) {
+        console.error("Failed to load roadmap:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [roadmapId]);
-
-  const loadRoadmap = async () => {
-    try {
-      setLoading(true);
-      const data = await roadmapService.getRoadmapById(roadmapId);
-      setRoadmapData(data);
-    } catch (error) {
-      console.error("Failed to load roadmap:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleViewRoadmap = () => {
     router.push(`/roadmaps/${roadmapId}`);

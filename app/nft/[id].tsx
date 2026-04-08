@@ -1,7 +1,7 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Linking } from "react-native";
 import React, { useEffect, useState } from "react";
 import BackButton from "@/components/backButton";
-import { RewardsService } from "@/services/rewards.service";
+import useRewardsStore from "@/core/rewardsState";
 import { useLocalSearchParams } from "expo-router";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
@@ -13,23 +13,24 @@ const nftPage = (props: Props) => {
   const [reward, setReward] = useState<any>(null);
   const [userReward, setUserReward] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const rewardService = new RewardsService();
   const { user, theme } = useUserStore();
-
+  const { fetchRewardById, fetchUserRewards } = useRewardsStore();
 
   useEffect(() => {
-    const fetchData = async () => {
+    const loadData = async () => {
       try {
         setIsLoading(true);
-        const rewardData = await rewardService.getRewardById(id as string);
-        setReward(rewardData);
+        const rewardData = await fetchRewardById(id as string);
+        setReward(rewardData ?? null);
 
         if (user?.id && id) {
-          const userRewards = await rewardService.getUserRewards(user.id);
-          const userSpecificReward = userRewards.find(r => r.id === id);
-          if (userSpecificReward) {
-            setUserReward(userSpecificReward);
-          }
+          await fetchUserRewards(user.id);
+          const state = useRewardsStore.getState();
+          const userRewards = state.userRewardsByUserId[user.id] ?? [];
+          const userSpecificReward = userRewards.find((r) => r.id === id);
+          setUserReward(userSpecificReward ?? null);
+        } else {
+          setUserReward(null);
         }
       } catch (error) {
         console.error("Error fetching rewards:", error);
@@ -38,7 +39,7 @@ const nftPage = (props: Props) => {
       }
     };
 
-    fetchData();
+    loadData();
   }, [id, user?.id]);
 
   const formatDate = (dateString: string) => {

@@ -1,47 +1,47 @@
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import BackButton from '@/components/backButton';
 import useUserStore from '@/core/userState';
 import useNotificationsStore from '@/core/notificationsState';
+import type { Notification } from '@/services/notifications.service';
 import * as Haptics from 'expo-haptics';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+
+function formatNotificationDate(date: Date | string): string {
+  const notificationDate = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now.getTime() - notificationDate.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+
+  return notificationDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: notificationDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  });
+}
 
 type NotificationItemProps = {
-  notification: {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: Date | string;
-  };
+  notification: Notification;
   onDelete: (id: string) => void;
+  theme: 'light' | 'dark';
 };
 
-const NotificationItem = ({ notification, onDelete }: NotificationItemProps) => {
-  const theme = useUserStore((state) => state.theme);
+const NotificationItem = memo(function NotificationItem({
+  notification,
+  onDelete,
+  theme,
+}: NotificationItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const formatDate = (date: Date | string) => {
-    const notificationDate = typeof date === 'string' ? new Date(date) : date;
-    const now = new Date();
-    const diffMs = now.getTime() - notificationDate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return notificationDate.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: notificationDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-    });
-  };
 
   const handleDelete = async () => {
     try {
@@ -55,25 +55,20 @@ const NotificationItem = ({ notification, onDelete }: NotificationItemProps) => 
     }
   };
 
-  const renderRightActions = () => {
-    return (
-      <TouchableOpacity
-        onPress={handleDelete}
-        disabled={isDeleting}
-        style={[
-          styles.deleteAction,
-          theme === 'dark' && { backgroundColor: '#2E1515' },
-        ]}
-        activeOpacity={0.7}
-      >
-        {isDeleting ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <FontAwesome5 name="trash-alt" size={20} color="#FF4444" />
-        )}
-      </TouchableOpacity>
-    );
-  };
+  const renderRightActions = () => (
+    <TouchableOpacity
+      onPress={handleDelete}
+      disabled={isDeleting}
+      style={[styles.deleteAction, theme === 'dark' && { backgroundColor: '#2E1515' }]}
+      activeOpacity={0.7}
+    >
+      {isDeleting ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <FontAwesome5 name="trash-alt" size={20} color="#FF4444" />
+      )}
+    </TouchableOpacity>
+  );
 
   return (
     <Swipeable
@@ -97,35 +92,28 @@ const NotificationItem = ({ notification, onDelete }: NotificationItemProps) => 
         <View style={styles.notificationContent}>
           <View style={styles.notificationHeader}>
             <Text
-              style={[
-                styles.notificationTitle,
-                theme === 'dark' && { color: '#E0E0E0' },
-              ]}
+              style={[styles.notificationTitle, theme === 'dark' && { color: '#E0E0E0' }]}
             >
               {notification.title}
             </Text>
           </View>
           <Text
-            style={[
-              styles.notificationContentText,
-              theme === 'dark' && { color: '#B3B3B3' },
-            ]}
+            style={[styles.notificationContentText, theme === 'dark' && { color: '#B3B3B3' }]}
           >
             {notification.content}
           </Text>
-          <Text
-            style={[
-              styles.notificationTime,
-              theme === 'dark' && { color: '#61728C' },
-            ]}
-          >
-            {formatDate(notification.createdAt)}
+          <Text style={[styles.notificationTime, theme === 'dark' && { color: '#61728C' }]}>
+            {formatNotificationDate(notification.createdAt)}
           </Text>
         </View>
       </View>
     </Swipeable>
   );
-};
+});
+
+const NotificationListSeparator = memo(function NotificationListSeparator() {
+  return <View style={styles.separator} />;
+});
 
 const Notifications = () => {
   const theme = useUserStore((state) => state.theme);
@@ -160,15 +148,22 @@ const Notifications = () => {
     setRefreshing(false);
   };
 
-  const handleDelete = async (notificationId: string) => {
-    await deleteNotification(notificationId);
-  };
-
-  const renderItem = ({ item }: { item: any }) => (
-    <NotificationItem notification={item} onDelete={handleDelete} />
+  const handleDelete = useCallback(
+    async (notificationId: string) => {
+      await deleteNotification(notificationId);
+    },
+    [deleteNotification],
   );
 
-  const renderEmptyState = () => (
+  const renderItem: ListRenderItem<Notification> = useCallback(
+    ({ item }) => (
+      <NotificationItem notification={item} onDelete={handleDelete} theme={theme} />
+    ),
+    [handleDelete, theme],
+  );
+
+  const renderEmptyState = useCallback(
+    () => (
     <View style={styles.emptyContainer}>
       <FontAwesome5
         name="bell-slash"
@@ -192,6 +187,8 @@ const Notifications = () => {
         You'll see your notifications here when they arrive
       </Text>
     </View>
+    ),
+    [theme],
   );
 
   return (
@@ -267,16 +264,18 @@ const Notifications = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <FlatList
+          <FlashList
+            style={{ flex: 1 }}
             data={notifications}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
+            extraData={theme}
             contentContainerStyle={[
               styles.listContent,
               notifications.length === 0 && styles.emptyListContent,
             ]}
             ListEmptyComponent={renderEmptyState}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ItemSeparatorComponent={NotificationListSeparator}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

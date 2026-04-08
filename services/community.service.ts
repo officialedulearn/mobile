@@ -474,6 +474,14 @@ export class CommunityService {
   }
   async connectWebSocket(): Promise<Socket> {
     try {
+      if (this.socket?.connected) {
+        return this.socket;
+      }
+      if (this.socket) {
+        this.socket.disconnect();
+        this.socket = null;
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -583,8 +591,9 @@ export class CommunityService {
   }
 
   joinRoom(communityId: string, userId?: string, callback?: (response: any) => void): void {
-    if (!this.socket) {
-      throw new Error("WebSocket not connected");
+    if (!this.socket?.connected) {
+      callback?.({ error: "WebSocket not connected" });
+      return;
     }
 
     const data: any = { communityId };
@@ -595,8 +604,8 @@ export class CommunityService {
   }
 
   leaveRoom(communityId: string, callback?: (response: any) => void): void {
-    if (!this.socket) {
-      throw new Error("WebSocket not connected");
+    if (!this.socket?.connected) {
+      return;
     }
 
     this.socket.emit("leave_room", { communityId }, callback);

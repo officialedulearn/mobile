@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
 import { useNotifications } from "@/hooks/useNotifications";
-import { RoadmapService } from "@/services/roadmap.service";
+import useRoadmapStore from "@/core/roadmapState";
 
 type Props = {};
 
@@ -15,7 +15,7 @@ const identity = (props: Props) => {
   const { user, setUser, theme } = useUserStore();
   const { scheduleNotification } = useNotifications();
   const userService = new UserService();
-  const roadmapService = new RoadmapService();
+  const { fetchRoadmaps } = useRoadmapStore();
 
   const handleFinishSetup = async () => {
     if (!learningGoal.trim()) {
@@ -44,11 +44,12 @@ const identity = (props: Props) => {
       });
 
       try {
-        const roadmap = await roadmapService.getUserRoadmaps(user.id);
+        await fetchRoadmaps(user.id);
+        const { roadmaps } = useRoadmapStore.getState();
 
-        if (roadmap && roadmap.length > 0) {
+        if (roadmaps.length > 0) {
           await scheduleNotification("Your roadmap has been generated", "You are now ready to start your learning journey", {
-            screen: `roadmaps/${roadmap[0].id}`
+            screen: `roadmaps/${roadmaps[0].id}`
           });
         }
       } catch (roadmapError) {

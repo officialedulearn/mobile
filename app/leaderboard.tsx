@@ -1,14 +1,50 @@
 import BackButton from "@/components/backButton";
 import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View, ActivityIndicator } from "react-native";
+import { Image, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity } from "react-native";
 import { DataTable } from "react-native-paper";
 import { UserService } from "@/services/auth.service";
 import { User } from "@/interface/User";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 
+function getNextSunday(): Date {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + ((7 - now.getDay()) % 7));
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function CountdownTimer({ until, theme }: { until: Date; theme?: "light" | "dark" }) {
+  const [remaining, setRemaining] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      const diff = until.getTime() - now.getTime();
+      if (diff <= 0) {
+        setRemaining("Resetting...");
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setRemaining(`${days}d ${hours}h`);
+    };
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [until]);
+
+  return (
+    <Text style={[styles.countdownText, theme === "dark" && { color: "#E0E0E0" }]}>
+      {remaining}
+    </Text>
+  );
+}
+
 const Leaderboard = () => {
   const [page, setPage] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<"allTime" | "weekly">("allTime");
   const theme = useUserStore(s => s.theme);
   const user = useUserStore(s => s.user);
   const [numberOfItemsPerPageList] = useState([5, 10, 15]);
@@ -17,6 +53,7 @@ const Leaderboard = () => {
   );
 
   const [users, setUsers] = useState<User[]>([]);
+  const [weeklyUsers, setWeeklyUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,12 +85,26 @@ const Leaderboard = () => {
     fetchLeaderboard();
   }, []);
 
+  useEffect(() => {
+    if (activeTab !== "weekly") return;
+    const fetchWeekly = async () => {
+      try {
+        const data = await userService.getWeeklyLeaderboard();
+        setWeeklyUsers(data);
+      } catch (err) {
+        console.error("Failed to fetch weekly leaderboard:", err);
+      }
+    };
+    fetchWeekly();
+  }, [activeTab]);
+
+  const displayUsers = activeTab === "allTime" ? users : weeklyUsers;
   const from = page * itemsPerPage;
-  const to = Math.min((page + 1) * itemsPerPage, users.length);
+  const to = Math.min((page + 1) * itemsPerPage, displayUsers.length);
 
   useEffect(() => {
     setPage(0);
-  }, [itemsPerPage]);
+  }, [itemsPerPage, activeTab]);
 
   const getLevelColor = (level: string) => {
     switch (level?.toLowerCase()) {
@@ -71,7 +122,7 @@ const Leaderboard = () => {
   };
 
   const getTopThreeUsers = () => {
-    const topThree = users.slice(0, 3);
+    const topThree = displayUsers.slice(0, 3);
     return {
       first: topThree[0] || null,
       second: topThree[1] || null,
@@ -80,7 +131,7 @@ const Leaderboard = () => {
   };
 
   const getRemainingUsers = () => {
-    const remainingUsers = users.slice(3, 10).map((userData, index) => ({
+    const remainingUsers = displayUsers.slice(3, 10).map((userData, index) => ({
       key: index + 4,
       rank: index + 4,
       name: userData.name,
@@ -89,11 +140,11 @@ const Leaderboard = () => {
       isCurrentUser: user?.id === userData.id,
     }));
 
-    const currentUserInTop3 = users.slice(0, 3).some(userData => userData.id === user?.id);
-    const currentUserInTop10 = users.slice(0, 10).some(userData => userData.id === user?.id);
+    const currentUserInTop3 = displayUsers.slice(0, 3).some(userData => userData.id === user?.id);
+    const currentUserInTop10 = displayUsers.slice(0, 10).some(userData => userData.id === user?.id);
     
     if (user && !currentUserInTop3 && !currentUserInTop10) {
-      const currentUserRank = users.findIndex(userData => userData.id === user.id) + 1;
+      const currentUserRank = displayUsers.findIndex(userData => userData.id === user.id) + 1;
       
       if (currentUserRank > 10) {
         remainingUsers.push({
@@ -153,6 +204,40 @@ const Leaderboard = () => {
       <Text style={[styles.subText, theme === "dark" && { color: "#A0A0A0" }]}>
         See how you rank against other learners and climb your way to the top.
       </Text>
+
+      <View style={[styles.tabContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "allTime" && styles.activeTab]}
+          onPress={() => setActiveTab("allTime")}
+        >
+          <Text style={[styles.tabText, activeTab === "allTime" && styles.activeTabText]}>
+            All Time
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "weekly" && styles.activeTab]}
+          onPress={() => setActiveTab("weekly")}
+        >
+          <Text style={[styles.tabText, activeTab === "weekly" && styles.activeTabText]}>
+            Weekly
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === "weekly" && (
+        <View style={[styles.weeklyHeader, theme === "dark" && { backgroundColor: "#131313" }]}>
+          <Text style={[styles.weeklyTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+            This Week&apos;s Competition
+          </Text>
+          <Text style={[styles.prizeText, theme === "dark" && { color: "#A0A0A0" }]}>
+            🏆 Prizes: 7 days • 3 days • 1 day premium
+          </Text>
+          <CountdownTimer until={getNextSunday()} theme={theme} />
+          <Text style={[styles.countdownLabel, theme === "dark" && { color: "#A0A0A0" }]}>
+            until reset
+          </Text>
+        </View>
+      )}
 
       <View style={styles.board}>
         <View style={styles.topthree}>
@@ -351,6 +436,63 @@ const styles = StyleSheet.create({
     color: "#61728C",
     fontWeight: "400",
     marginTop: 10,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    marginTop: 16,
+    backgroundColor: "#EDF3FC",
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  activeTab: {
+    backgroundColor: "#000",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Satoshi-Regular",
+    color: "#61728C",
+  },
+  activeTabText: {
+    color: "#00FF80",
+  },
+  weeklyHeader: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#EDF3FC",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  weeklyTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Satoshi-Regular",
+    color: "#2D3C52",
+    marginBottom: 8,
+  },
+  prizeText: {
+    fontSize: 12,
+    fontFamily: "Satoshi-Regular",
+    color: "#61728C",
+    marginBottom: 8,
+  },
+  countdownText: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "Satoshi-Regular",
+    color: "#2D3C52",
+  },
+  countdownLabel: {
+    fontSize: 12,
+    fontFamily: "Satoshi-Regular",
+    color: "#61728C",
+    marginTop: 4,
   },
   board: {
     marginTop: 70,

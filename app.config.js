@@ -29,11 +29,15 @@ export default {
       usesAppleSignIn: true,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
-        NSUserNotificationsUsageDescription: "Allow EduLearn to send you notifications about quizzes, achievements, and learning reminders.",
-        NSPhotoLibraryUsageDescription: "EduLearn needs access to your photo library so you can upload profile images and learning-related content.",
-        NSPhotoLibraryAddUsageDescription: "EduLearn saves selected images to your photo library when you choose to download or share content.",
-        NSCameraUsageDescription: "EduLearn uses the camera so you can take photos for your profile and learning activities."
-      }
+        NSUserNotificationsUsageDescription:
+          "Allow EduLearn to send you notifications about quizzes, achievements, and learning reminders.",
+        NSPhotoLibraryUsageDescription:
+          "EduLearn needs access to your photo library so you can upload profile images and learning-related content.",
+        NSPhotoLibraryAddUsageDescription:
+          "EduLearn saves selected images to your photo library when you choose to download or share content.",
+        NSCameraUsageDescription:
+          "EduLearn uses the camera so you can take photos for your profile and learning activities.",
+      },
     },
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
@@ -53,6 +57,17 @@ export default {
       typedRoutes: true,
     },
     plugins: [
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/images/mainlogo.png",
+          resizeMode: "contain",
+          backgroundColor: "#000",
+        },
+      ],
+      "expo-image",
+      "expo-sharing",
+      "expo-asset",
       "expo-build-properties",
       "expo-font",
       "expo-router",
@@ -62,18 +77,19 @@ export default {
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/mainlogo.png",
-          "color": "#ffffff",
-          "sounds": ["./assets/notification.mp3"],
-          "iosDisplayInForeground": true
-        }
+          icon: "./assets/images/mainlogo.png",
+          color: "#ffffff",
+          sounds: ["./assets/notification.mp3"],
+          iosDisplayInForeground: true,
+        },
       ],
       [
         "expo-audio",
         {
-          "microphonePermission": "EduLearn uses the microphone to capture your voice for AI transcription. For example, you can speak your questions instead of typing, and the AI will convert your speech to text."
-        }
-      ]
+          microphonePermission:
+            "EduLearn uses the microphone to capture your voice for AI transcription. For example, you can speak your questions instead of typing, and the AI will convert your speech to text.",
+        },
+      ],
     ],
   },
 };

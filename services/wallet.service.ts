@@ -135,6 +135,28 @@ export class WalletService {
     }
   }
 
+  async purchaseStreakShield(userId: string): Promise<{ success: boolean; expiresAt: Date }> {
+    try {
+      const response = await httpClient.post(`/subscription/purchase/streak-shield/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error purchasing streak shield:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to purchase Streak Shield';
+      throw new Error(errorMessage);
+    }
+  }
+
+  async purchaseQuizRefresh(userId: string): Promise<{ success: boolean; newLimit: number }> {
+    try {
+      const response = await httpClient.post(`/subscription/purchase/quiz-refresh/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error purchasing quiz refresh:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to purchase quiz refresh';
+      throw new Error(errorMessage);
+    }
+  }
+
   async getUserEarnings(userId: string): Promise<UserEarningsResponse> {
     try {
       const response = await httpClient.get(`/wallet/earnings/${userId}`);
