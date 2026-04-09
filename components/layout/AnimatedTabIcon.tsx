@@ -29,7 +29,7 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
       stiffness: 300,
     });
     opacity.value = withTiming(focused ? 1 : 0.8, { duration: 200 });
-  }, [focused]);
+  }, [focused, opacity, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -42,12 +42,5 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  icon: {
-    width: 20,
-    height: 20,
-  },
-});
 
 export default AnimatedTabIcon;

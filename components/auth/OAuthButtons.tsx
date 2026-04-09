@@ -57,7 +57,7 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
         throw new Error('Failed to process OAuth callback');
       }
 
-      const { user: backendUser, isNewUser, needsUsername } = await response.json();
+      const { isNewUser, needsUsername } = await response.json();
       console.log('OAuth callback response:', { isNewUser, needsUsername });
 
       if (needsUsername) {

@@ -1,25 +1,19 @@
 import useUserStore from "@/core/userState";
 import { Tabs, usePathname, useSegments } from "expo-router";
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
+
 import React, { useEffect, useState, useRef, createContext, useContext } from "react";
 import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View, Dimensions } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from "expo-blur";
+
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
   withSpring,
   withTiming,
-  SlideInRight,
-  SlideInLeft,
-  Easing,
 } from 'react-native-reanimated';
-import * as Device from 'expo-device';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const supportsNativeTabs = Platform.OS === 'ios' && parseInt(Platform.Version as string, 10) >= 26;
 
 const TAB_ORDER = ['index', 'hub', 'chat', 'rewards', 'profile'];
 
@@ -27,7 +21,7 @@ export const SlideTransitionContext = createContext<{
   direction: 'left' | 'right';
 }>({ direction: 'right' });
 
-type Props = {};
+type Props = Record<string, never>;
 
 const AnimatedTabIcon: React.FC<{
   source: any;
@@ -44,7 +38,7 @@ const AnimatedTabIcon: React.FC<{
       stiffness: 300,
     });
     opacity.value = withTiming(focused ? 1 : 0.8, { duration: 200 });
-  }, [focused]);
+  }, [focused, opacity, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -54,6 +48,30 @@ const AnimatedTabIcon: React.FC<{
   return (
     <Animated.View style={animatedStyle}>
       <Image source={source} style={[style, { tintColor: color }]} />
+    </Animated.View>
+  );
+};
+
+const ChatIconComponent: React.FC<{ focused: boolean }> = ({ focused }) => {
+  const scale = useSharedValue(1);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1.1 : 1, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }, [focused, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Image
+        source={require("@/assets/images/icons/Button.png")}
+        style={styles.chatIcon}
+      />
     </Animated.View>
   );
 };
@@ -178,29 +196,7 @@ const TabLayout = (props: Props) => {
         name="chat"
         options={{
           title: "", 
-          tabBarIcon: ({ focused }) => {
-            const scale = useSharedValue(1);
-            
-            React.useEffect(() => {
-              scale.value = withSpring(focused ? 1.1 : 1, {
-                damping: 15,
-                stiffness: 300,
-              });
-            }, [focused]);
-
-            const animatedStyle = useAnimatedStyle(() => ({
-              transform: [{ scale: scale.value }],
-            }));
-
-            return (
-              <Animated.View style={animatedStyle}>
-                <Image
-                  source={require("@/assets/images/icons/Button.png")}
-                  style={styles.chatIcon}
-                />
-              </Animated.View>
-            );
-          },
+          tabBarIcon: ({ focused }) => <ChatIconComponent focused={focused} />,
         }}
       />
 

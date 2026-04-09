@@ -1,5 +1,5 @@
-import BackButton from "@/components/backButton";
-import QuizRefreshModal from "@/components/QuizRefreshModal";
+import BackButton from "@/components/common/backButton";
+import QuizRefreshModal from "@/components/quiz/QuizRefreshModal";
 import useUserStore from "@/core/userState";
 import useQuizStore from "@/core/quizState";
 import useChatStore from "@/core/chatState";
@@ -40,6 +40,7 @@ const Quiz = () => {
       await quizState.generateQuiz(chatId, user?.id as string);
     };
     if (chatId && user?.id) fetch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatId, user?.id]);
 
   useEffect(() => {

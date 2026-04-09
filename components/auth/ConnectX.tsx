@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, useAuthRequest, CodeChallengeMethod } from "expo-auth-session";
-import httpClient from "../utils/httpClient";
-import useUserStore from "../core/userState";
+import httpClient from "../../utils/httpClient";
+import useUserStore from "../../core/userState";
 import Constants from "expo-constants";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -97,6 +97,7 @@ export default function ConnectX() {
     };
 
     handleResponse();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [response, currentUser]);
 
   const connectTwitter = async () => {

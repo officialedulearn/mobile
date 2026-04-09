@@ -1,14 +1,14 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Linking } from "react-native";
 import React, { useEffect, useState } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useRewardsStore from "@/core/rewardsState";
 import { useLocalSearchParams } from "expo-router";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const nftPage = (props: Props) => {
+const NftPage = (_props: Props) => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [reward, setReward] = useState<any>(null);
   const [userReward, setUserReward] = useState<any>(null);
@@ -32,7 +32,7 @@ const nftPage = (props: Props) => {
         } else {
           setUserReward(null);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error("Error fetching rewards:", error);
       } finally {
         setIsLoading(false);
@@ -40,6 +40,7 @@ const nftPage = (props: Props) => {
     };
 
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.id]);
 
   const formatDate = (dateString: string) => {
@@ -47,7 +48,7 @@ const nftPage = (props: Props) => {
     try {
       const date = new Date(dateString);
       return format(date, "MMM d, yyyy");
-    } catch (error) {
+    } catch (_error) {
       return dateString;
     }
   };
@@ -121,7 +122,7 @@ const nftPage = (props: Props) => {
             disabled={!reward?.signature}
           >
             <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
-              View this user's badge on chain
+              View this user&apos;s badge on chain
             </Text>
           </TouchableOpacity>
         )}
@@ -130,7 +131,7 @@ const nftPage = (props: Props) => {
   );
 };
 
-export default nftPage;
+export default NftPage;
 
 const styles = StyleSheet.create({
   container: {

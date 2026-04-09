@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View, Image, ScrollView, Dimensions, FlatList, TouchableOpacity, ImageBackground, Pressable, ActivityIndicator, SafeAreaView, Switch } from "react-native";
+import { StyleSheet, Text, View, Image, ScrollView, Dimensions, TouchableOpacity, ImageBackground, Pressable, ActivityIndicator, SafeAreaView, Switch } from "react-native";
 import React, { useEffect } from "react";
 import { Ionicons } from '@expo/vector-icons';
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import { useLocalSearchParams, router } from "expo-router";
 import { UserService } from "@/services/auth.service";
-import DailyCheckInStreak from "@/components/streak";
+import DailyCheckInStreak from "@/components/rewards/streak";
 import { getUserMetrics } from "@/utils/utils";
 import { ActivityService } from "@/services/activity.service";
 import useRewardsStore from "@/core/rewardsState";
@@ -13,7 +13,7 @@ import { NotificationPreferences } from "@/services/social.service";
 import useUserStore from "@/core/userState";
 import * as Haptics from "expo-haptics";
 
-type Props = {};
+type Props = Record<string, never>;
 
 const ACHIEVEMENT_IMAGES = {
   xp: require("@/assets/images/icons/medal-06.png"),
@@ -117,6 +117,7 @@ const User = (props: Props) => {
     };
 
     fetchUser();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -148,6 +149,7 @@ const User = (props: Props) => {
       }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     loadFollowStatus();
   }, [id, currentUser?.id]);
 
@@ -197,6 +199,7 @@ const User = (props: Props) => {
           console.error("Failed to fetch quiz activities:", error);
         }
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }
     fetchMetrics();
   }, [id]);

@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import AnimatedPressable from "../AnimatedPressable";
+import AnimatedPressable from "../common/AnimatedPressable";
 import useUserStore from "@/core/userState";
 import useRoadmapStore from "@/core/roadmapState";
 import { RoadmapWithSteps } from "@/interface/Roadmap";
@@ -43,6 +43,7 @@ const RoadmapCard = ({ roadmapId }: Props) => {
       }
     };
     load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roadmapId]);
 
   const handleViewRoadmap = () => {

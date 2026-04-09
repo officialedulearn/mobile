@@ -10,7 +10,6 @@ interface SolanaQRProps {
 }
 
 const SolanaQR = ({ address, amount = '', label = 'EduLearn Wallet' }: SolanaQRProps) => {
-  const { theme } = useUserStore();
 
   const buildSolanaUri = () => {
     if (!address) return '';

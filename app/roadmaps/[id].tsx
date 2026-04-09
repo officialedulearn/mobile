@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Share } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from "react-native";
 import React, { useState, useEffect } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import { RoadmapWithSteps, RoadmapStep } from "@/interface/Roadmap";
 import useRoadmapStore from "@/core/roadmapState";
@@ -44,10 +44,12 @@ const Roadmap = () => {
 
   useEffect(() => {
     fetchRoadmap();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useFocusEffect(
     React.useCallback(() => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       fetchRoadmap();
     }, [id])
   );

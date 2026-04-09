@@ -16,7 +16,7 @@ interface AchievementCardProps {
 }
 
 export function AchievementCard({ title, imageKey, metric }: AchievementCardProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { isDark, colors } = useTheme();
 
   return (
     <View style={[

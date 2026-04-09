@@ -26,7 +26,7 @@ import {
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
 import { useSharedValue } from "react-native-reanimated";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import useCommunityStore from "@/core/communityState";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -37,7 +37,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
-import AnimatedPressable from "@/components/AnimatedPressable";
+import AnimatedPressable from "@/components/common/AnimatedPressable";
 import { router, useLocalSearchParams } from "expo-router";
 import { CommunityService } from "@/services/community.service";
 import type {
@@ -243,6 +243,7 @@ const Room = () => {
         150,
       );
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
 
   useEffect(() => {
@@ -428,6 +429,7 @@ const Room = () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     };
   }, [id, user?.id, moderatorId]);
 

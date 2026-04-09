@@ -30,7 +30,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       -1,
       false
     );
-  }, []);
+  }, [rotation]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],

@@ -1,13 +1,13 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, Share } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import React, { useEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import useRewardsStore from "@/core/rewardsState";
 import { CardSharingService } from "@/services/cardSharing.service";
 import useUserStore from "@/core/userState";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const nftClaimed = (props: Props) => {
+const NftClaimed = (_props: Props) => {
   const [reward, setReward] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -51,6 +51,7 @@ const nftClaimed = (props: Props) => {
     };
 
     loadReward();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rewardId]);
 
   const handleViewNFTs = () => {
@@ -109,7 +110,7 @@ const nftClaimed = (props: Props) => {
             />
           )}
           <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
-            You've successfully claimed {reward.title || "your badge"}, a collectible badge for
+            You&apos;ve successfully claimed {reward.title || "your badge"}, a collectible badge for
             your achievement. You can now view this in your Claimed Collection.
           </Text>
         </View>
@@ -131,7 +132,7 @@ const nftClaimed = (props: Props) => {
   );
 };
 
-export default nftClaimed;
+export default NftClaimed;
 
 const styles = StyleSheet.create({
   container: {

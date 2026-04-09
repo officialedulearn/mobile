@@ -20,7 +20,7 @@ export function ChatInput({
   isLoading = false,
   placeholder = 'Type a message...',
 }: ChatInputProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { isDark, colors } = useTheme();
 
   return (
     <View style={[

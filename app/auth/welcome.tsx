@@ -1,9 +1,9 @@
 import useUserStore from "@/core/userState";
 import { router } from "expo-router";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, useColorScheme} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-type Props = {};
+type Props = Record<string, never>;
 
 const Welcome = (props: Props) => {
   const { user, theme } = useUserStore();

@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import React, { useState } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";

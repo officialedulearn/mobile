@@ -8,7 +8,7 @@ import {
   Dimensions,
   ImageBackground,
   ScrollView,
-  ActivityIndicator,
+  
   Alert,
   Modal,
   Share,
@@ -21,27 +21,21 @@ import { StatusBar } from 'expo-status-bar';
 import useActivityStore from '@/core/activityState';
 import { router } from 'expo-router';
 import { WalletService } from '@/services/wallet.service';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/hooks/useTheme';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
 import { Design } from '@/utils/design';
 
-type Props = {};
+type Props = Record<string, never>;
 
 const Rewards = (props: Props) => {
   const user = useUserStore((s) => s.user);
   const fetchWalletBalance = useUserStore((s) => s.fetchWalletBalance);
   const { isDark } = useTheme();
-  const screenStyles = useScreenStyles();
-  const [userEarnings, setUserEarnings] = useState<{ sol: number; edln: number; hasEarnings: boolean }>({
+    const [userEarnings, setUserEarnings] = useState<{ sol: number; edln: number; hasEarnings: boolean }>({
     sol: 0,
     edln: 0,
     hasEarnings: false,
   });
-  const [claimingEDLN, setClaimingEDLN] = useState(false);
-  const [claimingSOL, setClaimingSOL] = useState(false);
-  const [loadingEarnings, setLoadingEarnings] = useState(false);
-  const [successModalVisible, setSuccessModalVisible] = useState(false);
+        const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'USDC', amount: string} | null>(null);
   
   const [page, setPage] = useState<number>(0);
@@ -140,6 +134,7 @@ const Rewards = (props: Props) => {
       fetchActivities(user.id);
       fetchEarnings();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, fetchUserRewards, fetchActivities]);
 
   const handleClaimEDLN = async () => {
@@ -258,8 +253,8 @@ const Rewards = (props: Props) => {
 
         <Text style={[styles.upskillText, theme === "dark" && { color: "#000" }]}>
           {xpNeeded > 0
-            ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`
-            : "Congratulations! You've reached the highest level! 🏆"}
+            ? `Great work! You&apos;re just ${xpNeeded} XP away from the next badge 🔥`
+            : "Congratulations! You&apos;ve reached the highest level! 🏆"}
         </Text>
       </View>
       
@@ -312,7 +307,7 @@ const Rewards = (props: Props) => {
         ) : (
           <View style={[styles.emptyStateContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
             <Text style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}>
-              You haven't earned any badges yet.
+              You haven&apos;t earned any badges yet.
             </Text>
             <Text style={[styles.emptyStateSubtext, theme === "dark" && { color: "#B3B3B3" }]}>
               Complete quizzes and lessons to collect them!

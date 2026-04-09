@@ -1,4 +1,4 @@
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import { supabase } from "@/utils/supabase";
 import { router } from "expo-router";

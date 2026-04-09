@@ -42,7 +42,7 @@ import ChatHeaderBar from "./ChatHeaderBar";
 import { ChatRecordingRow, ChatTextInputRow } from "./ChatComposerInput";
 import ChatTypingIndicator from "./ChatTypingIndicator";
 import { MessageItem } from "./MessageItem";
-import QuizRefreshModal from "../QuizRefreshModal";
+import QuizRefreshModal from "../quiz/QuizRefreshModal";
 import { useRouter } from "expo-router";
 import {
   withRepeat,
@@ -94,9 +94,18 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const recorderState = useAudioRecorderState(audioRecorder);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
-  const waveAnimations = useRef(
-    Array.from({ length: 5 }, () => useSharedValue(0)),
-  ).current;
+  const waveAnimation1 = useSharedValue(0);
+  const waveAnimation2 = useSharedValue(0);
+  const waveAnimation3 = useSharedValue(0);
+  const waveAnimation4 = useSharedValue(0);
+  const waveAnimation5 = useSharedValue(0);
+  const waveAnimations = useRef([
+    waveAnimation1,
+    waveAnimation2,
+    waveAnimation3,
+    waveAnimation4,
+    waveAnimation5,
+  ]).current;
 
   const micButtonScale = useSharedValue(1);
   const micButtonRotation = useSharedValue(0);
@@ -147,6 +156,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     if (messages && messages.length > 0) {
       scrollToBottom();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
   const fetchSuggestions = useCallback(async () => {
@@ -167,6 +177,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       ]);
     } finally {
       setLoadingSuggestions(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }
   }, [user?.id]);
 
@@ -472,6 +483,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       micButtonRotation.value = withTiming(0, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       });
     }
   }, [recorderState.isRecording]);

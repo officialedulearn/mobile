@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Modal,
-  View,
   StyleSheet,
   TouchableOpacity,
   ViewStyle,

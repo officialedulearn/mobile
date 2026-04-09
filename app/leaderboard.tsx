@@ -1,4 +1,4 @@
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity } from "react-native";
 import { DataTable } from "react-native-paper";
@@ -83,6 +83,7 @@ const Leaderboard = () => {
     };
 
     fetchLeaderboard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -95,6 +96,7 @@ const Leaderboard = () => {
         console.error("Failed to fetch weekly leaderboard:", err);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchWeekly();
   }, [activeTab]);
 

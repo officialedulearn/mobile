@@ -10,20 +10,19 @@ import {
   TextInput,
   Image,
   Platform,
-  Linking,
+  
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import Modal from 'react-native-modal';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
-import BackButton from '@/components/backButton';
-import Toast, { ToastType } from '@/components/Toast';
-import SolanaQR from '@/components/SolanaQR';
+import BackButton from '@/components/common/backButton';
+import Toast, { ToastType } from '@/components/common/Toast';
+import SolanaQR from '@/components/wallet/SolanaQR';
 import useUserStore from '@/core/userState';
 import { WalletService, DeviceInfo } from '@/services/wallet.service';
 import { UserService } from '@/services/auth.service';
@@ -39,7 +38,7 @@ const getHighQualityImageUrl = (url: string | null | undefined): string | undefi
 };
 
 const walletService = new WalletService();
-const userService = new UserService();
+new UserService();
 const cardSharingService = new CardSharingService();
 
 function Wallet() {
@@ -55,8 +54,7 @@ function Wallet() {
   const [receiveModalVisible, setReceiveModalVisible] = useState(false);
   const [isBuyModalVisible, setBuyModalVisible] = useState(false);
   const [buyAmount, setBuyAmount] = useState('');
-  const [buySuccessModalVisible, setBuySuccessModalVisible] = useState(false);
-  const [transactionLink, setTransactionLink] = useState<string>('');
+    const [transactionLink, setTransactionLink] = useState<string>('');
   const [isBuying, setIsBuying] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -74,8 +72,7 @@ function Wallet() {
     fiatAmount: number;
     bank: string;
   } | null>(null);
-  const [onrampSuccessModalVisible, setOnrampSuccessModalVisible] = useState(false);
-  const completedEventIdsRef = useRef<Set<string>>(new Set());
+    const completedEventIdsRef = useRef<Set<string>>(new Set());
   const [completedTransactionDetails, setCompletedTransactionDetails] = useState<{
     amount: number;
     fiatAmount: number;
@@ -89,8 +86,7 @@ function Wallet() {
   
   const [isBurning, setIsBurning] = useState(false);
   const [burningAmount, setBurningAmount] = useState<number | null>(null);
-  const [burnSuccessModalVisible, setBurnSuccessModalVisible] = useState(false);
-  const [activeTokenUtilIndex, setActiveTokenUtilIndex] = useState(0);
+    const [activeTokenUtilIndex, setActiveTokenUtilIndex] = useState(0);
   const [isSharingCard, setIsSharingCard] = useState(false);
 
   useEffect(() => {

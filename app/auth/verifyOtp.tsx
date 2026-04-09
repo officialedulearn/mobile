@@ -1,4 +1,4 @@
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
@@ -19,9 +19,9 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { generateUUID } from "@/utils/constants";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const verifyOtp = (props: Props) => {
+const VerifyOtp = (_props: Props) => {
   const { 
     email, 
     isSignUp, 
@@ -53,6 +53,7 @@ const verifyOtp = (props: Props) => {
     if (isReviewer === "1" && email === "playreview@edulearn.com") {
       handleReviewerLogin();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReviewer, email]);
 
   useEffect(() => {
@@ -113,7 +114,7 @@ const verifyOtp = (props: Props) => {
           setUser(userData);
           router.push("/auth/welcome");
         } catch (getUserError) {
-          console.error("Get reviewer user failed:", getUserError);
+          console.error("Get reviewer user failed:");
           Alert.alert(
             "Profile Load Failed",
             "Unable to load reviewer profile. Please contact support."
@@ -238,7 +239,7 @@ const verifyOtp = (props: Props) => {
           if (isLogin === "0") {
             NotificationService.scheduleNotification(
               "Welcome to EduLearn!", 
-              "Account verified successfully! Let's set up your profile.", 
+              "Account verified successfully! Let&apos;s set up your profile.", 
               {
                 screen: "identity",
                 email: email,
@@ -248,7 +249,7 @@ const verifyOtp = (props: Props) => {
           } else {
             NotificationService.scheduleNotification(
               "Welcome Back!", 
-              "You're all set up and ready to continue learning.", 
+              "You&apos;re all set up and ready to continue learning.", 
               {
                 screen: "welcome",
                 email: email,
@@ -257,7 +258,7 @@ const verifyOtp = (props: Props) => {
             router.push("/auth/welcome");
           }
         } catch (getUserError: any) {
-          console.error("❌ Error fetching user:", getUserError);
+          console.error("❌ Error fetching user:");
           const errorMessage = getUserError?.response?.data?.message || getUserError?.message || "Unknown error";
           Alert.alert(
             "Login Failed",
@@ -318,7 +319,7 @@ const verifyOtp = (props: Props) => {
 
             <View style={styles.resendContainer}>
               <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
-                Didn't receive a code?{" "}
+                Didn&apos;t receive a code?{" "}
               </Text>
               <TouchableOpacity 
                 onPress={handleResendOtp}
@@ -490,4 +491,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default verifyOtp;
+export default VerifyOtp;

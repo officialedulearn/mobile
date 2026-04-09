@@ -13,9 +13,9 @@ import * as Clipboard from 'expo-clipboard';
 import Markdown from "react-native-markdown-display";
 import { Message } from "@/interface/Chat";
 import useUserStore from "@/core/userState";
-import AnimatedPressable from "../AnimatedPressable";
+// eslint-disable-next-line import/no-named-as-default
+import AnimatedPressable from "../common/AnimatedPressable";
 import RoadmapCard from "./RoadmapCard";
-import Toast from "../Toast";
 import { useToast } from "@/contexts/ToastContext";
 
 type Props = {
@@ -24,9 +24,9 @@ type Props = {
 };
 
 const MessageItem = ({ message, isStreaming = false }: Props) => {
-
   const theme = useUserStore((s) => s.theme);
-  
+  const { show } = useToast();
+
   if (!message) {
     console.error('MessageItem received undefined message');
     return null;
@@ -34,14 +34,13 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
   
   const isUser = message.role === "user";
   const isLoading = false;
-  const {show} = useToast();
 
   const handleCopyMessage = async () => {
     try {
       const messageText = getMessageContent();
       await Clipboard.setStringAsync(messageText);
       show("success", "Message copied to clipboard!");
-    } catch (error) {
+    } catch (_error) {
       show("error", "Failed to copy message");
     }
   };
@@ -53,7 +52,7 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
         message: messageText,
         title: "AI Response",
       });
-    } catch (error) {
+    } catch (_error) {
       Alert.alert("Error", "Failed to share message");
     }
   };
@@ -73,7 +72,7 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
       } else {
         Alert.alert("Error", "No email app available to send the report");
       }
-    } catch (error) {
+    } catch (_error) {
       Alert.alert("Error", "Failed to open email client");
     }
   };
@@ -295,7 +294,7 @@ const MessageItem = ({ message, isStreaming = false }: Props) => {
                 const withCursor = content + (isStreaming && !isUser ? ' ▊' : '');
                 
                 return renderContentWithRoadmap(withCursor);
-              } catch (error) {
+              } catch (_error) {
                 console.error('Error rendering markdown:', error);
                 const content = getMessageContent() || '';
                 return (

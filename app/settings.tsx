@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator } from "react-native";
 import React, { useState } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import useActivityStore from "@/core/activityState";
 import { router } from "expo-router";
@@ -13,9 +13,9 @@ import { supabase } from "@/utils/supabase";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const settings = (props: Props) => {
+const Settings = (_props: Props) => {
     const {user, logout, clearAllUserData, theme} = useUserStore();
     const {resetState: resetActivityState} = useActivityStore();
     const [loading, setLoading] = useState(false);
@@ -23,7 +23,8 @@ const settings = (props: Props) => {
     const [confirmModalVisible, setConfirmModalVisible] = useState(false);
     const [privateKey, setPrivateKey] = useState<string | null>(null);
     const userService = new UserService();
-    const payPro = async (userId: string) => {
+    const _payPro = 
+async (userId: string) => {
       // if (!userId) {
       //   Alert.alert("Error", "User information not available");
       //   return;
@@ -59,7 +60,8 @@ const settings = (props: Props) => {
 
     }
     
-    const exportPrivateKey = async () => {
+    const _exportPrivateKey = 
+async () => {
       if (!user?.id) {
         Alert.alert("Error", "User information not available");
         return;
@@ -414,7 +416,7 @@ const settings = (props: Props) => {
   );
 };
 
-export default settings;
+export default Settings;
 
 const styles = StyleSheet.create({
   container: {

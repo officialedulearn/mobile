@@ -1,5 +1,5 @@
 import Chat from '@/components/chat/Chat';
-import useUserStore from '@/core/userState';
+
 import useChatStore from '@/core/chatState';
 import { Chat as chatInterface, Message } from '@/interface/Chat';
 import { generateUUID } from '@/utils/constants';
@@ -15,7 +15,7 @@ const ChatScreen = () => {
     chatIdFromNav: string;
   }>();
   const [chat, setChat] = useState<chatInterface>();
-  const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
+  const [initialMessages, setInitialMessages] = useState<Message[]>([]);
   const { isDark } = useTheme();
   const screenStyles = useScreenStyles();
   const { fetchMessages, fetchChatById } = useChatStore();
@@ -28,7 +28,7 @@ const ChatScreen = () => {
     if (chatIdFromNav && chatIdFromNav !== currentChatId) {
       setCurrentChatId(chatIdFromNav);
     }
-  }, [chatIdFromNav]);
+  }, [chatIdFromNav, currentChatId]);
 
   useEffect(() => {
     const loadChatAndMessages = async () => {
@@ -66,7 +66,7 @@ const ChatScreen = () => {
     };
 
     loadChatAndMessages();
-  }, [currentChatId]);
+  }, [currentChatId, fetchMessages, fetchChatById]);
 
   return (
     <SafeAreaView style={[screenStyles.container]}>

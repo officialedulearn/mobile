@@ -8,8 +8,8 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import React, { use, useEffect, useState } from "react";
-import BackButton from "@/components/backButton";
+import React, { useEffect, useState } from "react";
+import BackButton from "@/components/common/backButton";
 import { UserService } from "@/services/auth.service";
 import { User } from "@/interface/User";
 import { debounce } from "@/utils/utils";
@@ -136,7 +136,7 @@ const SearchResult = ({
   );
 };
 
-type Props = {};
+type Props = Record<string, never>;
 
 const Search = (props: Props) => {
   const [users, setUsers] = useState<User[]>([]);
@@ -171,6 +171,7 @@ const Search = (props: Props) => {
 
   useEffect(() => {
     debouncedSearch(searchQuery);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const handleSearchInputChange = (text: string) => {

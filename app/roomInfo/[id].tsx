@@ -7,7 +7,7 @@ import {
   RefreshControl,
 } from "react-native";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import { Image } from "expo-image";
 import * as Clipboard from "expo-clipboard";
 import useUserStore from "@/core/userState";

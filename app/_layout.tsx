@@ -63,6 +63,7 @@ export default function RootLayout() {
       console.log("Current theme:", theme);
     }
     fetchTheme();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

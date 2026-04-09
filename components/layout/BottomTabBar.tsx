@@ -1,19 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   Keyboard,
   Platform,
   TouchableOpacity,
-  Image,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { usePathname, useSegments } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { useSegments } from 'expo-router';
 import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -30,10 +26,8 @@ const TAB_ORDER = ['index', 'hub', 'chat', 'rewards', 'profile'];
 
 const BottomTabBar: React.FC<BottomTabBarProps> = ({ onTabPress }) => {
   const theme = useUserStore((s) => s.theme);
-  const streakModalVisible = useUserStore((s) => s.streakModalVisible);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
-  const pathname = usePathname();
   const segments = useSegments();
   const isChatTab = segments.includes('chat');
 

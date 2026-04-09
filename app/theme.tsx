@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import { Image } from "expo-image";
 import useUserStore from "@/core/userState";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const theme = (props: Props) => {
+const Theme = (_props: Props) => {
   const currentTheme = useUserStore((state) => state.theme);
   const { setTheme } = useUserStore();
   const changeTheme = (newTheme: "dark" | "light") => {
@@ -111,7 +111,7 @@ const theme = (props: Props) => {
   );
 };
 
-export default theme;
+export default Theme;
 
 const styles = StyleSheet.create({
   container: {

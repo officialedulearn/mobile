@@ -13,8 +13,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import useUserStore from '@/core/userState';
-import Design from '@/utils/design';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -28,7 +26,6 @@ type ToastProps = {
 
 const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProps) => {
   const insets = useSafeAreaInsets();
-  const { theme } = useUserStore();
   const scale = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
 
@@ -48,7 +45,8 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
       scale.value = withTiming(0, { duration: 250, easing: Easing.in(Easing.ease) });
       contentOpacity.value = withTiming(0, { duration: 150 });
     }
-  }, [visible]);
+  }, [visible, contentOpacity, duration, type, scale]);
+ // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const triggerHaptic = (toastType: ToastType) => {
     switch (toastType) {

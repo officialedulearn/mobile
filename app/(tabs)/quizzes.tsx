@@ -20,10 +20,8 @@ import { ScreenContainer } from '@/components/common/ScreenContainer';
 import { useTheme } from '@/hooks/useTheme';
 import { useScreenStyles } from '@/hooks/useScreenStyles';
 import { Design } from '@/utils/design';
-import { QuizCard } from '@/components/quiz/QuizCard';
 
 const Quizzes = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const [page, setPage] = useState<number>(0);
   const [numberOfItemsPerPageList] = useState([10, 15, 20]);
@@ -49,7 +47,7 @@ const Quizzes = () => {
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = screenWidth * 0.75;
   const from = page * itemsPerPage;
-  const to = Math.min((page + 1) * itemsPerPage, quizActivities.length);
+  // const [isLoading, setIsLoading]o = Math.min((page + 1) * itemsPerPage, quizActivities.length);
 
   useEffect(() => {
     setPage(0);
@@ -61,7 +59,7 @@ const Quizzes = () => {
     fetchQuizActivities(user.id as unknown as string);
   }, [user?.id, fetchChatList, fetchQuizActivities]);
 
-  const startQuiz = (chatId: string) => {
+  // const [isLoading, setIsLoading]tartQuiz = (chatId: string) => {
     const currentCredits = Number(user?.credits) || 0;
 
     if (currentCredits <= 0.5) {
@@ -79,11 +77,11 @@ const Quizzes = () => {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffsetX / (cardWidth + 20));
+    // const [isLoading, setIsLoading]ndex = Math.round(contentOffsetX / (cardWidth + 20));
     setActiveIndex(index);
   };
 
-  const testedChats = chats.filter((chat) => !chat.tested);
+  // const [isLoading, setIsLoading]estedChats = chats.filter((chat) => !chat.tested);
 
   return (
     <>
@@ -100,7 +98,7 @@ const Quizzes = () => {
             styles.subtext,
             { color: isDark ? screenStyles.text.secondary : screenStyles.text.secondary }
           ]}>
-            Practice what you've learned. Earn XP. Get smarter.
+            Practice what you&apos;ve learned. Earn XP. Get smarter.
           </Text>
 
           <Text style={[

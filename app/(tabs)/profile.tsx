@@ -1,9 +1,9 @@
-import DailyCheckInStreak from '@/components/streak';
+import DailyCheckInStreak from '@/components/rewards/streak';
 import useUserStore from '@/core/userState';
 import { levels } from '@/utils/constants';
 import { supabase } from '@/utils/supabase';
 import { getUserMetrics } from '@/utils/utils';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
@@ -12,19 +12,16 @@ import { WalletService } from '@/services/wallet.service';
 import { UserService } from '@/services/auth.service';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import useRoadmapStore from '@/core/roadmapState';
-import { Roadmap } from '@/interface/Roadmap';
 import { useTheme } from '@/hooks/useTheme';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
 import { Design } from '@/utils/design';
 import { AchievementCard } from '@/components/profile/AchievementCard';
 
-type Props = {};
+type Props = Record<string, never>;
 
 const Profile = (props: Props) => {
   const { user } = useUserStore();
   const { isDark } = useTheme();
-  const screenStyles = useScreenStyles();
-  const walletBalance = useUserStore((state) => state.walletBalance);
+    const walletBalance = useUserStore((state) => state.walletBalance);
   const walletBalanceLoading = useUserStore((state) => state.walletBalanceLoading);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);
 
@@ -135,6 +132,7 @@ const Profile = (props: Props) => {
       
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletBalance?.tokenAccount, walletBalance?.sol, walletBalanceLoading, hasShownPopover, user?.id, popoverOpacity, popoverTranslateY]);
 
   const toggleBuyModal = () => {
@@ -173,7 +171,7 @@ const Profile = (props: Props) => {
       toggleBuyModal();
       
       setBuySuccessModalVisible(true);
-    } catch (error: any) {
+    } catch (_error: any) {
       setBuyError(error.message || "Failed to complete purchase");
       setIsBuying(false);
     }
@@ -187,7 +185,7 @@ const Profile = (props: Props) => {
       await fetchWalletBalance();
       setIsBurning(false);
       setBurnSuccessModalVisible(true);
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error("Error burning tokens:", error);
       setIsBurning(false);
     }
@@ -601,7 +599,7 @@ const Profile = (props: Props) => {
             <FontAwesome5 name="fire" size={30} color="#00FF80" />
           </View>
           <Text style={[styles.modalTitle, theme === "dark" && {color: "#E0E0E0"}]}>Tokens Burned Successfully!</Text>
-          <Text style={[styles.modalDescription, theme === "dark" && {color: "#B3B3B3"}]}>You've received 3 credits and your wallet balance has been updated.</Text>
+          <Text style={[styles.modalDescription, theme === "dark" && {color: "#B3B3B3"}]}>You&apos;ve received 3 credits and your wallet balance has been updated.</Text>
           <TouchableOpacity
             style={[styles.okButton, theme === "dark" && {backgroundColor: "#00FF80"}]}
             onPress={() => setBurnSuccessModalVisible(false)}

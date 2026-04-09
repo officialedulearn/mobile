@@ -5,13 +5,12 @@ import {
   Image,
   TouchableOpacity,
   FlatList,
-  ImageSourcePropType,
   ActivityIndicator,
   Platform,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import { BlurView } from "expo-blur";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useRewardsStore from "@/core/rewardsState";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
@@ -20,7 +19,7 @@ import { router, useFocusEffect } from "expo-router";
 import Purchases from "react-native-purchases";
 import { RewardsService } from "@/services/rewards.service";
 
-type Props = {};
+type Props = Record<string, never>;
 interface UserRewardWithDetails {
   id: string;
   type: "certificate" | "points";
@@ -159,7 +158,7 @@ const NFT = (props: Props) => {
           params: { rewardId: selectedReward.id },
         });
       }
-    } catch (error: any) {
+    } catch (_error: any) {
       console.error("❌ Failed to claim badge:", error);
       
       let errorMessage = "Failed to claim badge. Please try again.";
@@ -190,7 +189,7 @@ const NFT = (props: Props) => {
     try {
       const date = new Date(dateString);
       return format(date, "MMM d, yyyy");
-    } catch (error) {
+    } catch (_error) {
       return "Date unavailable";
     }
   };
@@ -409,7 +408,7 @@ const NFT = (props: Props) => {
               )}
               <Text style={[styles.claimModalTitle, theme === "dark" && {color: "#E0E0E0"}]}>Ready to Claim?🎉</Text>
               <Text style={[styles.modalText, theme === "dark" && styles.darkModalText]}>
-                You're about to claim{" "}
+                You&apos;re about to claim{" "}
                 <Text style={[styles.nftNameText, theme === "dark" && styles.darkNftNameText]}>
                   {selectedReward?.title}
                 </Text>

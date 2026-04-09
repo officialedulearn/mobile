@@ -2,7 +2,7 @@ import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, RefreshCon
 import React, { useEffect, useState, useCallback, memo } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import BackButton from '@/components/backButton';
+import BackButton from '@/components/common/backButton';
 import useUserStore from '@/core/userState';
 import useNotificationsStore from '@/core/notificationsState';
 import type { Notification } from '@/services/notifications.service';
@@ -139,6 +139,7 @@ const Notifications = () => {
     return () => {
       stopPolling();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const handleRefresh = async () => {
@@ -184,7 +185,7 @@ const Notifications = () => {
           theme === 'dark' && { color: '#B3B3B3' },
         ]}
       >
-        You'll see your notifications here when they arrive
+        You&apos;ll see your notifications here when they arrive
       </Text>
     </View>
     ),

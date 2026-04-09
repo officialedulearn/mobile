@@ -14,7 +14,6 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
 
 const groupChatsByRecency = (chats: Chat[]) => {
   const now = new Date();
@@ -80,6 +79,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
         easing: Easing.out(Easing.ease)
       });
     }, 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleClose = React.useCallback(() => {
     translateX.value = withTiming(-300, {
@@ -96,6 +96,7 @@ const ChatDrawer = ({ onClose }: { onClose: () => void }) => {
     });
     setTimeout(() => {
       onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, 250);
   }, [onClose]);
 

@@ -1,14 +1,14 @@
 import { StyleSheet, Text, View, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Image, Modal, ActivityIndicator } from 'react-native'
 import React, { useState } from 'react'
-import BackButton from '@/components/backButton'
+import BackButton from '@/components/common/backButton'
 import useUserStore from '@/core/userState'
 import { UserService } from '@/services/auth.service'
 import { router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 
-type Props = {}
+type Props = Record<string, never>
 
-const editProfile = (props: Props) => {
+const EditProfile = (_props: Props) => {
   const user = useUserStore((state) => state.user)
   const setUser = useUserStore((state) => state.setUser)
   const theme = useUserStore((state) => state.theme)
@@ -204,7 +204,7 @@ const editProfile = (props: Props) => {
   )
 }
 
-export default editProfile
+export default EditProfile
 
 const styles = StyleSheet.create({
   container: {

@@ -1,8 +1,8 @@
 import React from "react";
 import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import BackButton from "@/components/backButton";
-import ConnectX from "@/components/ConnectX";
+import BackButton from "@/components/common/backButton";
+import ConnectX from "@/components/auth/ConnectX";
 
 export default function ConnectXPage() {
   return (

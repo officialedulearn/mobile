@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import React, { useState, useRef } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
@@ -87,7 +87,7 @@ const PlanCard = ({
       </Text>
 
       <Text style={[styles.planDescription, theme === "dark" && styles.planDescriptionDark]}>
-        Upgrade your edulearn Plan to get access to more features that aren't
+        Upgrade your edulearn Plan to get access to more features that aren&apos;t
         available on the free plan
       </Text>
 

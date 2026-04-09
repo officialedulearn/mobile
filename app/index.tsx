@@ -4,7 +4,7 @@ import { supabase } from "@/utils/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Image, View, useColorScheme } from "react-native";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -47,6 +47,7 @@ export default function Index() {
       // clearTimeout(minSplashTimer);
       clearTimeout(initTimer);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

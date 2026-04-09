@@ -142,6 +142,7 @@ const Hub = () => {
       );
     }
     return null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isLoading, error, communities.length, isDark]);
 
   return (

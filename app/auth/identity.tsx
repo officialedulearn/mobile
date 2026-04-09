@@ -1,15 +1,15 @@
 import { StyleSheet, Text, TextInput, View, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import { router } from "expo-router";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
 import { useNotifications } from "@/hooks/useNotifications";
 import useRoadmapStore from "@/core/roadmapState";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const identity = (props: Props) => {
+const Identity = (_props: Props) => {
   const [learningGoal, setLearningGoal] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const { user, setUser, theme } = useUserStore();
@@ -31,7 +31,7 @@ const identity = (props: Props) => {
     setIsLoading(true);
 
     try {
-      const updatedUser = await userService.updateUserLearning({
+      await userService.updateUserLearning({
         name: user.name,
         email: user.email,
         username: user.username,
@@ -121,8 +121,6 @@ const identity = (props: Props) => {
   );
 };
 
-export default identity;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -176,3 +174,5 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi-Regular",
   },
 });
+
+export default Identity;

@@ -16,8 +16,7 @@ import {
 } from "react-native";
 import useUserStore from "@/core/userState";
 import { StatusBar } from "expo-status-bar";
-import { Route } from "expo-router/build/Route";
-import OAuthButtons from "@/components/OAuthButtons";
+import OAuthButtons from "@/components/auth/OAuthButtons";
 import { UserService } from "@/services/auth.service";
 
 const Auth = () => {
@@ -35,7 +34,7 @@ const Auth = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
+  const [oauthLoading] = useState(false);
 
   useEffect(() => {
     setIsSignUp(signUp === "1");

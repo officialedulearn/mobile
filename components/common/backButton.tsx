@@ -3,10 +3,10 @@ import { router } from "expo-router";
 import React from "react";
 import {
   Image,
-  ImageSourcePropType,
   StyleSheet,
   ViewStyle,
 } from "react-native";
+// eslint-disable-next-line import/no-named-as-default
 import AnimatedPressable from "./AnimatedPressable";
 
 type Props = {
