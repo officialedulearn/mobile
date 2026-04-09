@@ -1,52 +1,29 @@
-import DailyCheckInStreak from "@/components/streak";
-import useUserStore from "@/core/userState";
-import { levels } from "@/utils/constants";
-import { supabase } from "@/utils/supabase";
-import { getUserMetrics } from "@/utils/utils";
-import React, { useEffect, useState, useRef } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from "react-native";
+import DailyCheckInStreak from '@/components/streak';
+import useUserStore from '@/core/userState';
+import { levels } from '@/utils/constants';
+import { supabase } from '@/utils/supabase';
+import { getUserMetrics } from '@/utils/utils';
+import React, { useEffect, useState, useRef } from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { router } from "expo-router";
-import Modal from "react-native-modal";
-import { WalletService } from "@/services/wallet.service";
-import { UserService } from "@/services/auth.service";
+import { router } from 'expo-router';
+import Modal from 'react-native-modal';
+import { WalletService } from '@/services/wallet.service';
+import { UserService } from '@/services/auth.service';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import useRoadmapStore from "@/core/roadmapState";
-import { Roadmap } from "@/interface/Roadmap";
+import useRoadmapStore from '@/core/roadmapState';
+import { Roadmap } from '@/interface/Roadmap';
+import { useTheme } from '@/hooks/useTheme';
+import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { Design } from '@/utils/design';
+import { AchievementCard } from '@/components/profile/AchievementCard';
 
 type Props = {};
 
-const ACHIEVEMENT_IMAGES = {
-  xp: require("@/assets/images/icons/medal-06.png"),
-  nft: require("@/assets/images/icons/nft.png"),
-  quiz: require("@/assets/images/icons/brain-03.png"),
-};
-
-const AchievementCard = ({
-  title,
-  imageKey,
-  metric,
-}: {
-  title: string;
-  imageKey: keyof typeof ACHIEVEMENT_IMAGES;
-  metric: string;
-}) => {
-  const { theme } = useUserStore();
-  return (
-    <View style={[styles.achievementCard, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
-      <Image
-        source={ACHIEVEMENT_IMAGES[imageKey]}
-        style={{ width: 30, height: 30 }}
-      />
-      <Text style={[styles.cardSubText, theme === "dark" && {color: "#E0E0E0"}]}>{metric}</Text>
-
-      <Text style={[styles.metricTitle, theme === "dark" && {color: "#B3B3B3"}]}>{title}</Text>
-    </View>
-  );
-};
-
 const Profile = (props: Props) => {
-  const {user, theme} = useUserStore();
+  const { user } = useUserStore();
+  const { isDark } = useTheme();
+  const screenStyles = useScreenStyles();
   const walletBalance = useUserStore((state) => state.walletBalance);
   const walletBalanceLoading = useUserStore((state) => state.walletBalanceLoading);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);

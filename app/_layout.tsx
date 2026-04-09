@@ -117,6 +117,15 @@ export default function RootLayout() {
             console.error("OAuth callback error:", err);
           }
         }
+      } else if (url.includes("quiz/")) {
+        const quizIdMatch = url.match(/quiz\/([^/?]+)/);
+        if (quizIdMatch && quizIdMatch[1]) {
+          const quizId = quizIdMatch[1];
+          router.push({
+            pathname: "/quiz",
+            params: { chatId: quizId },
+          } as any);
+        }
       }
     };
 

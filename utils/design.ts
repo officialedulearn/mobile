@@ -1,5 +1,13 @@
 import { Dimensions, PixelRatio, Platform } from "react-native";
 
+type ThemeMode = "light" | "dark";
+
+type ComponentStyle = {
+  [key: string]: {
+    [key: string]: string | number | boolean;
+  };
+};
+
 const { width, height } = Dimensions.get("window");
 const BASE_WIDTH = 375;
 const BASE_HEIGHT = 812;
@@ -12,6 +20,62 @@ export const verticalScale = (size: number) =>
 
 export const getScreenTopPadding = (insets: { top: number }) =>
   insets.top + Design.spacing.sm;
+
+export const getTheme = (mode: ThemeMode) => {
+  return mode === "dark" ? Design.colors.dark : Design.colors.background;
+};
+
+export const getComponentStyles = (component: string, mode: ThemeMode): ComponentStyle => {
+  const theme = getTheme(mode);
+  const styles: { [key: string]: ComponentStyle } = {
+    button: {
+      primary: {
+        backgroundColor: Design.colors.primary.accentDark,
+        color: Design.colors.text.primary,
+        paddingVertical: Design.spacing.md,
+        paddingHorizontal: Design.spacing.lg,
+        borderRadius: 8,
+      },
+      secondary: {
+        backgroundColor: Design.colors.background.surface,
+        color: Design.colors.text.primary,
+        paddingVertical: Design.spacing.md,
+        paddingHorizontal: Design.spacing.lg,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Design.colors.border.default,
+      },
+    },
+    input: {
+      default: {
+        backgroundColor: Design.colors.background.input,
+        borderWidth: 1,
+        borderColor: Design.colors.border.input,
+        borderRadius: 8,
+        paddingVertical: Design.spacing.sm,
+        paddingHorizontal: Design.spacing.md,
+        color: Design.colors.text.primary,
+      },
+    },
+    card: {
+      default: {
+        backgroundColor: Design.colors.background.white,
+        borderRadius: 12,
+        padding: Design.spacing.md,
+        shadowColor: Design.colors.shadow.default,
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+    },
+    text: {
+      heading: Design.typography.styles.screenTitle,
+      body: Design.typography.styles.body,
+      caption: Design.typography.styles.caption,
+    },
+  };
+  return styles[component] || {};
+};
 
 export const Design = {
   spacing: {

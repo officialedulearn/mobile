@@ -1,36 +1,40 @@
-import useActivityStore from "@/core/activityState";
-import useUserStore from "@/core/userState";
-import useChatStore from "@/core/chatState";
-import { Chat } from "@/interface/Chat";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import useActivityStore from '@/core/activityState';
+import useUserStore from '@/core/userState';
+import useChatStore from '@/core/chatState';
+import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
-  StyleSheet, 
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { DataTable } from "react-native-paper";
+} from 'react-native';
+import { DataTable } from 'react-native-paper';
+import { ScreenContainer } from '@/components/common/ScreenContainer';
+import { useTheme } from '@/hooks/useTheme';
+import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { Design } from '@/utils/design';
+import { QuizCard } from '@/components/quiz/QuizCard';
 
-type Props = {};
-
-const quizzes = (props: Props) => {
+const Quizzes = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
-
   const [page, setPage] = useState<number>(0);
   const [numberOfItemsPerPageList] = useState([10, 15, 20]);
   const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
 
-  const { updateUserCredits, theme, user } = useUserStore();
+  const { updateUserCredits, user } = useUserStore();
+  const { isDark } = useTheme();
+  const screenStyles = useScreenStyles();
   const { chatList, fetchChatList } = useChatStore();
   const { quizActivities, isLoading, fetchQuizActivities } = useActivityStore();
+
   const chats = React.useMemo(
     () =>
       chatList
@@ -41,9 +45,9 @@ const quizzes = (props: Props) => {
         ),
     [chatList]
   );
-  const screenWidth = Dimensions.get("window").width;
-  const cardWidth = screenWidth * 0.75;
 
+  const screenWidth = Dimensions.get('window').width;
+  const cardWidth = screenWidth * 0.75;
   const from = page * itemsPerPage;
   const to = Math.min((page + 1) * itemsPerPage, quizActivities.length);
 
@@ -58,334 +62,381 @@ const quizzes = (props: Props) => {
   }, [user?.id, fetchChatList, fetchQuizActivities]);
 
   const startQuiz = (chatId: string) => {
-
     const currentCredits = Number(user?.credits) || 0;
-    console.log(
-      "Current credits (raw):",
-      user?.credits,
-      "Parsed:",
-      currentCredits,
-    );
 
     if (currentCredits <= 0.5) {
-      console.log(
-        "User has insufficient credits, redirecting to freeTrialIntro",
-      );
-      router.push("/freeTrialIntro");
+      router.push('/freeTrialIntro');
       return;
     }
 
     updateUserCredits(currentCredits - 0.5);
 
     router.push({
-      pathname: "/quiz",
-      params: {chatId: chatId}
-    })
-  }
+      pathname: '/quiz',
+      params: { chatId: chatId },
+    });
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / (cardWidth + 20));
     setActiveIndex(index);
   };
-  const testedChats = chats.filter(chat => !chat.tested);
-  return (  
-    <ScrollView 
-      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />} 
-      <Text style={[styles.header, theme === "dark" && {color: "#E0E0E0"}]}>Quizzes</Text>
-      <Text style={[styles.subtext, theme === "dark" && {color: "#B3B3B3"}]}>
-        Practice what you've learned. Earn XP. Get smarter.
-      </Text>
 
+  const testedChats = chats.filter((chat) => !chat.tested);
 
-      <Text style={[styles.sectionHeader, theme === "dark" && {color: "#E0E0E0"}]}>Quizzes From Your AI Sessions</Text>
-
-      {chats.length > 0 ? (
-        <>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollViewContent}
-            snapToInterval={cardWidth + 20}
-            decelerationRate="fast"
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            style={styles.horizontalScrollView}
-          >
-            {testedChats.map((chat) => (
-              <View
-                key={chat.id}
-                style={[styles.chatItem, { width: cardWidth}, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}
-              >
-                <View style={styles.chatItemHeader}>
-                  <Image
-                    source={require("@/assets/images/icons/brain1.png")}
-                    style={styles.chatIcon}
-                  />
-                  <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
-                    {chat.title || "Untitled Chat"}
-                  </Text>
-                </View>
-
-                <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
-                  From your chat on{" "}
-                  {new Date(chat.createdAt).toLocaleDateString()}
-                </Text>
-
-                <View style={styles.metadataRow}>
-                  <View style={styles.metadataItem}>
-                    <Image
-                      source={require("@/assets/images/icons/medal-05.png")}
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>Earn up to 10 XP</Text>
-                  </View>
-
-                  <View style={styles.metadataItem}>
-                    <Image
-                      source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")}
-                      style={styles.metadataIcon}
-                    />
-                    <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>~ 1 min</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={
-                  [styles.startButton, {marginBottom: 10}, theme === "dark" && {backgroundColor: "#00FF80"}]
-                } onPress={() => {
-                  startQuiz(chat.id)
-                }}>
-                  <Text style={[styles.startButtonText, theme === "dark" && {color: "#000"}]}>Start Quiz</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* <View style={styles.paginationContainer}>
-            {chats.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  activeIndex === index ? styles.paginationDotActive : {},
-                ]}
-                onPress={() => {
-                  scrollViewRef.current?.scrollTo({
-                    x: index * (cardWidth + 20),
-                    animated: true,
-                  });
-                  setActiveIndex(index);
-                }}
-              />
-            ))}
-          </View> */}
-        </>
-      ) : (
-        <Text style={styles.emptyText}>
-          No quizzes available.
-        </Text>
-      )}
-
-      <View style={styles.historyHeader}>
-        <Text style={[styles.sectionHeader, theme === "dark" && {color: "#E0E0E0"}]}>Quiz History</Text>
-
-        <TouchableOpacity style={[styles.searchButton, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
-          <Image
-            source={theme === "dark" ? require("@/assets/images/icons/dark/search.png") : require("@/assets/images/icons/search-normal.png")}
-            style={styles.searchIcon}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.historyList}>
-        {quizActivities.length > 0 ? (
-          <>
-            {quizActivities.slice(from, to).map((activity, index) => (
-              <View key={index} style={[styles.activityCard, theme === "dark" && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
-                <View style={styles.activityContainer}>
-
-                  <View style={styles.activityLeftColumn}>
-                    <Text style={[styles.chatText, theme === "dark" && {color: "#E0E0E0"}]} numberOfLines={1}>
-                      {activity.title || "Untitled Quiz"}
-                    </Text>
-                    
-                    <View style={styles.metadataItem}>
-                      <Image 
-                        source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")} 
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={[styles.xpText, theme === "dark" && {color: "#E0E0E0"}]}>1 min</Text>
-                    </View>
-                    
-                    <View style={styles.metadataItem}>
-                      <Image
-                        source={require("@/assets/images/icons/medal-05.png")}
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={[styles.xpText, theme === "dark" && {color: "#B3B3B3"}]}>+{activity.xpEarned} XP</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.activityRightColumn}>
-                    <View style={styles.metadataItem}>
-                      <Image 
-                        source={theme === "dark" ? require("@/assets/images/icons/dark/calendar.png") : require("@/assets/images/icons/calendar.png")} 
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={[styles.dateText, theme === "dark" && {color: "#B3B3B3"}]}>
-                        {new Date(activity.createdAt).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.metadataItem}>
-                      <Image 
-                        source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
-                        style={styles.metadataIcon}
-                      />
-                      <Text style={[styles.scoreText, theme === "dark" && {color: "#E0E0E0"}]}>
-                        {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
-                      </Text>
-                    </View>
-                    
-                    <View style={[
-                      styles.statusBadge,
-                      activity.xpEarned >= 3 ? styles.statusPassed : styles.statusFailed
-                    ]}>
-                      <View style={[
-                        styles.statusDot,
-                        activity.xpEarned >= 3 ? styles.statusDotPassed : styles.statusDotFailed
-                      ]} />
-                      <Text style={[
-                        styles.statusText,
-                        activity.xpEarned >= 3 ? styles.statusTextPassed : styles.statusTextFailed
-                      ]}>
-                        {activity.xpEarned >= 3 ? "Passed" : "Failed"}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
-
-            {quizActivities.length > itemsPerPage && (
-              <View style={[styles.tableContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
-                <DataTable style={[styles.table, theme === "dark" && { backgroundColor: "#131313" }]}>
-                  <View style={styles.paginationContainer}>
-                    <DataTable.Pagination
-                      page={page}
-                      numberOfPages={Math.ceil(quizActivities.length / itemsPerPage)}
-                      onPageChange={(page) => setPage(page)}
-                      onItemsPerPageChange={onItemsPerPageChange}
-                      showFastPaginationControls
-                      style={styles.pagination}
-                    />
-                  </View>
-                </DataTable>
-              </View>
-            )}
-          </>
-        ) : (
-          <Text style={[styles.emptyText, theme === "dark" && {color: "#B3B3B3"}]}>
-            No quiz history available.
+  return (
+    <>
+      {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
+      <ScreenContainer scrollable={true}>
+        <View style={{ paddingHorizontal: Design.spacing.mdLg }}>
+          <Text style={[
+            styles.header,
+            { color: isDark ? screenStyles.text.primary : screenStyles.text.primary }
+          ]}>
+            Quizzes
           </Text>
-        )}
-      </View>
-      
-      <View style={{height: 30}} />
-    </ScrollView>
+          <Text style={[
+            styles.subtext,
+            { color: isDark ? screenStyles.text.secondary : screenStyles.text.secondary }
+          ]}>
+            Practice what you've learned. Earn XP. Get smarter.
+          </Text>
+
+          <Text style={[
+            styles.sectionHeader,
+            { color: isDark ? screenStyles.text.primary : screenStyles.text.primary }
+          ]}>
+            Quizzes From Your AI Sessions
+          </Text>
+
+          {chats.length > 0 ? (
+            <>
+              <ScrollView
+                ref={scrollViewRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.scrollViewContent}
+                snapToInterval={cardWidth + 20}
+                decelerationRate="fast"
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                style={styles.horizontalScrollView}
+              >
+                {testedChats.map((chat) => (
+                  <View
+                    key={chat.id}
+                    style={[
+                      styles.chatItem,
+                      {
+                        width: cardWidth,
+                        backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white,
+                        borderColor: isDark ? Design.colors.dark.border : Design.colors.border.hub,
+                      }
+                    ]}
+                  >
+                    <View style={styles.chatItemHeader}>
+                      <Image
+                        source={require('@/assets/images/icons/brain1.png')}
+                        style={styles.chatIcon}
+                      />
+                      <Text style={[
+                        styles.chatText,
+                        { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                      ]} numberOfLines={1}>
+                        {chat.title || 'Untitled Chat'}
+                      </Text>
+                    </View>
+
+                    <Text style={[
+                      styles.dateText,
+                      { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+                    ]}>
+                      From your chat on{' '}
+                      {new Date(chat.createdAt).toLocaleDateString()}
+                    </Text>
+
+                    <View style={styles.metadataRow}>
+                      <View style={styles.metadataItem}>
+                        <Image
+                          source={require('@/assets/images/icons/medal-05.png')}
+                          style={styles.metadataIcon}
+                        />
+                        <Text style={[
+                          styles.xpText,
+                          { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                        ]}>
+                          Earn up to 10 XP
+                        </Text>
+                      </View>
+
+                      <View style={styles.metadataItem}>
+                        <Image
+                          source={isDark ? require('@/assets/images/icons/dark/clock.png') : require('@/assets/images/icons/clock.png')}
+                          style={styles.metadataIcon}
+                        />
+                        <Text style={[
+                          styles.xpText,
+                          { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                        ]}>
+                          ~ 1 min
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.startButton,
+                        {
+                          backgroundColor: isDark ? Design.colors.mint.DEFAULT : Design.colors.primary.accentDarkest,
+                          marginBottom: 10
+                        }
+                      ]}
+                      onPress={() => {
+                        startQuiz(chat.id);
+                      }}
+                    >
+                      <Text style={[
+                        styles.startButtonText,
+                        { color: isDark ? Design.colors.text.primary : Design.colors.mint.DEFAULT }
+                      ]}>
+                        Start Quiz
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </>
+          ) : (
+            <Text style={[
+              styles.emptyText,
+              { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+            ]}>
+              No quizzes available.
+            </Text>
+          )}
+
+          <View style={styles.historyHeader}>
+            <Text style={[
+              styles.sectionHeader,
+              { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+            ]}>
+              Quiz History
+            </Text>
+
+            <TouchableOpacity style={[
+              styles.searchButton,
+              {
+                backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white,
+                borderColor: isDark ? Design.colors.dark.border : Design.colors.border.hub,
+              }
+            ]}>
+              <Image
+                source={isDark ? require('@/assets/images/icons/dark/search.png') : require('@/assets/images/icons/search-normal.png')}
+                style={styles.searchIcon}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.historyList}>
+            {quizActivities.length > 0 ? (
+              <>
+                {quizActivities.slice(from, to).map((activity, index) => (
+                  <View key={index} style={[
+                    styles.activityCard,
+                    {
+                      backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white,
+                      borderColor: isDark ? Design.colors.dark.border : Design.colors.border.hub,
+                    }
+                  ]}>
+                    <View style={styles.activityContainer}>
+                      <View style={styles.activityLeftColumn}>
+                        <Text style={[
+                          styles.chatText,
+                          { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                        ]} numberOfLines={1}>
+                          {activity.title || 'Untitled Quiz'}
+                        </Text>
+
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={isDark ? require('@/assets/images/icons/dark/clock.png') : require('@/assets/images/icons/clock.png')}
+                            style={styles.metadataIcon}
+                          />
+                          <Text style={[
+                            styles.xpText,
+                            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                          ]}>
+                            1 min
+                          </Text>
+                        </View>
+
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={require('@/assets/images/icons/medal-05.png')}
+                            style={styles.metadataIcon}
+                          />
+                          <Text style={[
+                            styles.xpText,
+                            { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+                          ]}>
+                            +{activity.xpEarned} XP
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.activityRightColumn}>
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={isDark ? require('@/assets/images/icons/dark/calendar.png') : require('@/assets/images/icons/calendar.png')}
+                            style={styles.metadataIcon}
+                          />
+                          <Text style={[
+                            styles.dateText,
+                            { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+                          ]}>
+                            {new Date(activity.createdAt).toLocaleDateString()}
+                          </Text>
+                        </View>
+
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={isDark ? require('@/assets/images/icons/dark/notebook.png') : require('@/assets/images/icons/notebook.png')}
+                            style={styles.metadataIcon}
+                          />
+                          <Text style={[
+                            styles.scoreText,
+                            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+                          ]}>
+                            {activity.xpEarned}/5 ({activity.xpEarned * 20}%)
+                          </Text>
+                        </View>
+
+                        <View style={[
+                          styles.statusBadge,
+                          activity.xpEarned >= 3 ? styles.statusPassed : styles.statusFailed
+                        ]}>
+                          <View style={[
+                            styles.statusDot,
+                            activity.xpEarned >= 3 ? styles.statusDotPassed : styles.statusDotFailed
+                          ]} />
+                          <Text style={[
+                            styles.statusText,
+                            activity.xpEarned >= 3 ? styles.statusTextPassed : styles.statusTextFailed
+                          ]}>
+                            {activity.xpEarned >= 3 ? 'Passed' : 'Failed'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+
+                {quizActivities.length > itemsPerPage && (
+                  <View style={[
+                    styles.tableContainer,
+                    { backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white }
+                  ]}>
+                    <DataTable style={[
+                      styles.table,
+                      { backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white }
+                    ]}>
+                      <View style={styles.paginationContainer}>
+                        <DataTable.Pagination
+                          page={page}
+                          numberOfPages={Math.ceil(quizActivities.length / itemsPerPage)}
+                          onPageChange={(page) => setPage(page)}
+                          onItemsPerPageChange={onItemsPerPageChange}
+                          showFastPaginationControls
+                          style={styles.pagination}
+                        />
+                      </View>
+                    </DataTable>
+                  </View>
+                )}
+              </>
+            ) : (
+              <Text style={[
+                styles.emptyText,
+                { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+              ]}>
+                No quiz history available.
+              </Text>
+            )}
+          </View>
+        </View>
+      </ScreenContainer>
+    </>
   );
 };
 
-export default quizzes;
+export default Quizzes;
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#F9FBFC",
-    paddingTop: 50,
-    padding: 20,
-    paddingLeft: 30,
-    height: "100%",
-  },
   header: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 32,
+    fontSize: Design.typography.fontSize.xl,
+    fontWeight: Design.typography.fontWeight.semibold,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.xl,
   },
   subtext: {
-    fontSize: 14,
-    color: "#2D3C52",
-    marginTop: 8,
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 24,
-    fontWeight: "400",
-    marginBottom: 20,
+    fontSize: Design.typography.fontSize.sm,
+    marginTop: Design.spacing.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.regular,
+    marginBottom: Design.spacing.lg,
   },
   sectionHeader: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 28,
-    marginTop: 20,
-    marginBottom: 10,
+    fontSize: Design.typography.fontSize.lg,
+    fontWeight: Design.typography.fontWeight.semibold,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.lg,
+    marginTop: Design.spacing.lg,
+    marginBottom: Design.spacing.sm,
   },
   chatText: {
-    fontSize: 16,
-    color: "#2D3C52",
-    marginLeft: 10,
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 26,
-    fontWeight: "500",
+    fontSize: Design.typography.fontSize.base,
+    marginLeft: Design.spacing.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.medium,
   },
   dateText: {
-    fontSize: 14,
-    color: "#61728C",
-    marginLeft: 10,
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 24,
-    fontWeight: "400",
+    fontSize: Design.typography.fontSize.sm,
+    marginLeft: Design.spacing.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.regular,
   },
   xpText: {
-    fontSize: 14,
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 24,
-    fontWeight: "500",
+    fontSize: Design.typography.fontSize.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.medium,
   },
   chatItem: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-
+    paddingVertical: Design.spacing.md,
+    paddingHorizontal: Design.spacing.sm,
     borderRadius: 12,
-    marginTop: 5,
+    marginTop: Design.spacing.xs,
     borderWidth: 1,
-    borderColor: "#E0E7F0",
-    gap: 12,
-    alignContent: "flex-start"
+    gap: Design.spacing.md,
   },
   activityCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 12,
+    padding: Design.spacing.sm,
     borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: Design.spacing.sm,
+    marginBottom: Design.spacing.sm,
     borderWidth: 1,
-    borderColor: "#E0E7F0",
   },
   horizontalScrollView: {
-    gap: 10,
-    marginBottom: 5,
+    gap: Design.spacing.md,
+    marginBottom: Design.spacing.xs,
   },
   chatItemHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   chatIcon: {
     width: 20,
@@ -393,165 +444,136 @@ const styles = StyleSheet.create({
     borderRadius: 25,
   },
   metadataRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Design.spacing.sm,
+    justifyContent: 'space-between',
   },
   metadataItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Design.spacing.xs,
   },
   metadataIcon: {
     width: 20,
     height: 20,
-    marginRight: 5,
+    marginRight: Design.spacing.xs,
   },
   startButton: {
     borderRadius: 12,
-    backgroundColor: "#000",
-    textAlign: "center",
-    marginTop: 8,
+    textAlign: 'center',
+    marginTop: Design.spacing.sm,
   },
   startButtonText: {
-    color: "#00FF80",
-    fontSize: 16,
-    fontFamily: "Satoshi-Regular",
-    fontWeight: "500",
-    padding: 12,
-    textAlign: "center",
-    lineHeight: 24,
+    fontSize: Design.typography.fontSize.base,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    fontWeight: Design.typography.fontWeight.medium,
+    padding: Design.spacing.md,
+    textAlign: 'center',
+    lineHeight: Design.typography.lineHeight.md,
   },
   scrollViewContent: {
-    gap:10,
-    paddingVertical: 10,
+    gap: Design.spacing.md,
+    paddingVertical: Design.spacing.sm,
   },
   paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#E0E7F0",
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    width: 12,
-    height: 12,
-    backgroundColor: "#00FF80",
-    borderRadius: 6,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Design.spacing.lg,
+    marginBottom: Design.spacing.sm,
   },
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Design.spacing.md,
+    paddingVertical: Design.spacing.xs,
     borderRadius: 999,
   },
   statusPassed: {
-    backgroundColor: "#F2FFF7",
+    backgroundColor: '#F2FFF7',
   },
   statusFailed: {
-    backgroundColor: "#FBEAE9",
+    backgroundColor: '#FBEAE9',
   },
   statusDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: Design.spacing.sm,
   },
   statusDotPassed: {
-    backgroundColor: "#0E7B33",
+    backgroundColor: Design.colors.semantic.successDark,
   },
   statusDotFailed: {
-    backgroundColor: "#940803",
+    backgroundColor: '#940803',
   },
   statusText: {
-    fontSize: 14,
-    fontWeight: "500",
-    fontFamily: "Satoshi-Regular",
+    fontSize: Design.typography.fontSize.sm,
+    fontWeight: Design.typography.fontWeight.medium,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
   },
   statusTextPassed: {
-    color: "#0E7B33",
+    color: Design.colors.semantic.successDark,
   },
   statusTextFailed: {
-    color: "#940803",
+    color: '#940803',
   },
   historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 20, 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Design.spacing.lg,
   },
   searchButton: {
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#EDF3FC",
     borderRadius: 8,
-    padding: 10,
+    padding: Design.spacing.sm,
   },
   searchIcon: {
     width: 20,
     height: 20,
   },
   historyList: {
-    marginTop: 10,
+    marginTop: Design.spacing.md,
   },
   activityContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   activityLeftColumn: {
     flex: 1,
-    paddingRight: 10,
-    justifyContent: "center",
-    gap: 5,
-    alignItems: "flex-start"
+    paddingRight: Design.spacing.md,
+    justifyContent: 'center',
+    gap: Design.spacing.xs,
+    alignItems: 'flex-start',
   },
   activityRightColumn: {
     flex: 1,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 5,
-  },
-  activityMetadata: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  activityDetails: {
-    marginTop: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: Design.spacing.xs,
   },
   scoreText: {
-    fontSize: 14,
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
-    lineHeight: 24,
-    fontWeight: "500",
+    fontSize: Design.typography.fontSize.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.medium,
   },
   emptyText: {
-    marginTop: 10,
-    fontFamily: "Satoshi-Regular",
-    textAlign: "center",
-    color: "#61728C",
+    marginTop: Design.spacing.md,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    textAlign: 'center',
   },
   tableContainer: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: Design.spacing.lg,
+    marginBottom: Design.spacing.lg,
   },
   table: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: 'white',
   },
   pagination: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: 'white',
   },
 });

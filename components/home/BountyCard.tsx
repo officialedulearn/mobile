@@ -1,0 +1,83 @@
+import React from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { Design } from '@/utils/design';
+
+export function BountyCard() {
+  const { isDark, colors, spacing } = useTheme();
+
+  return (
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: isDark ? colors.dark.surface : colors.background.white,
+        borderColor: isDark ? colors.dark.border : colors.border.hub,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginTop: spacing.lg,
+      }
+    ]}>
+      <View>
+        <View style={[
+          styles.badge,
+          { backgroundColor: isDark ? colors.dark.canvas : colors.background.surfaceMuted, borderColor: isDark ? colors.dark.border : colors.border.hub }
+        ]}>
+          <Image
+            source={require('@/assets/images/icons/trophy.png')}
+            style={{ width: 16, height: 16 }}
+          />
+          <Text style={[
+            styles.badgeText,
+            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+          ]}>
+            Bounty Challenge
+          </Text>
+        </View>
+        <Text style={[
+          styles.title,
+          { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+        ]}>
+          Stay Top 3 This Week!
+        </Text>
+      </View>
+      <Image
+        source={require('@/assets/images/icons/bountyCard.png')}
+        style={{ width: 66.6, height: 83, resizeMode: 'contain' }}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    borderRadius: 24,
+    borderWidth: 1,
+    width: '100%',
+  },
+  badge: {
+    borderRadius: 24,
+    borderWidth: 1,
+    paddingVertical: Design.spacing.xs,
+    paddingHorizontal: Design.spacing.sm,
+    gap: Design.spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Design.spacing.sm,
+  },
+  badgeText: {
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    fontSize: Design.typography.fontSize.sm,
+    fontWeight: Design.typography.fontWeight.regular,
+    lineHeight: Design.typography.lineHeight.sm,
+    textAlign: 'center',
+  },
+  title: {
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    lineHeight: Design.typography.fontSize.xl * 1.8,
+    fontSize: Design.typography.fontSize.lg,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+});

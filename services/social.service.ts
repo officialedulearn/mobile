@@ -1,112 +1,96 @@
-import httpClient from "@/utils/httpClient";
+import { BaseService } from "./base.service";
 
 export interface FollowStats {
-    followersCount: number;
-    followingCount: number;
+  followersCount: number;
+  followingCount: number;
 }
 
 export interface UserFollow {
-    id: string;
-    username: string;
-    name: string;
-    email: string;
-    profilePictureURL?: string;
-    level: string;
-    xp: number;
-    verified: boolean;
-    createdAt: Date;
+  id: string;
+  username: string;
+  name: string;
+  email: string;
+  profilePictureURL?: string;
+  level: string;
+  xp: number;
+  verified: boolean;
+  createdAt: Date;
 }
 
 export interface NotificationPreferences {
-    emailNotifications: boolean;
-    pushNotifications: boolean;
-    inAppNotifications: boolean;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  inAppNotifications: boolean;
 }
 
-export class SocialService {
-    async followUser(
-        userId: string, 
-        preferences?: Partial<NotificationPreferences>
-    ): Promise<{ message: string }> {
-        try {
-            const response = await httpClient.post(`/social/follow/${userId}`, preferences);
-            return response.data;
-        } catch (error) {
-            console.error("Error following user:", error);
-            throw error;
-        }
-    }
+export class SocialService extends BaseService {
+  async followUser(
+    userId: string,
+    preferences?: Partial<NotificationPreferences>
+  ): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().post(`/social/follow/${userId}`, preferences)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 
-    async unfollowUser(userId: string): Promise<{ message: string }> {
-        try {
-            const response = await httpClient.delete(`/social/unfollow/${userId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error unfollowing user:", error);
-            throw error;
-        }
-    }
+  async unfollowUser(userId: string): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/social/unfollow/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 
-    async isFollowing(userId: string): Promise<boolean> {
-        try {
-            const response = await httpClient.get(`/social/is-following/${userId}`);
-            return response.data.isFollowing;
-        } catch (error) {
-            console.error("Error checking follow status:", error);
-            throw error;
-        }
-    }
+  async isFollowing(userId: string): Promise<boolean> {
+    const response = await this.executeRequest(
+      this.getClient().get(`/social/is-following/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.isFollowing ?? false;
+  }
 
-    async getFollowers(userId: string): Promise<UserFollow[]> {
-        try {
-            const response = await httpClient.get(`/social/followers/${userId}`);
-            return response.data.followers;
-        } catch (error) {
-            console.error("Error fetching followers:", error);
-            throw error;
-        }
-    }
+  async getFollowers(userId: string): Promise<UserFollow[]> {
+    const response = await this.executeRequest(
+      this.getClient().get(`/social/followers/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.followers ?? [];
+  }
 
-    async getFollowing(userId: string): Promise<UserFollow[]> {
-        try {
-            const response = await httpClient.get(`/social/following/${userId}`);
-            return response.data.following;
-        } catch (error) {
-            console.error("Error fetching following:", error);
-            throw error;
-        }
-    }
+  async getFollowing(userId: string): Promise<UserFollow[]> {
+    const response = await this.executeRequest(
+      this.getClient().get(`/social/following/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.following ?? [];
+  }
 
-    async getFollowStats(userId: string): Promise<FollowStats> {
-        try {
-            const response = await httpClient.get(`/social/stats/${userId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching follow stats:", error);
-            throw error;
-        }
-    }
+  async getFollowStats(userId: string): Promise<FollowStats> {
+    const response = await this.executeRequest<FollowStats>(
+      this.getClient().get(`/social/stats/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 
-    async updateNotificationPreferences(
-        userId: string,
-        preferences: Partial<NotificationPreferences>
-    ): Promise<{ message: string }> {
-        try {
-            const response = await httpClient.put(`/social/notification-preferences/${userId}`, preferences);
-            return response.data;
-        } catch (error) {
-            console.error("Error updating notification preferences:", error);
-            throw error;
-        }
-    }
+  async updateNotificationPreferences(
+    userId: string,
+    preferences: Partial<NotificationPreferences>
+  ): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().put(`/social/notification-preferences/${userId}`, preferences)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 
-    async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
-        try {
-            const response = await httpClient.get(`/social/notification-preferences/${userId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching notification preferences:", error);
-            throw error;
-        }
-    }
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+    const response = await this.executeRequest<NotificationPreferences>(
+      this.getClient().get(`/social/notification-preferences/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 }

@@ -1,26 +1,23 @@
-import Chat from "@/components/chat/Chat";
-import useUserStore from "@/core/userState";
-import useChatStore from "@/core/chatState";
-import { Chat as chatInterface, Message } from "@/interface/Chat";
-import { generateUUID } from "@/utils/constants";
-import { useLocalSearchParams } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  View,
-} from "react-native";
+import Chat from '@/components/chat/Chat';
+import useUserStore from '@/core/userState';
+import useChatStore from '@/core/chatState';
+import { Chat as chatInterface, Message } from '@/interface/Chat';
+import { generateUUID } from '@/utils/constants';
+import { useLocalSearchParams } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, View } from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { useScreenStyles } from '@/hooks/useScreenStyles';
 
-type Props = {};
-
-const ChatScreen = (props: Props) => {
+const ChatScreen = () => {
   const { chatIdFromNav } = useLocalSearchParams<{
     chatIdFromNav: string;
   }>();
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Array<Message>>([]);
-  const theme = useUserStore((state) => state.theme);
+  const { isDark } = useTheme();
+  const screenStyles = useScreenStyles();
   const { fetchMessages, fetchChatById } = useChatStore();
 
   const [currentChatId, setCurrentChatId] = useState<string>(() =>
@@ -62,7 +59,7 @@ const ChatScreen = (props: Props) => {
           setChat(undefined);
         }
       } catch (error) {
-        console.error("Error loading chat:", error);
+        console.error('Error loading chat:', error);
         setChat(undefined);
         setInitialMessages([]);
       }
@@ -72,11 +69,11 @@ const ChatScreen = (props: Props) => {
   }, [currentChatId]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-      <StatusBar style="light" />
-      <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <SafeAreaView style={[screenStyles.container]}>
+      {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
+      <View style={[screenStyles.container]}>
         <Chat
-          title={chat?.title || "AI Tutor Chat"}
+          title={chat?.title || 'AI Tutor Chat'}
           initialMessages={initialMessages}
           chatId={currentChatId}
           key={currentChatId}
@@ -87,14 +84,3 @@ const ChatScreen = (props: Props) => {
 };
 
 export default ChatScreen;
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F9FBFC",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FBFC",
-  },
-});

@@ -1,74 +1,60 @@
 import { Chat } from "@/interface/Chat";
-import httpClient from "@/utils/httpClient";
+import { BaseService } from "./base.service";
 
-export class ChatService {
-    async getHistory(id: string): Promise<Chat[]> {
-        try {
-            const response = await httpClient.get(`/chat/user/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching chat history:", error);
-            throw error;
-        }
-    }
+export class ChatService extends BaseService {
+  async getHistory(id: string): Promise<Chat[]> {
+    const response = await this.executeRequest<Chat[]>(
+      this.getClient().get(`/chat/user/${id}`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 
-    async createChat(title: string, userId: string) {
-        try {
-            const response = await httpClient.post('/chat', { title, userId });
-            return response.data;
-        } catch (error) {
-            console.error("Error creating chat:", error);
-            throw error;
-        }
-    }
-    
-    async getChatById(chatId: string) {
-        try {
-            const response = await httpClient.get(`/chat/${chatId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching chat by ID:", error);
-            throw error;
-        }
-    }
+  async createChat(title: string, userId: string) {
+    const response = await this.executeRequest(
+      this.getClient().post("/chat", { title, userId })
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
 
-    async deleteChat(chatId: string) {
-        try {
-            const response = await httpClient.delete(`/chat/${chatId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error deleting chat:", error);
-            throw error;
-        }
-    }
+  async getChatById(chatId: string) {
+    const response = await this.executeRequest(
+      this.getClient().get(`/chat/${chatId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
 
-    async saveMessages(messages: any[]) {
-        try {
-            const response = await httpClient.post('/chat/messages', { messages });
-            return response.data;
-        } catch (error) {
-            console.error("Error saving messages:", error);
-            throw error;
-        }
-    }
+  async deleteChat(chatId: string) {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/chat/${chatId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
 
-    async getMessagesInChat(chatId: string) {
-        try {
-            const response = await httpClient.get(`/chat/${chatId}/messages`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching messages in chat:", error);
-            throw error;
-        }
-    }
+  async saveMessages(messages: any[]) {
+    const response = await this.executeRequest(
+      this.getClient().post("/chat/messages", { messages })
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
 
-    async deleteMessagesInChat(chatId: string) {
-        try {
-            const response = await httpClient.delete(`/chat/${chatId}/messages`);
-            return response.data;
-        } catch (error) {
-            console.error("Error deleting messages in chat:", error);
-            throw error;
-        }
-    }
+  async getMessagesInChat(chatId: string) {
+    const response = await this.executeRequest(
+      this.getClient().get(`/chat/${chatId}/messages`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
+
+  async deleteMessagesInChat(chatId: string) {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/chat/${chatId}/messages`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
 }

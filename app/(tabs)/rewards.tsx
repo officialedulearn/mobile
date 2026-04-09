@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,22 +12,27 @@ import {
   Alert,
   Modal,
   Share,
-} from "react-native";
-import { levels } from "@/utils/constants";
-import useUserStore from "@/core/userState";
-import { ProgressBar, DataTable } from "react-native-paper";
-import useRewardsStore from "@/core/rewardsState";
-import { StatusBar } from "expo-status-bar";
-import useActivityStore from "@/core/activityState";
-import { router } from "expo-router";
-import { WalletService } from "@/services/wallet.service";
-import { LinearGradient } from "expo-linear-gradient";
+} from 'react-native';
+import { levels } from '@/utils/constants';
+import useUserStore from '@/core/userState';
+import { ProgressBar, DataTable } from 'react-native-paper';
+import useRewardsStore from '@/core/rewardsState';
+import { StatusBar } from 'expo-status-bar';
+import useActivityStore from '@/core/activityState';
+import { router } from 'expo-router';
+import { WalletService } from '@/services/wallet.service';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '@/hooks/useTheme';
+import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { Design } from '@/utils/design';
 
 type Props = {};
 
-const rewards = (props: Props) => {
+const Rewards = (props: Props) => {
   const user = useUserStore((s) => s.user);
   const fetchWalletBalance = useUserStore((s) => s.fetchWalletBalance);
+  const { isDark } = useTheme();
+  const screenStyles = useScreenStyles();
   const [userEarnings, setUserEarnings] = useState<{ sol: number; edln: number; hasEarnings: boolean }>({
     sol: 0,
     edln: 0,
@@ -618,7 +623,7 @@ const rewards = (props: Props) => {
   );
 };
 
-export default rewards;
+export default Rewards;
 
 const styles = StyleSheet.create({
   container: {
