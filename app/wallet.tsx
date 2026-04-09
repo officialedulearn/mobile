@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import Modal from 'react-native-modal';
@@ -28,6 +29,7 @@ import { WalletService, DeviceInfo } from '@/services/wallet.service';
 import { UserService } from '@/services/auth.service';
 import { CardSharingService } from '@/services/cardSharing.service';
 import { generateUUID } from '@/utils/constants';
+import { getScreenTopPadding } from '@/utils/design';
 
 const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
   if (!url || typeof url !== 'string') return undefined;
@@ -44,6 +46,8 @@ const cardSharingService = new CardSharingService();
 function Wallet() {
   const { user, theme } = useUserStore();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   
   const [solBalance, setSolBalance] = useState(0);
   const [edlnBalance, setEdlnBalance] = useState(0);
@@ -512,7 +516,7 @@ function Wallet() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
+      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme === 'dark' ? '#00FF80' : '#000'} />
@@ -526,7 +530,7 @@ function Wallet() {
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
+      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
         <View style={styles.container}>
           <BackButton />
@@ -540,7 +544,7 @@ function Wallet() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
+    <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <Toast
         visible={toastVisible}

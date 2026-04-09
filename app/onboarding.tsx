@@ -11,8 +11,10 @@ import {
   Platform,
   Animated,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useUserStore from "@/core/userState";
-import * as Haptics from "expo-haptics"
+import * as Haptics from "expo-haptics";
+import { getScreenTopPadding } from '@/utils/design';
 
 type OnBoardingSteps = {
   title: string;
@@ -24,6 +26,8 @@ type OnBoardingSteps = {
 const OnBoarding = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const theme = useUserStore((state) => state.theme);
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const isAnimating = useRef(false);
 
@@ -86,7 +90,7 @@ const OnBoarding = () => {
   const currentStep = onBoardingSteps[stepIndex];
 
   return (
-    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
       <View style={styles.topNavigation}>

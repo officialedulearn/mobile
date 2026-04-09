@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, Image, ScrollView, Dimensions, TouchableOpacity, ImageBackground, Pressable, ActivityIndicator, SafeAreaView, Switch } from "react-native";
 import React, { useEffect } from "react";
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BackButton from "@/components/common/backButton";
 import { useLocalSearchParams, router } from "expo-router";
 import { UserService } from "@/services/auth.service";
@@ -12,6 +13,7 @@ import useSocialStore from "@/core/socialState";
 import { NotificationPreferences } from "@/services/social.service";
 import useUserStore from "@/core/userState";
 import * as Haptics from "expo-haptics";
+import { getScreenTopPadding } from '@/utils/design';
 
 type Props = Record<string, never>;
 
@@ -47,6 +49,8 @@ const User = (props: Props) => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useUserStore((state) => state.theme);
   const currentUser = useUserStore((state) => state.user);
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   const [user, setUser] = React.useState<any>();
   const [joinedAt, setJoinedAt] = React.useState<string | undefined>();
   const [userMetrics, setUserMetrics] = React.useState({
@@ -223,7 +227,7 @@ const User = (props: Props) => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
+    <SafeAreaView style={[styles.safeArea, theme === "dark" && {backgroundColor: '#0D0D0D'}, { paddingTop: topPadding }]}>
       <ScrollView 
         style={[styles.container, theme === "dark" && {backgroundColor: '#0D0D0D'}]} 
         contentContainerStyle={{ paddingBottom: 30 }}

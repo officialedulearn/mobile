@@ -33,7 +33,7 @@ export function XPProgress({ currentXP, progress, xpNeeded }: XPProgressProps) {
 
       <ProgressBar
         progress={progress}
-        color={isDark ? colors.primary.accentDarkest : colors.mint.DEFAULT}
+        color={isDark ? "#000" : "#00FF80"}
         style={{
           height: 10,
           borderRadius: 5,
