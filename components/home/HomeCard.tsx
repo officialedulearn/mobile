@@ -11,15 +11,15 @@ interface HomeCardProps {
 }
 
 export function HomeCard({ icon, title, subtitle, onPress }: HomeCardProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <TouchableOpacity
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-          borderColor: isDark ? colors.dark.border : colors.border.hub,
+          backgroundColor: colors.surface,
+          borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
         }
@@ -33,13 +33,13 @@ export function HomeCard({ icon, title, subtitle, onPress }: HomeCardProps) {
       />
       <Text style={[
         styles.title,
-        { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+        { color: colors.textPrimary }
       ]}>
         {title}
       </Text>
       <Text style={[
         styles.subtitle,
-        { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+        { color: colors.textSecondary }
       ]}>
         {subtitle}
       </Text>

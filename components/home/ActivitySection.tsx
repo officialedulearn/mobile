@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
+import { Design, iconCaretRight } from '@/utils/design';
 
 interface Activity {
   id: string;
@@ -17,32 +17,32 @@ interface ActivitySectionProps {
 }
 
 export function ActivitySection({ activities, isLoading }: ActivitySectionProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing, theme } = useTheme();
 
   return (
     <View style={[styles.container, { marginTop: spacing.lg }]}>
       <View style={styles.header}>
         <Text style={[
           styles.title,
-          { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+          { color: colors.textPrimary }
         ]}>
           Recent Highlights
         </Text>
         <TouchableOpacity
           style={[
             styles.seeMoreButton,
-            { borderColor: isDark ? colors.dark.border : colors.border.hub }
+            { borderColor: colors.borderMuted }
           ]}
           onPress={() => router.push('/quizzes')}
         >
           <Text style={[
             styles.seeMoreText,
-            { color: isDark ? colors.text.darkPrimary : colors.text.slate }
+            { color: colors.slate }
           ]}>
             See all
           </Text>
           <Image
-            source={isDark ? require('@/assets/images/icons/dark/CaretRight.png') : require('@/assets/images/icons/CaretRight.png')}
+            source={iconCaretRight(theme)}
             style={{ width: 24, height: 24 }}
           />
         </TouchableOpacity>
@@ -50,16 +50,16 @@ export function ActivitySection({ activities, isLoading }: ActivitySectionProps)
 
       {activities.length === 0 && !isLoading ? (
         <View style={styles.emptyState}>
-          <FontAwesome5 name="trophy" size={24} color={isDark ? colors.text.darkSecondary : colors.text.slateSecondary} />
+          <FontAwesome5 name="trophy" size={24} color={colors.textSecondary} />
           <Text style={[
             styles.emptyTitle,
-            { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             No highlights yet
           </Text>
           <Text style={[
             styles.emptySubtitle,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Complete activities to see your achievements!
           </Text>
@@ -68,7 +68,7 @@ export function ActivitySection({ activities, isLoading }: ActivitySectionProps)
         <View style={styles.loadingContainer}>
           <Text style={[
             styles.loadingText,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Loading...
           </Text>
@@ -76,14 +76,14 @@ export function ActivitySection({ activities, isLoading }: ActivitySectionProps)
       ) : (
         <View style={[
           styles.itemsContainer,
-          { backgroundColor: isDark ? colors.dark.surface : colors.background.white, borderColor: isDark ? colors.dark.border : colors.border.hub }
+          { backgroundColor: colors.surface, borderColor: colors.borderMuted }
         ]}>
           {activities.slice(0, 3).map((activity, index) => (
             <View key={activity.id}>
               <View style={styles.item}>
                 <Text style={[
                   styles.activityTitle,
-                  { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+                  { color: colors.textPrimary }
                 ]}>
                   {activity.title}
                 </Text>
@@ -94,14 +94,14 @@ export function ActivitySection({ activities, isLoading }: ActivitySectionProps)
                   />
                   <Text style={[
                     styles.xpText,
-                    { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+                    { color: colors.textSecondary }
                   ]}>
                     +{activity.xpEarned} XP
                   </Text>
                 </View>
               </View>
               {index < activities.slice(0, 3).length - 1 && (
-                <View style={{ height: 0.5, backgroundColor: isDark ? colors.dark.border : colors.border.hub }} />
+                <View style={{ height: 0.5, backgroundColor: colors.borderMuted }} />
               )}
             </View>
           ))}

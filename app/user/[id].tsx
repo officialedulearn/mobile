@@ -153,7 +153,7 @@ const User = (props: Props) => {
       }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     loadFollowStatus();
   }, [id, currentUser?.id]);
 
@@ -203,7 +203,7 @@ const User = (props: Props) => {
           console.error("Failed to fetch quiz activities:", error);
         }
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }
     fetchMetrics();
   }, [id]);

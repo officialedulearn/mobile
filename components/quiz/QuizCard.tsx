@@ -11,15 +11,15 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ title, description, tested = false, onPress }: QuizCardProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <TouchableOpacity
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-          borderColor: isDark ? colors.dark.border : colors.border.hub,
+          backgroundColor: colors.surface,
+          borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
         }
@@ -32,7 +32,7 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
         <Text
           style={[
             styles.title,
-            { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+            { color: colors.textPrimary }
           ]}
           numberOfLines={2}
         >
@@ -41,7 +41,7 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
         <Text
           style={[
             styles.description,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}
           numberOfLines={3}
         >

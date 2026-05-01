@@ -46,7 +46,7 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
       contentOpacity.value = withTiming(0, { duration: 150 });
     }
   }, [visible, contentOpacity, duration, type, scale]);
- // eslint-disable-next-line react-hooks/exhaustive-deps
+  
 
   const triggerHaptic = (toastType: ToastType) => {
     switch (toastType) {

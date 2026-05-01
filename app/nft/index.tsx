@@ -1,23 +1,23 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Platform,
-} from "react-native";
-import React, { useEffect, useState, useCallback } from "react";
-import { BlurView } from "expo-blur";
 import BackButton from "@/components/common/backButton";
 import useRewardsStore from "@/core/rewardsState";
 import useUserStore from "@/core/userState";
-import { format } from "date-fns";
-import Modal from "react-native-modal";
-import { router, useFocusEffect } from "expo-router";
-import Purchases from "react-native-purchases";
 import { RewardsService } from "@/services/rewards.service";
+import { format } from "date-fns";
+import { BlurView } from "expo-blur";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Modal from "react-native-modal";
+import Purchases from "react-native-purchases";
 
 type Props = Record<string, never>;
 interface UserRewardWithDetails {
@@ -138,7 +138,6 @@ const NFT = (props: Props) => {
             break;
           }
         } catch (statusError) {
-          console.error("Error checking claim status:", statusError);
         }
         attempts++;
       }
@@ -159,13 +158,7 @@ const NFT = (props: Props) => {
         });
       }
     } catch (_error: any) {
-      console.error("❌ Failed to claim badge:", error);
-      
       let errorMessage = "Failed to claim badge. Please try again.";
-      
-      if (error?.message) {
-        errorMessage = error.message;
-      }
       
       setError(errorMessage);
       toggleModal();

@@ -16,12 +16,12 @@ interface AchievementCardProps {
 }
 
 export function AchievementCard({ title, imageKey, metric }: AchievementCardProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View style={[
       styles.container,
-      { backgroundColor: isDark ? colors.dark.surface : colors.background.white }
+      { backgroundColor: colors.surface, borderColor: colors.borderMuted },
     ]}>
       <Image
         source={ACHIEVEMENT_IMAGES[imageKey]}
@@ -29,13 +29,13 @@ export function AchievementCard({ title, imageKey, metric }: AchievementCardProp
       />
       <Text style={[
         styles.metric,
-        { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+        { color: colors.textPrimary }
       ]}>
         {metric}
       </Text>
       <Text style={[
         styles.title,
-        { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+        { color: colors.textSecondary }
       ]}>
         {title}
       </Text>
@@ -51,7 +51,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Design.colors.border.hub,
     flex: 1,
     marginHorizontal: Design.spacing.xs,
   },

@@ -1,29 +1,32 @@
-import useUserStore from '@/core/userState';
+import { ScreenContainer } from '@/components/common/ScreenContainer';
+import { ActivitySection } from '@/components/home/ActivitySection';
+import { BountyCard } from '@/components/home/BountyCard';
+import { HomeCard } from '@/components/home/HomeCard';
+import { HomeHeader } from '@/components/home/HomeHeader';
+import { RoadmapCard } from '@/components/home/RoadmapCard';
+import { StreakModal } from '@/components/home/StreakModal';
+import { XPProgress } from '@/components/home/XPProgress';
 import useActivityStore from '@/core/activityState';
+import useRoadmapStore from '@/core/roadmapState';
+import useUserStore from '@/core/userState';
+import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { useTheme } from '@/hooks/useTheme';
+import { CardSharingService } from '@/services/cardSharing.service';
+import { getMilestoneProgress } from '@/utils/xpMilestones';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as StoreReview from 'expo-store-review';
 import React, { useEffect, useState } from 'react';
 import { Modal, View } from 'react-native';
-import { BlurView } from 'expo-blur';
-import * as StoreReview from 'expo-store-review';
-import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import useRoadmapStore from '@/core/roadmapState';
-import { CardSharingService } from '@/services/cardSharing.service';
-import { ScreenContainer } from '@/components/common/ScreenContainer';
-import { useTheme } from '@/hooks/useTheme';
-import { HomeHeader } from '@/components/home/HomeHeader';
-import { XPProgress } from '@/components/home/XPProgress';
-import { HomeCard } from '@/components/home/HomeCard';
-import { ActivitySection } from '@/components/home/ActivitySection';
-import { RoadmapCard } from '@/components/home/RoadmapCard';
-import { BountyCard } from '@/components/home/BountyCard';
-import { StreakModal } from '@/components/home/StreakModal';
 
 const Home = () => {
   const { user } = useUserStore();
   const { activities, fetchActivities, isLoading } = useActivityStore();
-  const { isDark } = useTheme();
+  const { colors, statusBarStyle, blurTint } = useTheme();
+  const screenStyles = useScreenStyles();
   const streakModalVisible = useUserStore((s) => s.streakModalVisible);
   const setStreakModalVisible = useUserStore((s) => s.setStreakModalVisible);
   const { roadmaps, roadmapWithStepsById, fetchRoadmaps, fetchRoadmapById } = useRoadmapStore();
@@ -54,7 +57,6 @@ const Home = () => {
           await fetchRoadmapById(state.roadmaps[0].id);
         }
       } catch (error) {
-        console.log('Error fetching roadmap:', error);
       }
     };
     load();
@@ -74,69 +76,15 @@ const Home = () => {
           }, 1000);
         }
       } catch (error) {
-        console.log('Error checking streak modal:', error);
       }
     };
 
     checkAndShowModal();
   }, [setStreakModalVisible]);
 
-  const milestones = {
-    novice: 0,
-    beginner: 500,
-    intermediate: 1500,
-    advanced: 3000,
-    expert: 5000,
-  };
-
   const currentXP = user?.xp || 0;
 
-  const getMilestoneProgress = () => {
-    if (currentXP >= milestones.expert) {
-      return {
-        progress: 1,
-        xpNeeded: 0,
-        currentLevel: milestones.expert,
-        nextLevel: milestones.expert,
-      };
-    } else if (currentXP >= milestones.advanced) {
-      return {
-        progress:
-          (currentXP - milestones.advanced) /
-          (milestones.expert - milestones.advanced),
-        xpNeeded: milestones.expert - currentXP,
-        currentLevel: milestones.advanced,
-        nextLevel: milestones.expert,
-      };
-    } else if (currentXP >= milestones.intermediate) {
-      return {
-        progress:
-          (currentXP - milestones.intermediate) /
-          (milestones.advanced - milestones.intermediate),
-        xpNeeded: milestones.advanced - currentXP,
-        currentLevel: milestones.intermediate,
-        nextLevel: milestones.advanced,
-      };
-    } else if (currentXP >= milestones.beginner) {
-      return {
-        progress:
-          (currentXP - milestones.beginner) /
-          (milestones.intermediate - milestones.beginner),
-        xpNeeded: milestones.intermediate - currentXP,
-        currentLevel: milestones.beginner,
-        nextLevel: milestones.intermediate,
-      };
-    } else {
-      return {
-        progress: currentXP / milestones.beginner,
-        xpNeeded: milestones.beginner - currentXP,
-        currentLevel: milestones.novice,
-        nextLevel: milestones.beginner,
-      };
-    }
-  };
-
-  const { progress, xpNeeded } = getMilestoneProgress();
+  const { progress, xpNeeded } = getMilestoneProgress(currentXP);
 
   const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
   const [isSharing, setIsSharing] = useState(false);
@@ -150,7 +98,6 @@ const Home = () => {
       await cardSharingService.shareStreakCard(user.id, user.streak);
       setStreakModalVisible(false);
     } catch (error) {
-      console.error('Error sharing streak card:', error);
     } finally {
       setIsSharing(false);
     }
@@ -167,7 +114,6 @@ const Home = () => {
         }
       }
     } catch (error) {
-      console.log('Error requesting review:', error);
     } finally {
       setStreakModalVisible(false);
     }
@@ -175,11 +121,17 @@ const Home = () => {
 
   return (
     <>
-      <View style={{ flex: 1 }}>
-        {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
-        <ScreenContainer>
+      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
+        <StatusBar style={statusBarStyle} />
+        <View
+          style={{
+            paddingTop: screenStyles.container.paddingTop,
+            backgroundColor: colors.canvas,
+          }}
+        >
           <HomeHeader userName={user?.name || 'User'} profileImageUrl={profileImageUrl} />
-
+        </View>
+        <ScreenContainer style={{ flex: 1, paddingTop: 0 }}>
           <XPProgress currentXP={currentXP} progress={progress} xpNeeded={xpNeeded} />
 
           <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
@@ -220,7 +172,7 @@ const Home = () => {
       >
         <BlurView
           intensity={30}
-          tint={isDark ? 'dark' : 'light'}
+          tint={blurTint}
           style={{ flex: 1 }}
           experimentalBlurMethod="dimezisBlurView"
         >

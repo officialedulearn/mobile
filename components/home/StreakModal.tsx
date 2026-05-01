@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Presets } from 'react-native-pulsar';
 
 interface StreakModalProps {
   streak: number;
@@ -11,13 +12,15 @@ interface StreakModalProps {
 }
 
 export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModalProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { isDark, colors, palette, spacing } = useTheme();
+  Presets.applause()
+
 
   return (
     <View style={[styles.container, { paddingHorizontal: spacing.md }]}>
       <View style={[
         styles.modal,
-        { backgroundColor: isDark ? colors.dark.surface : colors.background.white }
+        { backgroundColor: colors.surface }
       ]}>
         <View style={styles.topImageSection}>
           <Image
@@ -39,7 +42,7 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
           <Text style={styles.streakText}>{streak}</Text>
           <Text style={[
             styles.streakSubtitle,
-            { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             Days streak
           </Text>
@@ -47,7 +50,7 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
 
         <Text style={[
           styles.title,
-          { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+          { color: colors.textSecondary }
         ]}>
           You are on 🔥, Keep showing up daily
         </Text>
@@ -57,8 +60,8 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
             style={[
               styles.button,
               {
-                backgroundColor: isDark ? colors.dark.canvas : colors.mint.bubbleTint,
-                borderColor: isDark ? colors.dark.border : 'transparent',
+                backgroundColor: isDark ? colors.canvas : palette.mint.bubbleTint,
+                borderColor: isDark ? colors.border : 'transparent',
               }
             ]}
             onPress={onClose}
@@ -66,7 +69,7 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
           >
             <Text style={[
               styles.buttonText,
-              { color: isDark ? colors.text.darkPrimary : colors.semantic.successDark }
+              { color: isDark ? colors.textPrimary : palette.semantic.successDark }
             ]}>
               Close
             </Text>
@@ -75,7 +78,7 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
             style={[
               styles.button,
               {
-                backgroundColor: isDark ? colors.mint.DEFAULT : colors.primary.accentDarkest,
+                backgroundColor: colors.hubFabBg,
                 opacity: isSharing ? 0.6 : 1,
               }
             ]}
@@ -85,7 +88,7 @@ export function StreakModal({ streak, isSharing, onShare, onClose }: StreakModal
           >
             <Text style={[
               styles.buttonText,
-              { color: isDark ? colors.text.primary : colors.mint.DEFAULT }
+              { color: colors.hubFabFg }
             ]}>
               {isSharing ? 'Preparing...' : 'Share'}
             </Text>

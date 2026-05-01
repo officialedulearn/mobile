@@ -1,14 +1,14 @@
 import Chat from '@/components/chat/Chat';
 
 import useChatStore from '@/core/chatState';
+import { useTheme } from '@/hooks/useTheme';
 import { Chat as chatInterface, Message } from '@/interface/Chat';
 import { generateUUID } from '@/utils/constants';
 import { useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ChatScreen = () => {
   const { chatIdFromNav } = useLocalSearchParams<{
@@ -16,9 +16,9 @@ const ChatScreen = () => {
   }>();
   const [chat, setChat] = useState<chatInterface>();
   const [initialMessages, setInitialMessages] = useState<Message[]>([]);
-  const { isDark } = useTheme();
-  const screenStyles = useScreenStyles();
-  const { fetchMessages, fetchChatById } = useChatStore();
+  const { statusBarStyle, colors } = useTheme();
+  const fetchMessages = useChatStore((s) => s.fetchMessages);
+  const fetchChatById = useChatStore((s) => s.fetchChatById);
 
   const [currentChatId, setCurrentChatId] = useState<string>(() =>
     chatIdFromNav || generateUUID()
@@ -59,7 +59,6 @@ const ChatScreen = () => {
           setChat(undefined);
         }
       } catch (error) {
-        console.error('Error loading chat:', error);
         setChat(undefined);
         setInitialMessages([]);
       }
@@ -69,9 +68,12 @@ const ChatScreen = () => {
   }, [currentChatId, fetchMessages, fetchChatById]);
 
   return (
-    <SafeAreaView style={[screenStyles.container]}>
-      {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
-      <View style={[screenStyles.container]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.canvas }}
+      edges={["left", "right"]}
+    >
+      <StatusBar style={statusBarStyle} />
+      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
         <Chat
           title={chat?.title || 'AI Tutor Chat'}
           initialMessages={initialMessages}

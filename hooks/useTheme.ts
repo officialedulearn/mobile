@@ -1,15 +1,24 @@
 import { useMemo } from 'react';
 import useUserStore from '@/core/userState';
-import { Design } from '@/utils/design';
+import {
+  Design,
+  getBlurTint,
+  getStatusBarStyle,
+  getThemedColors,
+  type ThemeMode,
+} from '@/utils/design';
 
 export function useTheme() {
-  const theme = useUserStore((s) => s.theme);
+  const theme = useUserStore((s) => s.theme) as ThemeMode;
 
   return useMemo(() => ({
     isDark: theme === 'dark',
     theme,
-    colors: Design.colors,
+    colors: getThemedColors(theme),
+    palette: Design.colors,
     spacing: Design.spacing,
     typography: Design.typography,
+    statusBarStyle: getStatusBarStyle(theme),
+    blurTint: getBlurTint(theme),
   }), [theme]);
 }

@@ -1,14 +1,14 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView, ActivityIndicator } from 'react-native'
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
 import BackButton from '@/components/common/backButton'
-import * as Haptics from 'expo-haptics' 
-import { BottomSheetModal, BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet'
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
-import { CommunityService } from '@/services/community.service'
-import type { Community } from '@/interface/Community'
-import useUserStore from '@/core/userState'
 import useCommunityStore from '@/core/communityState'
+import useUserStore from '@/core/userState'
+import type { Community } from '@/interface/Community'
+import { CommunityService } from '@/services/community.service'
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
+import * as Haptics from 'expo-haptics'
 import { router } from 'expo-router'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 const communityService = new CommunityService()
 
@@ -82,7 +82,6 @@ const JoinCommunity = () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             setCode('')
         } catch (err: any) {
-            console.error('Error finding community:', err)
             setError(true)
             setErrorMessage(err?.response?.data?.message || 'Invalid invite code')
             setSuccess(false)
@@ -104,7 +103,6 @@ const JoinCommunity = () => {
             setBottomSheetStep('success')
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         } catch (err: any) {
-            console.error('Error requesting to join:', err)
             handleCloseBottomSheet()
             setError(true)
             setErrorMessage(err?.response?.data?.message || 'Failed to send join request')

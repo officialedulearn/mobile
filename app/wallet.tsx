@@ -1,35 +1,34 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-  TextInput,
-  Image,
-  Platform,
-  
-  useWindowDimensions,
-} from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Clipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
-import Modal from 'react-native-modal';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Device from 'expo-device';
 import BackButton from '@/components/common/backButton';
 import Toast, { ToastType } from '@/components/common/Toast';
 import SolanaQR from '@/components/wallet/SolanaQR';
 import useUserStore from '@/core/userState';
-import { WalletService, DeviceInfo } from '@/services/wallet.service';
 import { UserService } from '@/services/auth.service';
 import { CardSharingService } from '@/services/cardSharing.service';
+import { DeviceInfo, WalletService } from '@/services/wallet.service';
 import { generateUUID } from '@/utils/constants';
 import { getScreenTopPadding } from '@/utils/design';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
+import * as Device from 'expo-device';
+import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import Modal from 'react-native-modal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
   if (!url || typeof url !== 'string') return undefined;
@@ -101,7 +100,6 @@ function Wallet() {
           setVerifiedToken(JSON.parse(storedToken));
         }
       } catch (e) {
-        console.error('Failed to parse stored token:', e);
         await AsyncStorage.removeItem('onramp_verified_token');
       }
     };
@@ -154,7 +152,6 @@ function Wallet() {
         const errorMsg = err?.response?.data?.message || err?.message || 'Failed to fetch wallet data';
         setError(errorMsg);
         showToast('error', errorMsg);
-        console.error('Error fetching wallet data:', err);
       } finally {
         setLoading(false);
       }
@@ -184,7 +181,6 @@ function Wallet() {
           );
           
           if (completedEvents.length > 0 && isMounted) {
-            console.log('Webhook updates detected, refreshing balance...');
             
             const [balance, priceData] = await Promise.all([
               walletService.getBalance(address),
@@ -231,7 +227,6 @@ function Wallet() {
         }
       } catch (err) {
         if (isMounted) {
-          console.error('Error checking webhook updates:', err);
         }
       }
     };
@@ -253,7 +248,6 @@ function Wallet() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy:', err);
       showToast('error', 'Failed to copy to clipboard');
     }
   };
@@ -380,7 +374,6 @@ function Wallet() {
     } catch (err: any) {
       const errorMsg = err?.response?.data?.message || err?.message || 'Failed to refresh balance';
       showToast('error', errorMsg);
-      console.error('Error refreshing balance:', err);
     } finally {
       setIsRefreshing(false);
     }
@@ -403,7 +396,6 @@ function Wallet() {
       }
 
       const result = await walletService.swapSolToEDLN(user?.id || '', amount);
-      console.log(`Successfully bought EDLN with ${amount} SOL`);
       
       setTransactionLink(result.response || '');
       
@@ -495,7 +487,6 @@ function Wallet() {
     } catch (error: any) {
       const errorMsg = error?.message || 'Failed to share earnings card';
       showToast('error', errorMsg);
-      console.error('Error sharing earnings card:', error);
     } finally {
       setIsSharingCard(false);
     }

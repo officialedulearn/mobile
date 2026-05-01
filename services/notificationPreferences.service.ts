@@ -1,6 +1,6 @@
-import * as Notifications from 'expo-notifications';
+import * as Notifications from "expo-notifications";
 
-const DAILY_NOTIFICATION_ID = 'daily_quiz_reminder';
+const DAILY_NOTIFICATION_ID = "daily_quiz_reminder";
 
 export class NotificationPreferencesService {
   static async scheduleDailyReminder(): Promise<void> {
@@ -10,9 +10,9 @@ export class NotificationPreferencesService {
       await Notifications.scheduleNotificationAsync({
         identifier: DAILY_NOTIFICATION_ID,
         content: {
-          title: 'Daily Learning Time! 📚',
-          body: 'Complete your daily quiz to maintain your streak',
-          data: { screen: 'quiz' },
+          title: "Daily Learning Time! 📚",
+          body: "Complete your daily quiz to maintain your streak",
+          data: { screen: "quiz" },
           sound: true,
         },
         trigger: {
@@ -21,25 +21,27 @@ export class NotificationPreferencesService {
           repeats: true,
         } as Notifications.CalendarTriggerInput,
       });
-      
-      console.log('Daily reminder scheduled for 7:00 PM');
     } catch (error) {
-      console.error('Error scheduling daily reminder:', error);
+      console.error("Error scheduling daily reminder:", error);
       throw error;
     }
   }
 
   static async cancelDailyReminder(): Promise<void> {
     try {
-      const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-      const dailyReminder = scheduledNotifications.find(n => n.identifier === DAILY_NOTIFICATION_ID);
-      
+      const scheduledNotifications =
+        await Notifications.getAllScheduledNotificationsAsync();
+      const dailyReminder = scheduledNotifications.find(
+        (n) => n.identifier === DAILY_NOTIFICATION_ID,
+      );
+
       if (dailyReminder) {
-        await Notifications.cancelScheduledNotificationAsync(DAILY_NOTIFICATION_ID);
-        console.log('Daily reminder cancelled');
+        await Notifications.cancelScheduledNotificationAsync(
+          DAILY_NOTIFICATION_ID,
+        );
       }
     } catch (error) {
-      console.error('Error cancelling daily reminder:', error);
+      console.error("Error cancelling daily reminder:", error);
     }
   }
 

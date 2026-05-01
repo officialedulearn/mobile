@@ -4,14 +4,14 @@ import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
 
 export function BountyCard() {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <View style={[
       styles.container,
       {
-        backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-        borderColor: isDark ? colors.dark.border : colors.border.hub,
+        backgroundColor: colors.surface,
+        borderColor: colors.borderMuted,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         marginTop: spacing.lg,
@@ -20,7 +20,7 @@ export function BountyCard() {
       <View>
         <View style={[
           styles.badge,
-          { backgroundColor: isDark ? colors.dark.canvas : colors.background.surfaceMuted, borderColor: isDark ? colors.dark.border : colors.border.hub }
+          { backgroundColor: colors.surfaceMuted, borderColor: colors.borderMuted }
         ]}>
           <Image
             source={require('@/assets/images/icons/trophy.png')}
@@ -28,14 +28,14 @@ export function BountyCard() {
           />
           <Text style={[
             styles.badgeText,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Bounty Challenge
           </Text>
         </View>
         <Text style={[
           styles.title,
-          { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+          { color: colors.textPrimary }
         ]}>
           Stay Top 3 This Week!
         </Text>

@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { Question } from "@/core/quizState";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 type Theme = "light" | "dark";
 
@@ -27,8 +27,7 @@ const styles = StyleSheet.create({
   question: {
     color: "#2D3C52",
     lineHeight: 30,
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 14,
     fontFamily: "Satoshi-Regular",
     marginBottom: 20,
   },

@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import React from "react";
+import Design from "@/utils/design";
 import {
   Alert,
   Image,
@@ -170,7 +171,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingTop: Design.spacing.sm,
+    paddingBottom: Design.spacing.md,
     backgroundColor: "#F9FBFC",
     borderBottomWidth: 1,
     borderBottomColor: "#EDF3FC",

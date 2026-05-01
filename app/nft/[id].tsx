@@ -1,10 +1,10 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Linking } from "react-native";
-import React, { useEffect, useState } from "react";
 import BackButton from "@/components/common/backButton";
 import useRewardsStore from "@/core/rewardsState";
-import { useLocalSearchParams } from "expo-router";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = Record<string, never>;
 
@@ -33,7 +33,6 @@ const NftPage = (_props: Props) => {
           setUserReward(null);
         }
       } catch (_error) {
-        console.error("Error fetching rewards:", error);
       } finally {
         setIsLoading(false);
       }
@@ -100,7 +99,6 @@ const NftPage = (_props: Props) => {
           <TouchableOpacity 
             onPress={() => {
               const explorerUrl = `https://solscan.io/tx/${userReward.signature}`;
-              console.log("Opening explorer URL:", explorerUrl);
               Linking.openURL(explorerUrl);
             }} 
             style={[styles.viewOnExplorerButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
@@ -114,7 +112,6 @@ const NftPage = (_props: Props) => {
             onPress={() => {
               if (reward?.signature) {
                 const explorerUrl = `https://solscan.io/tx/${reward.signature}`;
-                console.log("Opening explorer URL:", explorerUrl);
                 Linking.openURL(explorerUrl);
               }
             }} 

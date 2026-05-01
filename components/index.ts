@@ -5,6 +5,7 @@ export { default as AppModal } from './common/AppModal';
 export { default as AppHeader } from './common/AppHeader';
 export { default as AppSafeArea } from './common/AppSafeArea';
 export { default as LoadingSpinner } from './common/LoadingSpinner';
+export { default as ScreenLoader } from './common/ScreenLoader';
 export { default as EmptyState } from './common/EmptyState';
 export { default as Avatar } from './common/Avatar';
 export { default as Toast } from './common/Toast';
@@ -19,7 +20,7 @@ export { default as OAuthButtons } from './auth/OAuthButtons';
 
 export { default as Chat } from './chat/Chat';
 export { default as ChatComposerInput } from './chat/ChatComposerInput';
-export { default as ChatDrawer } from './chat/ChatDrawer';
+export { default as ChatSidebarPanel } from './chat/ChatSidebarPanel';
 export { default as ChatHeaderBar } from './chat/ChatHeaderBar';
 export { default as ChatTypingIndicator } from './chat/ChatTypingIndicator';
 export { default as MessageItem } from './chat/MessageItem';

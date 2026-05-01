@@ -1,4 +1,5 @@
 import useUserStore from "@/core/userState";
+import { getThemedColors, tabIconGift, tabIconHome, tabIconUser } from "@/utils/design";
 import { Tabs, usePathname, useSegments } from "expo-router";
 
 import React, { useEffect, useState, useRef, createContext, useContext } from "react";
@@ -7,8 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 import Animated, { 
+  Easing,
   useAnimatedStyle, 
   useSharedValue, 
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -22,6 +25,41 @@ export const SlideTransitionContext = createContext<{
 }>({ direction: 'right' });
 
 type Props = Record<string, never>;
+
+const BouncyTabBarButton = React.forwardRef<any, any>(({ onPress, ...rest }, ref) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const runBounce = () => {
+    scale.value = withSequence(
+      withTiming(0.88, { duration: 100, easing: Easing.out(Easing.quad) }),
+      withTiming(1.06, { duration: 150, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 250, easing: Easing.out(Easing.back(1.2)) }),
+    );
+  };
+
+  return (
+    <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+      <TouchableOpacity
+        ref={ref}
+        {...rest}
+        activeOpacity={1}
+        onPressIn={(e) => {
+          runBounce();
+          rest.onPressIn?.(e);
+        }}
+        onPress={(e) => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress?.(e);
+        }}
+      />
+    </Animated.View>
+  );
+});
+BouncyTabBarButton.displayName = 'BouncyTabBarButton';
 
 const AnimatedTabIcon: React.FC<{
   source: any;
@@ -78,13 +116,15 @@ const ChatIconComponent: React.FC<{ focused: boolean }> = ({ focused }) => {
 
 const TabLayout = (props: Props) => {
   const theme = useUserStore(s => s.theme);
+  const colors = getThemedColors(theme);
   const streakModalVisible = useUserStore(s => s.streakModalVisible);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const segments = useSegments();
   const previousPathRef = useRef(pathname);
-  const isChatTab = segments.includes("chat");
+  const isChatTab = (segments as string[]).includes("chat");
+  const isQuizDetailScreen = /^\/quizzes\/[^/]+$/.test(pathname);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
@@ -118,13 +158,13 @@ const TabLayout = (props: Props) => {
   }, []);
   return (
     <SlideTransitionContext.Provider value={{ direction }}>
-      <View style={{ flex: 1, backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
       <Tabs
         screenOptions={{
-        tabBarActiveTintColor: theme === "dark" ? '#fff' : '#00FF80',
-        tabBarInactiveTintColor: theme === "dark" ? '#777777' : '#000',
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         animation: 'shift',
-        sceneStyle: { backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' },
+        sceneStyle: { backgroundColor: colors.canvas },
         tabBarStyle: [
           {
             borderTopWidth: 0,
@@ -132,11 +172,11 @@ const TabLayout = (props: Props) => {
             height: 70 + insets.bottom,
             paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 15,
-            backgroundColor: theme === 'dark' ? '#0d0d0d' : "#F9FBFC",
-            borderColor: theme === 'dark' ? '#0d0d0d' : "#F9FBFC",
+            backgroundColor: colors.tabBarBg,
+            borderColor: colors.tabBarBg,
             borderWidth: 1,
           },
-          (isKeyboardVisible || streakModalVisible || isChatTab) && {
+          (isKeyboardVisible || streakModalVisible || isChatTab || isQuizDetailScreen) && {
             display: "none",
           },
         ],
@@ -150,15 +190,7 @@ const TabLayout = (props: Props) => {
         tabBarItemStyle: {
           backgroundColor: "transparent",
         },
-        tabBarButton: ({ onPress, ...props }: any) => (
-          <TouchableOpacity
-            {...props}
-            onPress={(e: any) => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onPress?.(e);
-            }}
-          />
-        ),
+        tabBarButton: (props: any) => <BouncyTabBarButton {...props} />,
       }}
     >
       <Tabs.Screen
@@ -168,7 +200,7 @@ const TabLayout = (props: Props) => {
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/home.png") : require("@/assets/images/icons/home.png")}
+              source={tabIconHome(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -206,7 +238,7 @@ const TabLayout = (props: Props) => {
           title: "Rewards",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/gift.png") : require("@/assets/images/icons/gift.png")}
+              source={tabIconGift(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -221,7 +253,7 @@ const TabLayout = (props: Props) => {
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user.png")}
+              source={tabIconUser(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -247,6 +279,7 @@ export const useSlideTransition = () => useContext(SlideTransitionContext);
 export const SlideTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { direction } = useSlideTransition();
   const theme = useUserStore(s => s.theme);
+  const colors = getThemedColors(theme);
   
   const slideInRight = () => {
     'worklet';
@@ -286,7 +319,7 @@ export const SlideTransitionWrapper: React.FC<{ children: React.ReactNode }> = (
   
   return (
     <Animated.View 
-      style={{ flex: 1, backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' }}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
       entering={direction === 'right' ? slideInRight : slideInLeft}
     >
       {children}

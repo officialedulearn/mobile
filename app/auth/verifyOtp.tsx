@@ -1,25 +1,34 @@
+import OtpCodeInput from "@/components/auth/OtpCodeInput";
 import BackButton from "@/components/common/backButton";
+import ScreenLoader from "@/components/common/ScreenLoader";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
+import { NotificationService } from "@/services/notification.service";
+import { generateUUID } from "@/utils/constants";
 import { supabase } from "@/utils/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { NotificationService } from "@/services/notification.service";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  Modal,
-  Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { generateUUID } from "@/utils/constants";
 
 type Props = Record<string, never>;
+
+function maskEmailHint(email: string) {
+  if (!email) return "";
+  const at = email.indexOf("@");
+  if (at <= 0) return email;
+  const user = email.slice(0, at);
+  const domain = email.slice(at + 1);
+  const head = user.slice(0, Math.min(2, user.length));
+  return `${head}•••••@${domain}`;
+}
 
 const VerifyOtp = (_props: Props) => {
   const { 
@@ -46,8 +55,14 @@ const VerifyOtp = (_props: Props) => {
   const [resendLoading, setResendLoading] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [loadingText, setLoadingText] = useState("Verifying...");
+  const autoSubmitLock = useRef(false);
+  const handleSubmitRef = useRef<() => Promise<void>>(async () => {});
   const { setUser } = useUserStore();
   const theme = useUserStore((state) => state.theme);
+
+  useEffect(() => {
+    if (otp.length < 6) autoSubmitLock.current = false;
+  }, [otp]);
 
   useEffect(() => {
     if (isReviewer === "1" && email === "playreview@edulearn.com") {
@@ -92,7 +107,6 @@ const VerifyOtp = (_props: Props) => {
           setUser(newUser);
           router.push("/auth/identity");
         } catch (createError) {
-          console.error("Reviewer account creation failed:", createError);
           try {
             const userData = await userService.getUser(email);
             setUser(userData);
@@ -114,7 +128,6 @@ const VerifyOtp = (_props: Props) => {
           setUser(userData);
           router.push("/auth/welcome");
         } catch (getUserError) {
-          console.error("Get reviewer user failed:");
           Alert.alert(
             "Profile Load Failed",
             "Unable to load reviewer profile. Please contact support."
@@ -122,7 +135,6 @@ const VerifyOtp = (_props: Props) => {
         }
       }
     } catch (error) {
-      console.error("Reviewer login error:", error);
       Alert.alert(
         "Authentication Failed", 
         "Unable to authenticate reviewer account. Please contact support."
@@ -139,11 +151,6 @@ const VerifyOtp = (_props: Props) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}`;
-  };
-
-  const handleTextChange = (text: string) => {
-    const numericValue = text.replace(/[^0-9]/g, "");
-    setOtp(numericValue);
   };
 
   const handleResendOtp = async () => {
@@ -176,7 +183,6 @@ const VerifyOtp = (_props: Props) => {
         email: email,
       });
     } catch (error) {
-      console.error("Resend OTP error:", error);
       Alert.alert("Network Error", "Unable to resend code. Please check your connection.");
     } finally {
       setResendLoading(false);
@@ -189,13 +195,15 @@ const VerifyOtp = (_props: Props) => {
       return;
     }
 
+    if (loading) return;
+
     if (otp.length !== 6) {
       Alert.alert("Invalid Code", "Please enter the complete 6-digit verification code");
       return;
     }
 
     setLoading(true);
-    setLoadingText("Verifying code...");
+    setLoadingText("Verifying your OTP...");
     
     try {
       const { data, error } = await supabase.auth.verifyOtp({
@@ -205,7 +213,6 @@ const VerifyOtp = (_props: Props) => {
       });
 
       if (error) {
-        console.error("OTP verification failed:", error.message);
         
         if (error.message.includes('expired')) {
           Alert.alert("Code Expired", "Your verification code has expired. Please request a new one.");
@@ -225,7 +232,6 @@ const VerifyOtp = (_props: Props) => {
           const userData = await userService.getUser(data.user.email || "");
           
           if (!userData) {
-            console.error("❌ User not found in database");
             Alert.alert(
               "User Not Found",
               "Unable to find your account. Please contact support."
@@ -233,7 +239,6 @@ const VerifyOtp = (_props: Props) => {
             return;
           }
           
-          console.log("✅ User loaded successfully:", userData);
           setUser(userData);
           
           if (isLogin === "0") {
@@ -258,7 +263,6 @@ const VerifyOtp = (_props: Props) => {
             router.push("/auth/welcome");
           }
         } catch (getUserError: any) {
-          console.error("❌ Error fetching user:");
           const errorMessage = getUserError?.response?.data?.message || getUserError?.message || "Unknown error";
           Alert.alert(
             "Login Failed",
@@ -267,7 +271,6 @@ const VerifyOtp = (_props: Props) => {
         }
       }
     } catch (error) {
-      console.error("Error during OTP verification:", error);
       Alert.alert(
         "Connection Error", 
         "Unable to connect to our servers. Please check your internet connection and try again."
@@ -278,6 +281,18 @@ const VerifyOtp = (_props: Props) => {
     }
   };
 
+  handleSubmitRef.current = handleSubmit;
+
+  useEffect(() => {
+    if (isReviewer === "1") return;
+    if (otp.length !== 6 || loading || autoSubmitLock.current) return;
+    autoSubmitLock.current = true;
+    const t = setTimeout(() => {
+      void handleSubmitRef.current();
+    }, 240);
+    return () => clearTimeout(t);
+  }, [otp, loading, isReviewer]);
+
   return (
     <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
@@ -287,31 +302,31 @@ const VerifyOtp = (_props: Props) => {
 
       <View style={styles.contentContainer}>
         <Text style={[styles.boldText, theme === "dark" && { color: "#E0E0E0" }]}>
-          {isReviewer === "1" ? "Authenticating..." : "Verify email address?"}
+          {isReviewer === "1" ? "Authenticating..." : "Verify account with OTP"}
         </Text>
         <Text style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}>
-          {isReviewer === "1" 
-            ? "Logging in Google Play reviewer account automatically..." 
-            : `Enter the six digits code sent to your email address ${email}`
-          }
+          {isReviewer === "1"
+            ? "Logging in Google Play reviewer account automatically..."
+            : `We've sent a 6-digit code to ${maskEmailHint(email || "")}`}
         </Text>
 
         {isReviewer !== "1" && (
           <>
             <View style={styles.formContainer}>
-              <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>Code</Text>
-              <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
-                <TextInput
-                  keyboardType="numeric"
-                  style={[styles.input, theme === "dark" && { color: "#E0E0E0" }]}
-                  placeholder="Enter OTP"
-                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-                  value={otp}
-                  onChangeText={handleTextChange}
-                  maxLength={6}
-                />
-              </View>
+              <OtpCodeInput
+                value={otp}
+                onChange={setOtp}
+                theme={theme === "dark" ? "dark" : "light"}
+                editable={!loading}
+                autoFocus
+              />
             </View>
+
+            {loading ? (
+              <Text style={[styles.verifyHint, theme === "dark" && styles.verifyHintDark]}>
+                Verifying your OTP…
+              </Text>
+            ) : null}
 
             <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
               Code expires in <Text style={[styles.timerText, theme === "dark" && { color: "#E0E0E0" }]}>{formatTime()}</Text>
@@ -347,24 +362,15 @@ const VerifyOtp = (_props: Props) => {
               onPress={() => handleSubmit()}
               disabled={loading}
             >
-              <Text style={[styles.buttonText, theme === "dark" && { color: "#000" }]}>Submit</Text>
+              <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
+                Submit
+              </Text>
             </TouchableOpacity>
           </>
         )}
       </View>
 
-      <Modal
-        transparent={true}
-        visible={loading}
-        animationType="fade"
-      >
-        <View style={styles.loadingOverlay}>
-          <View style={[styles.loaderContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
-            <ActivityIndicator size="large" color="#00FF80" />
-            <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>{loadingText}</Text>
-          </View>
-        </View>
-      </Modal>
+      <ScreenLoader visible={loading} message={loadingText} />
     </View>
   );
 };
@@ -398,31 +404,17 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   formContainer: {
-    marginBottom: 24,
+    marginBottom: 8,
   },
-  inputLabel: {
+  verifyHint: {
     fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    lineHeight: 24,
-    fontWeight: "500",
-    marginBottom: 8,
-    color: "#2D3C52",
+    color: "#61728C",
+    textAlign: "center",
+    marginBottom: 16,
   },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#EDF3FC",
-    borderRadius: 32,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
+  verifyHintDark: {
+    color: "#94A3B8",
   },
   expiryText: {
     fontFamily: "Satoshi-Regular",
@@ -444,7 +436,6 @@ const styles = StyleSheet.create({
   resendText: {
     fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: "700",
     color: "#2D3C52",
     textDecorationLine: "underline",
   },
@@ -465,29 +456,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#00FF80",
     fontWeight: "700",
+    fontFamily: "Satoshi-Medium",
     textAlign: "center",
     fontSize: 16,
   },
+  buttonTextDark: {
+    color: "#000",
+  },
   disabledButton: {
     opacity: 0.5,
-  },
-  loadingOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  loaderContainer: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#2D3C52",
-    fontFamily: "Satoshi-Regular",
   },
 });
 

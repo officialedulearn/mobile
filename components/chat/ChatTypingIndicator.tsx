@@ -1,6 +1,5 @@
 import useUserStore from "@/core/userState";
-import { STREAMING_WAIT_MESSAGES } from "@/utils/constants";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
@@ -11,14 +10,6 @@ import Animated, {
 
 const ChatTypingIndicator = () => {
   const theme = useUserStore((s) => s.theme);
-  const [messageIndex, setMessageIndex] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setMessageIndex((i) => (i + 1) % STREAMING_WAIT_MESSAGES.length);
-    }, 2800);
-    return () => clearInterval(id);
-  }, []);
 
   const labelPulseStyle = useAnimatedStyle(() => ({
     opacity: withRepeat(
@@ -42,7 +33,6 @@ const ChatTypingIndicator = () => {
     ),
   }));
 
-  const label = STREAMING_WAIT_MESSAGES[messageIndex];
   const dark = theme === "dark";
 
   return (
@@ -70,14 +60,13 @@ const ChatTypingIndicator = () => {
       >
         <View style={styles.streamingWaitRow}>
           <Animated.Text
-            key={label}
             style={[
               styles.streamingWaitLabel,
               dark && styles.streamingWaitLabelDark,
               labelPulseStyle,
             ]}
           >
-            {label}
+            Thinking
           </Animated.Text>
           <Animated.View style={[styles.cursorContainer, cursorStyle]}>
             <Text style={[styles.cursor, dark && { color: "#E0E0E0" }]}>|</Text>

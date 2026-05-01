@@ -1,9 +1,10 @@
-import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { Question } from "@/core/quizState";
-import { QuestionCard } from "./QuestionCard";
-import { AnswerOption } from "./AnswerOption";
 import * as Haptics from "expo-haptics";
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AnswerOption } from "./AnswerOption";
+import { QuestionCard } from "./QuestionCard";
 
 type Theme = "light" | "dark";
 
@@ -30,6 +31,7 @@ export const QuizQuestionsScreen = ({
   onNext: () => void;
   onFinish: () => void;
 }) => {
+  const insets = useSafeAreaInsets();
   const isLastQuestion = currentIndex === totalQuestions - 1;
 
   const handleSelectOption = (option: string) => {
@@ -56,17 +58,21 @@ export const QuizQuestionsScreen = ({
     <View style={styles.questionContainer}>
       <QuestionCard question={question} theme={theme} />
 
-      <View style={styles.options}>
-        {question.options.map((option, index) => (
-          <AnswerOption
-            key={index}
-            option={option}
-            isSelected={selectedOption === option}
-            theme={theme}
-            onPress={() => handleSelectOption(option)}
-          />
-        ))}
-      </View>
+      <ScrollView
+  style={styles.options}
+  contentContainerStyle={styles.optionsContent}
+  showsVerticalScrollIndicator={false}
+>
+  {question.options.map((option, index) => (
+    <AnswerOption
+      key={index}
+      option={option}
+      isSelected={selectedOption === option}
+      theme={theme}
+      onPress={() => handleSelectOption(option)}
+    />
+  ))}
+</ScrollView>
 
       <View
         style={[
@@ -74,7 +80,7 @@ export const QuizQuestionsScreen = ({
           theme === "dark" && { backgroundColor: "#0D0D0D" },
         ]}
       >
-        <View style={styles.navigationButtons}>
+        <View style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}>
           <TouchableOpacity
             style={[
               styles.navButton,
@@ -130,6 +136,12 @@ const styles = StyleSheet.create({
   },
   options: {
     marginTop: 10,
+    flex: 1
+  },
+  optionsContent: {
+    flexDirection: "column",
+    gap: 12,
+    paddingVertical: 8,
   },
   bottomButtonsContainer: {
     position: "absolute",
@@ -137,7 +149,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingVertical: 20,
     backgroundColor: "#F9FBFC",
     width: "100%",
     alignItems: "center",

@@ -1,8 +1,8 @@
 import { Message } from "@/interface/Chat";
 import { generateUUID } from "@/utils/constants";
 import { supabase } from "@/utils/supabase";
-import { BaseService } from "./base.service";
 import EventSource from "react-native-sse";
+import { BaseService } from "./base.service";
 
 function scheduleAfterReactRender(fn: () => void) {
   setTimeout(fn, 0);
@@ -11,7 +11,7 @@ function scheduleAfterReactRender(fn: () => void) {
 export class AIService extends BaseService {
   async getTitle(message: Message) {
     const response = await this.executeRequest(
-      this.getClient().post("/ai/title", message)
+      this.getClient().post("/ai/title", message),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -23,7 +23,7 @@ export class AIService extends BaseService {
     userId: string;
   }) {
     const response = await this.executeRequest(
-      this.getClient().post("/ai/message", dto)
+      this.getClient().post("/ai/message", dto),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -31,7 +31,7 @@ export class AIService extends BaseService {
 
   async generateQuiz(dto: { chatId: string; userId: string }) {
     const response = await this.executeRequest(
-      this.getClient().post("/ai/quiz", dto)
+      this.getClient().post("/ai/quiz", dto),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -39,10 +39,10 @@ export class AIService extends BaseService {
 
   async generateSuggestions(dto: { userId: string }) {
     const response = await this.executeRequest(
-      this.getClient().post("/ai/suggestions", dto)
+      this.getClient().post("/ai/suggestions", dto),
     );
     if (response.error) throw response.error;
-    return response.data;
+    return response.data.suggestions;
   }
 
   async generateMessagesStream(
@@ -53,14 +53,19 @@ export class AIService extends BaseService {
     },
     onToken: (token: string, type?: string) => void,
     onComplete: (fullMessage: Message) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
   ) {
     try {
-      const initResponse = await this.getClient().post("/ai/message-stream/init", dto);
+      const initResponse = await this.getClient().post(
+        "/ai/message-stream/init",
+        dto,
+      );
       const { streamId } = initResponse.data;
 
       const API_URL = this.getClient().defaults.baseURL;
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
         throw new Error("No access token found. Please log in again.");
@@ -72,7 +77,7 @@ export class AIService extends BaseService {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-        }
+        },
       );
 
       let fullResponse = "";
@@ -107,14 +112,9 @@ export class AIService extends BaseService {
 
           if (data.token) {
             fullResponse += data.token;
-            const token = data.token;
-            const tokenType = data.type;
-            scheduleAfterReactRender(() => {
-              onToken(token, tokenType);
-            });
+            onToken(data.token, data.type);
           }
-        } catch (parseError) {
-        }
+        } catch (parseError) {}
       });
 
       eventSource.addEventListener("error", () => {
@@ -134,7 +134,9 @@ export class AIService extends BaseService {
               chatId: dto.chatId,
             });
           } else {
-            onError(new Error("Connection error during streaming. Please try again."));
+            onError(
+              new Error("Connection error during streaming. Please try again."),
+            );
           }
         });
       });
@@ -157,7 +159,9 @@ export class AIService extends BaseService {
     }
   }
 
-  async transcribeAudio(dto: { audioUri: string }): Promise<{ transcription: string }> {
+  async transcribeAudio(dto: {
+    audioUri: string;
+  }): Promise<{ transcription: string }> {
     try {
       const getFileTypeFromUri = (uri: string) => {
         const extension = uri.split(".").pop()?.toLowerCase();
@@ -191,13 +195,14 @@ export class AIService extends BaseService {
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        })
+        }),
       );
 
       if (response.error) throw response.error;
       return response.data!;
     } catch (error: any) {
-      let errorMessage = "Failed to process your audio message. Please try again.";
+      let errorMessage =
+        "Failed to process your audio message. Please try again.";
 
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -209,11 +214,19 @@ export class AIService extends BaseService {
         if (error.response?.status === 400) {
           errorMessage = "Invalid audio file. Please try recording again.";
         } else if (error.response?.status === 413) {
-          errorMessage = "Audio file too large. Please record a shorter message.";
-        } else if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+          errorMessage =
+            "Audio file too large. Please record a shorter message.";
+        } else if (
+          error.code === "ECONNABORTED" ||
+          error.message?.includes("timeout")
+        ) {
           errorMessage = "Audio processing timed out. Please try again.";
-        } else if (error.message?.includes("Network Error") || !error.response) {
-          errorMessage = "Network error. Please check your internet connection and try again.";
+        } else if (
+          error.message?.includes("Network Error") ||
+          !error.response
+        ) {
+          errorMessage =
+            "Network error. Please check your internet connection and try again.";
         }
       }
 

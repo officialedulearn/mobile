@@ -20,15 +20,15 @@ export function RewardCard({
   color = Design.colors.primary.accentDark,
   onPress,
 }: RewardCardProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
 
   return (
     <TouchableOpacity
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-          borderColor: isDark ? colors.dark.border : colors.border.hub,
+          backgroundColor: colors.surface,
+          borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
         }
@@ -43,13 +43,13 @@ export function RewardCard({
       <View style={{ flex: 1 }}>
         <Text style={[
           styles.title,
-          { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+          { color: colors.textPrimary }
         ]}>
           {title}
         </Text>
         <Text style={[
           styles.description,
-          { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+          { color: colors.textSecondary }
         ]}>
           {description}
         </Text>

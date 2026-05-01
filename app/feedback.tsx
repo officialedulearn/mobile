@@ -1,10 +1,10 @@
-import { StyleSheet, Text, View, TextInput, KeyboardAvoidingView, Platform, TouchableOpacity, Image, Modal, ActivityIndicator, ScrollView } from 'react-native'
-import React, { useState } from 'react'
 import BackButton from '@/components/common/backButton'
 import useUserStore from '@/core/userState'
 import { FeedbackService } from '@/services/feedback.service'
 import { router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import React, { useState } from 'react'
+import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 type Props = Record<string, never>
 
@@ -61,7 +61,6 @@ const Feedback = (_props: Props) => {
       }, 2000);
 
     } catch (error) {
-      console.error("Failed to submit feedback:", error);
       setIsError(true);
       setModalMessage(error instanceof Error ? error.message : "Failed to submit feedback. Please try again.");
       setShowModal(true);

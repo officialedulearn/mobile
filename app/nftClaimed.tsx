@@ -1,9 +1,9 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
-import React, { useEffect } from "react";
-import { router, useLocalSearchParams } from "expo-router";
 import useRewardsStore from "@/core/rewardsState";
-import { CardSharingService } from "@/services/cardSharing.service";
 import useUserStore from "@/core/userState";
+import { CardSharingService } from "@/services/cardSharing.service";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = Record<string, never>;
 
@@ -43,7 +43,6 @@ const NftClaimed = (_props: Props) => {
           setReward(rewardData);
         }
       } catch (error) {
-        console.error("Failed to fetch reward:", error);
         setError("Failed to load reward details");
       } finally {
         setIsLoading(false);
@@ -60,14 +59,12 @@ const NftClaimed = (_props: Props) => {
 
   const handleShareNFT = async () => {
     if (!reward || !reward.imageUrl) {
-      console.error('No NFT image to share');
       return;
     }
   
     try {
       await cardSharingService.shareNFTMintCard(user?.id as string, reward.title || "your badge", reward.imageUrl);
     } catch (error) {
-      console.error('Error sharing NFT:', error);
       alert('Failed to share NFT');
     }
   };

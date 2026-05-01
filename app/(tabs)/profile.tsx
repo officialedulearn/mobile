@@ -1,26 +1,33 @@
+import { AchievementCard } from '@/components/profile/AchievementCard';
 import DailyCheckInStreak from '@/components/rewards/streak';
+import useRoadmapStore from '@/core/roadmapState';
 import useUserStore from '@/core/userState';
+import { useTheme } from '@/hooks/useTheme';
+import { UserService } from '@/services/auth.service';
+import { WalletService } from '@/services/wallet.service';
 import { levels } from '@/utils/constants';
 import { supabase } from '@/utils/supabase';
+import {
+  iconClock,
+  iconCopy,
+  iconLevel,
+  iconNotebook,
+  iconSettings,
+  iconWallet,
+} from '@/utils/design';
 import { getUserMetrics } from '@/utils/utils';
-import React, { useEffect, useRef } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, TextInput, ScrollView, Dimensions, ActivityIndicator, SafeAreaView, useWindowDimensions, Platform, Linking, Animated } from 'react-native';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Animated, Dimensions, Image, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Modal from 'react-native-modal';
-import { WalletService } from '@/services/wallet.service';
-import { UserService } from '@/services/auth.service';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import useRoadmapStore from '@/core/roadmapState';
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { AchievementCard } from '@/components/profile/AchievementCard';
 
 type Props = Record<string, never>;
 
 const Profile = (props: Props) => {
   const { user } = useUserStore();
-  const { isDark } = useTheme();
+  const { colors, theme } = useTheme();
     const walletBalance = useUserStore((state) => state.walletBalance);
   const walletBalanceLoading = useUserStore((state) => state.walletBalanceLoading);
   const fetchWalletBalance = useUserStore((state) => state.fetchWalletBalance);
@@ -93,7 +100,6 @@ const Profile = (props: Props) => {
       user?.id
     ) {
       const timer = setTimeout(() => {
-        console.log('Showing EDLN popover for balance:', walletBalance.tokenAccount);
         setShowEDLNPopover(true);
         setHasShownPopover(true);
 
@@ -161,7 +167,6 @@ const Profile = (props: Props) => {
       }
 
       const result = await walletService.swapSolToEDLN(user?.id || "", amount);
-      console.log(`Successfully bought EDLN with ${amount} SOL`);
       
       setTransactionLink(result.response || result.response || "");
       
@@ -172,7 +177,7 @@ const Profile = (props: Props) => {
       
       setBuySuccessModalVisible(true);
     } catch (_error: any) {
-      setBuyError(error.message || "Failed to complete purchase");
+      setBuyError(_error.message || "Failed to complete purchase");
       setIsBuying(false);
     }
   };
@@ -186,7 +191,6 @@ const Profile = (props: Props) => {
       setIsBurning(false);
       setBurnSuccessModalVisible(true);
     } catch (_error: any) {
-      console.error("Error burning tokens:", error);
       setIsBurning(false);
     }
   };
@@ -194,20 +198,20 @@ const Profile = (props: Props) => {
   const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
 
   return (
-    <SafeAreaView style={[styles.safeArea, isDark && { backgroundColor: "#0D0D0D" }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.canvas }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.container, { marginTop: width > 350 ? 30 : 20 }]}>
           <View style={styles.header}>
-            <Text style={[styles.headerText, isDark && {color: "#E0E0E0"}]}>Profile</Text>
+            <Text style={[styles.headerText, { color: colors.slate }]}>Profile</Text>
             <TouchableOpacity onPress={() => router.push("/settings")} >
               <Image
-                source={isDark ? require("@/assets/images/icons/dark/settings.png") : require("@/assets/images/icons/settings.png")}
+                source={iconSettings(theme)}
                 style={{ width: 40, height: 40 }}
               />
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.profileCard, { marginTop: 12, gap: 10 }, isDark && { backgroundColor: "#00FF80" }]}>
+          <View style={[styles.profileCard, { marginTop: 12, gap: 10, backgroundColor: colors.heroBackground }]}>
             <View style={styles.cardHeader}>
               <View style={[styles.identity, { marginRight: 10 }]}>
                 <Image
@@ -215,7 +219,7 @@ const Profile = (props: Props) => {
                   style={styles.profileAvatar}
                   resizeMode="cover"
                 />
-                <Text style={[styles.cardText, { flex: 1 }, isDark && {color: "#000"}]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.cardText, { flex: 1, color: colors.heroText }]} numberOfLines={1} ellipsizeMode="tail">
                   {user?.name}
                 </Text>
               </View>
@@ -223,14 +227,14 @@ const Profile = (props: Props) => {
               <View style={styles.levelContainer}>
                 <View style={styles.levelIconContainer}>
                   <Image
-                    source={isDark ? require("@/assets/images/icons/dark/level.png") : require("@/assets/images/icons/level.png")}
+                    source={iconLevel(theme)}
                     style={styles.levelIcon}
                   />
-                  <Text style={[styles.levelNumber, isDark && {color: "#000"}]}>
+                  <Text style={[styles.levelNumber, { color: colors.heroText }]}>
                     {levels.indexOf(user?.level?.toLowerCase() || "") + 1}
                   </Text>
                 </View>
-                <Text style={[styles.levelText, isDark && {color: "#000"}]}>{user?.level}</Text>
+                <Text style={[styles.levelText, { color: colors.heroText }]}>{user?.level}</Text>
               </View>
             </View>
             <View style={styles.xpContainer}>
@@ -239,7 +243,7 @@ const Profile = (props: Props) => {
                   source={require("@/assets/images/icons/medal-05.png")} 
                   style={styles.xpIcon}
                 />
-                <Text style={[styles.xpText, isDark && {color: "#000"}]}>{user?.xp} XP</Text>
+                <Text style={[styles.xpText, { color: colors.heroText }]}>{user?.xp} XP</Text>
               </View>
             </View>
             {Platform.OS === "android" && (
@@ -247,15 +251,15 @@ const Profile = (props: Props) => {
               onPress={() => {
                 router.push("/wallet");
               }}
-              style={[styles.walletCard, { padding: 12, gap: 12 }, isDark && {backgroundColor: "rgba(255, 255, 255, 0.60)"}]}
+              style={[styles.walletCard, { padding: 12, gap: 12, backgroundColor: colors.walletGlass }]}
             >
               <View style={styles.walletInfoContainer}>
                 <Image 
-                  source={isDark ? require("@/assets/images/icons/dark/wallet.png") : require("@/assets/images/icons/wallet.png")} 
+                  source={iconWallet(theme)} 
                   style={styles.walletIcon}
                 />
                 <Text 
-                  style={[styles.walletText, isDark && {color: "#000"}]} 
+                  style={[styles.walletText, { color: colors.heroText }]} 
                   numberOfLines={1} 
                   ellipsizeMode="middle"
                 >
@@ -276,13 +280,13 @@ const Profile = (props: Props) => {
               </View>
 
               <View style={styles.balanceContainer}>
-                <Text style={[styles.balanceHeader, isDark && {color: "#000"}]}>Balance</Text>
+                <Text style={[styles.balanceHeader, { color: colors.heroText }]}>Balance</Text>
                 <View style={styles.balancesWrapper}>
                   <View style={[styles.balanceItem, width < 360 && styles.balanceItemSmall]}>
-                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}, isDark && {color: "#000"}]}>
+                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}, { color: colors.heroText }]}>
                       {walletBalance?.sol.toFixed(4)}
                     </Text>
-                    <Text style={[styles.balanceTicker, isDark && {color: "#000"}]}>SOL</Text>
+                    <Text style={[styles.balanceTicker, { color: colors.heroText }]}>SOL</Text>
                   </View>
                   
                   <TouchableOpacity 
@@ -296,10 +300,10 @@ const Profile = (props: Props) => {
                   </TouchableOpacity>
                   
                   <View style={[styles.balanceItem, width < 360 && styles.balanceItemSmall]}>
-                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}, isDark && {color: "#000"}]}>
+                    <Text style={[styles.balanceValue, width < 360 && {fontSize: 16}, { color: colors.heroText }]}>
                       {walletBalance?.tokenAccount.toFixed(2)}
                     </Text>
-                    <Text style={[styles.balanceTicker, isDark && {color: "#000"}]}>EDLN</Text>
+                    <Text style={[styles.balanceTicker, { color: colors.heroText }]}>EDLN</Text>
                   </View>
                 </View>
               </View>
@@ -307,7 +311,7 @@ const Profile = (props: Props) => {
             )}
           </View>
 
-          <View style={[styles.achievements, { marginTop: 12 }, isDark && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
+          <View style={[styles.achievements, { marginTop: 12, backgroundColor: colors.achievementSurface, borderColor: colors.achievementBorder }]}>
             <AchievementCard
               title="XP Earned"
               imageKey="xp"
@@ -326,29 +330,29 @@ const Profile = (props: Props) => {
             />
           </View>
           <DailyCheckInStreak />
-          <View style={[styles.refCard, isDark && {backgroundColor: "#131313", borderColor: "#2E3033"}]}>
+          <View style={[styles.refCard, { backgroundColor: colors.refCardSurface, borderColor: colors.refCardBorder }]}>
             <View style={styles.invitePush}>
               <Image
                 source={require("@/assets/images/icons/congrats.png")}
                 style={{ width: 62, height: 62 }}
               />
               <View style={styles.inviteTextContainer}>
-                <Text style={[styles.inviteTitle, isDark && {color: "#E0E0E0"}]}>Invite friends, earn rewards!</Text>
-                <Text style={[styles.inviteSubtitle, isDark && {color: "#B3B3B3"}]}>Share your referral link and earn XP when they join.</Text>
+                <Text style={[styles.inviteTitle, { color: colors.slate }]}>Invite friends, earn rewards!</Text>
+                <Text style={[styles.inviteSubtitle, { color: colors.textSecondary }]}>Share your referral link and earn XP when they join.</Text>
               </View>
             </View>
 
-            <View style={[styles.referralCodeContainer, isDark && {backgroundColor: "#2E3033", borderColor: "#2E3033"}]}>
-              <Text style={[styles.referralCode, isDark && {color: "#E0E0E0"}]}>{user?.referralCode}</Text>
+            <View style={[styles.referralCodeContainer, { backgroundColor: colors.referralBoxBg, borderColor: colors.referralBoxBorder }]}>
+              <Text style={[styles.referralCode, { color: colors.slate }]}>{user?.referralCode}</Text>
               <TouchableOpacity
                 onPress={async () => {
                   await Clipboard.setStringAsync(user?.referralCode || "");
                 }}
                 style={{flexDirection: "row", alignItems: "center", gap: 8}}
               >
-                <Text style={[styles.cardSubText, {fontSize: 16, lineHeight: 26}, isDark && {color: "#B3B3B3"}]}>Copy Code</Text>
+                <Text style={[styles.cardSubText, {fontSize: 16, lineHeight: 26, color: colors.textSecondary }]}>Copy Code</Text>
                 <Image
-                  source={isDark ? require("@/assets/images/icons/dark/copy.png") : require("@/assets/images/icons/copy.png")}
+                  source={iconCopy(theme)}
                   style={{ width: 16, height: 16 }}
                 />
               </TouchableOpacity>
@@ -356,7 +360,7 @@ const Profile = (props: Props) => {
           </View>
           {roadmaps.length > 0 && (
             <View style={styles.roadmapsSection}>
-              <Text style={[styles.sectionTitle, isDark && {color: "#E0E0E0"}]}>
+              <Text style={[styles.sectionTitle, { color: colors.slate }]}>
                 Your Learning Paths
               </Text>
               <ScrollView
@@ -367,7 +371,7 @@ const Profile = (props: Props) => {
                 {roadmaps.map((roadmap) => (
                   <TouchableOpacity
                     key={roadmap.id}
-                    style={[styles.roadmapCard, isDark && {backgroundColor: "#131313", borderColor: "#2E3033"}]}
+                    style={[styles.roadmapCard, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]}
                     onPress={() => router.push(`/roadmaps/${roadmap.id}` as any)}
                   >
                     <View style={styles.roadmapCardHeader}>
@@ -375,7 +379,7 @@ const Profile = (props: Props) => {
                         source={require("@/assets/images/icons/roadmap.png")}
                         style={styles.roadmapIcon}
                       />
-                      <Text style={[styles.roadmapTitle, isDark && {color: "#E0E0E0"}]} numberOfLines={2}>
+                      <Text style={[styles.roadmapTitle, { color: colors.slate }]} numberOfLines={2}>
                         {roadmap.title}
                       </Text>
                     </View>
@@ -384,19 +388,19 @@ const Profile = (props: Props) => {
                       <View style={{flexDirection: "row", gap: 8}}>
                       <View style={styles.roadmapStat}>
                         <Image
-                          source={isDark ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")}
+                          source={iconClock(theme)}
                           style={styles.roadmapStatIcon}
                         />
-                        <Text style={[styles.roadmapStatText, isDark && {color: "#B3B3B3"}]}>
+                        <Text style={[styles.roadmapStatText, { color: colors.textSecondary }]}>
                           ~45 mins
                         </Text>
                       </View>
                       <View style={styles.roadmapStat}>
                         <Image
-                          source={isDark ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
+                          source={iconNotebook(theme)}
                           style={styles.roadmapStatIcon}
                         />
-                        <Text style={[styles.roadmapStatText, isDark && {color: "#B3B3B3"}]}>
+                        <Text style={[styles.roadmapStatText, { color: colors.textSecondary }]}>
                           5 Steps
                         </Text>
                       </View>
@@ -406,17 +410,17 @@ const Profile = (props: Props) => {
                           source={require("@/assets/images/icons/medal-05.png")}
                           style={styles.roadmapStatIcon}
                         />
-                        <Text style={[styles.roadmapStatText, isDark && {color: "#B3B3B3"}]}>
+                        <Text style={[styles.roadmapStatText, { color: colors.textSecondary }]}>
                           Earn up to 16 XP
                         </Text>
                       </View>
                     </View>
 
                     <TouchableOpacity
-                      style={[styles.viewRoadmapButton, isDark && {backgroundColor: "#00FF80"}]}
+                      style={[styles.viewRoadmapButton, { backgroundColor: colors.brand }]}
                       onPress={() => router.push(`/roadmaps/${roadmap.id}` as any)}
                     >
-                      <Text style={[styles.viewRoadmapButtonText, isDark && {color: "#000"}]}>
+                      <Text style={[styles.viewRoadmapButtonText, { color: colors.onBrand }]}>
                         View Learning Path
                       </Text>
                     </TouchableOpacity>
@@ -431,20 +435,20 @@ const Profile = (props: Props) => {
       </ScrollView>
 
       <Modal isVisible={isBuyModalVisible} style={styles.buyModal}>
-        <View style={[styles.modalContent, isDark && {backgroundColor: "#131313"}]}>
-          <Text style={[styles.modalTitle, isDark && {color: "#E0E0E0"}]}>Buy EDLN Tokens</Text>
+        <View style={[styles.modalContent, { backgroundColor: colors.modalBackground }]}>
+          <Text style={[styles.modalTitle, { color: colors.slate }]}>Buy EDLN Tokens</Text>
           
           <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, isDark && {backgroundColor: "#2E3033", borderColor: "#2E3033", color: "#E0E0E0"}]}
+              style={[styles.input, { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder, color: colors.slate }]}
               placeholder="Amount in SOL"
-              placeholderTextColor={isDark ? "#B3B3B3" : "#61728C"}
+              placeholderTextColor={colors.placeholder}
               keyboardType="numeric"
               value={buyAmount}
               onChangeText={setBuyAmount}
               editable={!isBuying}
             />
-            <Text style={[styles.balanceText, isDark && {color: "#B3B3B3"}]}>
+            <Text style={[styles.balanceText, { color: colors.textSecondary }]}>
               Available: {walletBalance?.sol.toFixed(4)} SOL
             </Text>
           </View>
@@ -455,22 +459,22 @@ const Profile = (props: Props) => {
 
           <View style={styles.modalButtons}>
             <TouchableOpacity
-              style={[styles.cancelButton, isDark && {backgroundColor: "#000", borderColor: "#00FF80"}]}
+              style={[styles.cancelButton, { backgroundColor: colors.cancelButtonBg, borderColor: colors.cancelButtonBorder }]}
               onPress={toggleBuyModal}
               disabled={isBuying}
             >
-              <Text style={[styles.cancelButtonText, isDark && {color: "#00FF80"}]}>Cancel</Text>
+              <Text style={[styles.cancelButtonText, { color: colors.cancelButtonText }]}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.buyModalButton, isDark && {backgroundColor: "#00FF80"}, isBuying && styles.disabledButton]}
+              style={[styles.buyModalButton, { backgroundColor: colors.ctaPrimaryBg }, isBuying && styles.disabledButton]}
               onPress={handleBuyEDLN}
               disabled={isBuying}
             >
               {isBuying ? (
-                <ActivityIndicator size="small" color={isDark ? "#000" : "#00FF80"} />
+                <ActivityIndicator size="small" color={colors.ctaPrimaryFg} />
               ) : (
-                <Text style={[styles.buyModalButtonText, isDark && {color: "#000"}]}>Buy EDLN</Text>
+                <Text style={[styles.buyModalButtonText, { color: colors.ctaPrimaryFg }]}>Buy EDLN</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -484,17 +488,17 @@ const Profile = (props: Props) => {
         animationIn="fadeIn"
         animationOut="fadeOut"
       >
-        <View style={[styles.modalContent, isDark && {backgroundColor: "#131313"}]}>
-          <View style={[styles.burnSuccessIconContainer, isDark && {backgroundColor: "rgba(0, 255, 128, 0.1)"}]}>
-            <FontAwesome5 name="fire" size={30} color="#00FF80" />
+        <View style={[styles.modalContent, { backgroundColor: colors.modalBackground }]}>
+          <View style={[styles.burnSuccessIconContainer, { backgroundColor: colors.modalIconBg }]}>
+            <FontAwesome5 name="fire" size={30} color={colors.brand} />
           </View>
-          <Text style={[styles.modalTitle, isDark && {color: "#E0E0E0"}]}>Tokens Burned Successfully!</Text>
-          <Text style={[styles.modalDescription, isDark && {color: "#B3B3B3"}]}>You&apos;ve received 3 credits and your wallet balance has been updated.</Text>
+          <Text style={[styles.modalTitle, { color: colors.slate }]}>Tokens Burned Successfully!</Text>
+          <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>You&apos;ve received 3 credits and your wallet balance has been updated.</Text>
           <TouchableOpacity
-            style={[styles.okButton, isDark && {backgroundColor: "#00FF80"}]}
+            style={[styles.okButton, { backgroundColor: colors.brand }]}
             onPress={() => setBurnSuccessModalVisible(false)}
           >
-            <Text style={[styles.okButtonText, isDark && {color: "#000"}]}>OK</Text>
+            <Text style={[styles.okButtonText, { color: colors.onBrand }]}>OK</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -506,24 +510,24 @@ const Profile = (props: Props) => {
         animationIn="fadeIn"
         animationOut="fadeOut"
       >
-        <View style={[styles.modalContent, isDark && {backgroundColor: "#131313"}]}>
-          <View style={[styles.successIconContainer, isDark && {backgroundColor: "rgba(0, 255, 128, 0.1)"}]}>
-            <FontAwesome5 name="check-circle" size={30} color="#00FF80" />
+        <View style={[styles.modalContent, { backgroundColor: colors.modalBackground }]}>
+          <View style={[styles.successIconContainer, { backgroundColor: colors.modalIconBg }]}>
+            <FontAwesome5 name="check-circle" size={30} color={colors.brand} />
           </View>
-          <Text style={[styles.modalTitle, isDark && {color: "#E0E0E0"}]}>Purchase Successful!</Text>
-          <Text style={[styles.modalDescription, isDark && {color: "#B3B3B3"}]}>
+          <Text style={[styles.modalTitle, { color: colors.slate }]}>Purchase Successful!</Text>
+          <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
             Your EDLN tokens have been purchased successfully. Your wallet balance has been updated.
           </Text>
           
           {transactionLink && (
             <TouchableOpacity
-              style={[styles.okButton, styles.transactionButton, isDark && {backgroundColor: "#00FF80"}]}
+              style={[styles.okButton, styles.transactionButton, { backgroundColor: colors.brand }]}
               onPress={() => {
                 Linking.openURL(transactionLink);
               }}
             >
-              <Text style={[styles.transactionButtonText, isDark && {color: "#000"}]}>View on Solscan</Text>
-              <FontAwesome5 name="external-link-alt" size={14} color={isDark ? "#000" : "#00FF80"} />
+              <Text style={[styles.transactionButtonText, { color: colors.onBrand }]}>View on Solscan</Text>
+              <FontAwesome5 name="external-link-alt" size={14} color={colors.onBrand} />
             </TouchableOpacity>
           )}
         </View>

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
+import { Design, iconCaretRight } from '@/utils/design';
 
 interface RoadmapCardProps {
   roadmapId: string;
@@ -12,7 +12,7 @@ interface RoadmapCardProps {
 }
 
 export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing, theme, palette, isDark } = useTheme();
   const percentage = Math.round((completed / total) * 100);
 
   return (
@@ -20,8 +20,8 @@ export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardP
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-          borderColor: isDark ? colors.dark.border : colors.border.hub,
+          backgroundColor: colors.surface,
+          borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
           marginTop: spacing.lg,
@@ -33,7 +33,7 @@ export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardP
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md }}>
         <View style={[
           styles.iconContainer,
-          { backgroundColor: isDark ? colors.dark.canvas : colors.background.canvas, borderColor: isDark ? colors.dark.border : colors.border.hub }
+          { backgroundColor: colors.canvas, borderColor: colors.borderMuted }
         ]}>
           <Image
             source={require('@/assets/images/icons/roadmap.png')}
@@ -43,14 +43,14 @@ export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardP
         <View style={{ flex: 1 }}>
           <Text style={[
             styles.label,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Continue Learning
           </Text>
           <Text
             style={[
               styles.title,
-              { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+              { color: colors.textPrimary }
             ]}
             numberOfLines={1}
           >
@@ -58,7 +58,7 @@ export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardP
           </Text>
         </View>
         <Image
-          source={isDark ? require('@/assets/images/icons/dark/CaretRight.png') : require('@/assets/images/icons/CaretRight.png')}
+          source={iconCaretRight(theme)}
           style={{ width: 24, height: 24 }}
         />
       </View>
@@ -67,25 +67,25 @@ export function RoadmapCard({ roadmapId, title, completed, total }: RoadmapCardP
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[
             styles.progressText,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             {completed} of {total} steps completed
           </Text>
           <Text style={[
             styles.percentageText,
-            { color: colors.mint.DEFAULT }
+            { color: colors.brand }
           ]}>
             {percentage}%
           </Text>
         </View>
         <View style={[
           styles.progressBar,
-          { backgroundColor: isDark ? colors.dark.canvas : colors.background.surfaceAlt }
+          { backgroundColor: isDark ? colors.canvas : palette.background.surfaceAlt }
         ]}>
           <View
             style={[
               styles.progressFill,
-              { width: `${percentage}%`, backgroundColor: isDark ? colors.mint.DEFAULT : colors.primary.accentDarkest }
+              { width: `${percentage}%`, backgroundColor: colors.hubFabBg }
             ]}
           />
         </View>

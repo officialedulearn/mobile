@@ -16,16 +16,16 @@ export function XPProgress({ currentXP, progress, xpNeeded }: XPProgressProps) {
   return (
     <View style={[
       styles.container,
-      { backgroundColor: colors.primary.accentDarkest, paddingHorizontal: spacing.md, paddingVertical: spacing.md }
+      { backgroundColor: colors.brand, paddingHorizontal: spacing.md, paddingVertical: spacing.md }
     ]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
         <Image
           source={require('@/assets/images/icons/medal.png')}
-          style={{ width: 24, height: 24 }}
+          style={{ width: 24, height: 24, tintColor: colors.onBrand }}
         />
         <Text style={[
           styles.xpText,
-          { color: colors.mint.DEFAULT, fontSize: Design.typography.fontSize.lg, fontWeight: Design.typography.fontWeight.bold }
+          { color: colors.onBrand, fontSize: Design.typography.fontSize.lg, fontWeight: Design.typography.fontWeight.bold }
         ]}>
           {currentXP} XP
         </Text>
@@ -33,16 +33,16 @@ export function XPProgress({ currentXP, progress, xpNeeded }: XPProgressProps) {
 
       <ProgressBar
         progress={progress}
-        color={isDark ? "#000" : "#00FF80"}
+        color={isDark ? colors.onBrand : colors.brand}
         style={{
           height: 10,
           borderRadius: 5,
-          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.60)' : 'rgba(255, 255, 255, 0.10)',
+          backgroundColor: isDark ? colors.walletGlass : colors.progressTrack,
         }}
       />
       <Text style={[
         styles.subtitle,
-        { color: isDark ? colors.text.darkSecondary : colors.text.tertiary }
+        { color: colors.onBrand }
       ]}>
         {xpNeeded > 0
           ? `Great work! You're just ${xpNeeded} XP away from the next badge 🔥`

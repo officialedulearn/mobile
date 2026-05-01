@@ -13,7 +13,7 @@ import { Design } from '@/utils/design';
 const Hub = () => {
   const [activeTab, setActiveTab] = useState<'communities' | 'trending'>('communities');
   const [refreshing, setRefreshing] = useState(false);
-  const { isDark } = useTheme();
+  const { colors } = useTheme();
   const screenStyles = useScreenStyles();
   const user = useUserStore((s) => s.user);
   const {
@@ -53,8 +53,8 @@ const Hub = () => {
         <View style={[
           styles.communityCard,
           {
-            backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.white,
-            borderColor: isDark ? Design.colors.dark.border : Design.colors.border.hub,
+            backgroundColor: colors.surface,
+            borderColor: colors.borderMuted,
           }
         ]}>
           <Image
@@ -67,19 +67,19 @@ const Hub = () => {
           <View style={styles.communityCardContent}>
             <Text style={[
               styles.communityCardTitle,
-              { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+              { color: colors.textPrimary }
             ]}>
               {community.title}
             </Text>
             <Text style={[
               styles.communityLastMessage,
-              { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+              { color: colors.textSecondary }
             ]}>
               {communityDetails[community.id]?.description || 'Join this community'}
             </Text>
             <Text style={[
               styles.communityLastMessage,
-              { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+              { color: colors.textSecondary }
             ]}>
               {communityDetails[community.id]?.memberCount !== undefined
                 ? `${communityDetails[community.id].memberCount} members`
@@ -89,7 +89,7 @@ const Hub = () => {
         </View>
       </TouchableOpacity>
     ),
-    [communityDetails, isDark],
+    [communityDetails, colors],
   );
 
   const listEmpty = useCallback(() => {
@@ -97,10 +97,10 @@ const Hub = () => {
     if (isLoading) {
       return (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={isDark ? Design.colors.mint.DEFAULT : Design.colors.primary.accentDarkest} />
+          <ActivityIndicator size="large" color={colors.refreshTint} />
           <Text style={[
             styles.loadingText,
-            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             Loading communities...
           </Text>
@@ -112,7 +112,7 @@ const Hub = () => {
         <View style={styles.centerContainer}>
           <Text style={[
             styles.errorText,
-            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             {error}
           </Text>
@@ -125,16 +125,16 @@ const Hub = () => {
     if (communities.length === 0) {
       return (
         <View style={styles.centerContainer}>
-          <FontAwesome5 name="users" size={48} color={isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary} />
+          <FontAwesome5 name="users" size={48} color={colors.textSecondary} />
           <Text style={[
             styles.emptyText,
-            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             No communities yet
           </Text>
           <Text style={[
             styles.emptySubtext,
-            { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Join a community to get started
           </Text>
@@ -143,14 +143,14 @@ const Hub = () => {
     }
     return null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, isLoading, error, communities.length, isDark]);
+  }, [activeTab, isLoading, error, communities.length, colors]);
 
   return (
     <View style={[screenStyles.container, { paddingHorizontal: Design.spacing.mdLg }]}>
       <View style={styles.headerNav}>
         <Text style={[
           styles.headerTitle,
-          { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.slate }
+          { color: colors.slate }
         ]}>
           Communities
         </Text>
@@ -165,10 +165,10 @@ const Hub = () => {
                 activeTab === 'communities' && styles.activeTab,
                 {
                   color: activeTab === 'communities'
-                    ? (isDark ? Design.colors.text.darkPrimary : Design.colors.primary.accentDarkest)
-                    : (isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary),
+                    ? colors.hubTabActive
+                    : colors.hubTabInactive,
                   borderBottomColor: activeTab === 'communities'
-                    ? (isDark ? Design.colors.text.darkPrimary : Design.colors.primary.accentDarkest)
+                    ? colors.hubTabBorder
                     : 'transparent',
                 }
               ]}
@@ -185,17 +185,17 @@ const Hub = () => {
                   activeTab === 'trending' && styles.activeTab,
                   {
                     color: activeTab === 'trending'
-                      ? (isDark ? Design.colors.text.darkPrimary : Design.colors.primary.accentDarkest)
-                      : (isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary),
+                      ? colors.hubTabActive
+                      : colors.hubTabInactive,
                     borderBottomColor: activeTab === 'trending'
-                      ? (isDark ? Design.colors.text.darkPrimary : Design.colors.primary.accentDarkest)
+                      ? colors.hubTabBorder
                       : 'transparent',
                   }
                 ]}
               >
                 Trending
               </Text>
-              <FontAwesome5 name="fire" size={14} color={Design.colors.semantic.errorIos} />
+              <FontAwesome5 name="fire" size={14} color={colors.destructive} />
             </View>
           </TouchableOpacity>
         </View>
@@ -213,23 +213,23 @@ const Hub = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={isDark ? Design.colors.mint.DEFAULT : Design.colors.primary.accentDarkest}
+              tintColor={colors.refreshTint}
             />
           }
           ListEmptyComponent={listEmpty}
         />
       ) : (
         <View style={styles.trendingPlaceholder}>
-          <FontAwesome5 name="fire" size={48} color={Design.colors.semantic.errorIos} />
+          <FontAwesome5 name="fire" size={48} color={colors.destructive} />
           <Text style={[
             styles.emptyText,
-            { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             Trending Communities
           </Text>
           <Text style={[
             styles.emptySubtext,
-            { color: isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Coming soon! Check back later for trending communities.
           </Text>
@@ -240,7 +240,7 @@ const Hub = () => {
         style={[
           styles.joinButton,
           {
-            backgroundColor: isDark ? Design.colors.mint.DEFAULT : Design.colors.primary.accentDarkest,
+            backgroundColor: colors.hubFabBg,
           }
         ]}
         activeOpacity={0.8}
@@ -248,11 +248,11 @@ const Hub = () => {
       >
         <Text style={[
           styles.joinButtonText,
-          { color: isDark ? Design.colors.text.primary : Design.colors.mint.DEFAULT }
+          { color: colors.hubFabFg }
         ]}>
           Join Community
         </Text>
-        <FontAwesome5 name="plus" size={20} color={isDark ? Design.colors.text.primary : Design.colors.mint.DEFAULT} />
+        <FontAwesome5 name="plus" size={20} color={colors.hubFabFg} />
       </TouchableOpacity>
     </View>
   );

@@ -1,13 +1,14 @@
+import { UserAnswer } from "@/core/quizState";
 import React from "react";
 import {
-  View,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Image,
-  StyleSheet,
+  View,
 } from "react-native";
-import { UserAnswer } from "@/core/quizState";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Theme = "light" | "dark";
 
@@ -15,12 +16,16 @@ const ScoreBreakdown = ({
   score,
   totalQuestions,
   theme,
+  xpEarned,
 }: {
   score: number;
   totalQuestions: number;
   theme: Theme;
+  xpEarned?: number;
 }) => {
+  const insets = useSafeAreaInsets();
   const isPassing = score >= totalQuestions / 2;
+  const xp = xpEarned ?? score;
 
   return (
     <>
@@ -48,7 +53,7 @@ const ScoreBreakdown = ({
       <Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
         {isPassing
           ? "You're one step closer to your next badge. Keep the momentum going! Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
-          : `You got ${score} out of ${totalQuestions}, which means there's room to grow. You still earned ${score} XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!`}
+          : `You got ${score} out of ${totalQuestions}, which means there's room to grow. You still earned ${xp} XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!`}
       </Text>
 
       <Text style={[styles.scoreText, { marginTop: 10 }, theme === "dark" && { color: "#E0E0E0" }]}>
@@ -65,7 +70,7 @@ const ScoreBreakdown = ({
       <View style={styles.xpContainer}>
         <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.xpImage} />
         <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
-          +{score} XP
+          +{xp} XP
         </Text>
       </View>
     </>
@@ -136,6 +141,7 @@ export const QuizResultsScreen = ({
   theme,
   onToggleReview,
   onReturnToQuizzes,
+  xpEarned,
 }: {
   reviewAnswers: boolean;
   score: number;
@@ -144,10 +150,18 @@ export const QuizResultsScreen = ({
   theme: Theme;
   onToggleReview: () => void;
   onReturnToQuizzes: () => void;
-}) => (
-  <View style={styles.resultsContainer}>
+  xpEarned?: number;
+}) => {
+  const insets = useSafeAreaInsets();
+  return (
+  <View style={[styles.resultsContainer, { paddingBottom: insets.bottom }]}>
     {!reviewAnswers && (
-      <ScoreBreakdown score={score} totalQuestions={totalQuestions} theme={theme} />
+      <ScoreBreakdown
+        score={score}
+        totalQuestions={totalQuestions}
+        theme={theme}
+        xpEarned={xpEarned}
+      />
     )}
     {reviewAnswers && <AnswersReview userAnswers={userAnswers} theme={theme} />}
 
@@ -157,7 +171,7 @@ export const QuizResultsScreen = ({
         theme === "dark" && { backgroundColor: "#0D0D0D" },
       ]}
     >
-      <View style={styles.navigationButtons}>
+      <View style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}>
         <TouchableOpacity
           style={[
             styles.resultsButton,
@@ -203,6 +217,7 @@ export const QuizResultsScreen = ({
     </View>
   </View>
 );
+};
 
 const styles = StyleSheet.create({
   resultsContainer: {
@@ -321,7 +336,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingBottom: 20,
     backgroundColor: "#F9FBFC",
     width: "100%",
     alignItems: "center",

@@ -7,12 +7,3 @@ export function generateUUID(): string {
   }
 
 export const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
-
-export const STREAMING_WAIT_MESSAGES = [
-  "Analysing your request",
-  "Eddie is thinking",
-  "Finding the best answer",
-  "Crunching the details",
-  "Almost there…",
-  "Warming up the neurons",
-] as const;

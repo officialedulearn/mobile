@@ -20,23 +20,23 @@ export function ChatInput({
   isLoading = false,
   placeholder = 'Type a message...',
 }: ChatInputProps) {
-  const { isDark, colors } = useTheme();
+  const { colors, palette } = useTheme();
 
   return (
     <View style={[
       styles.container,
       {
-        backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-        borderColor: isDark ? colors.dark.border : colors.border.input,
+        backgroundColor: colors.surface,
+        borderColor: palette.border.input,
       }
     ]}>
       <TextInput
         style={[
           styles.input,
-          { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+          { color: colors.textPrimary }
         ]}
         placeholder={placeholder}
-        placeholderTextColor={isDark ? colors.text.darkSecondary : colors.text.placeholder}
+        placeholderTextColor={palette.text.placeholder}
         value={value}
         onChangeText={onChangeText}
         multiline

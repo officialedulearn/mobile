@@ -1,6 +1,11 @@
+import ScreenLoader from "@/components/common/ScreenLoader";
+import useUserStore from "@/core/userState";
+import { UserService } from "@/services/auth.service";
+import { getScreenTopPadding } from "@/utils/design";
 import { supabase } from "@/utils/supabase";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useRef } from "react";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
@@ -14,16 +19,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import useUserStore from "@/core/userState";
-import { StatusBar } from "expo-status-bar";
-import OAuthButtons from "@/components/auth/OAuthButtons";
-import { UserService } from "@/services/auth.service";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
   const theme = useUserStore((state) => state.theme);
   const scrollViewRef = useRef<ScrollView>(null);
-
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   const [isSignUp, setIsSignUp] = useState(signUp === "1");
 
   const [formData, setFormData] = useState({
@@ -136,7 +139,6 @@ const Auth = () => {
             return;
           }
         } catch (availabilityError) {
-          console.error("Availability check failed:", availabilityError);
           Alert.alert(
             "Login Failed",
             "Unable to verify account. Please try again."
@@ -171,8 +173,7 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-        } catch (availabilityError) {
-          console.error("Availability check failed:", availabilityError);
+        } catch (availabilityError) { 
           Alert.alert(
             "Connection Error",
             "Failed to verify availability. Please try again."
@@ -214,14 +215,6 @@ const Auth = () => {
           const userService = new UserService();
           const userId = generateUUID();
           
-          console.log("📤 Creating database user first:", {
-            id: userId,
-            name: formData.name,
-            email: formData.email,
-            username: formData.username,
-            referralCode: formData.referralCode
-          });
-
           const newUser = await userService.createUser({
             id: userId,
             name: formData.name,
@@ -236,9 +229,7 @@ const Auth = () => {
             return;
           }
 
-          console.log("✅ Database user created successfully:", newUser);
         } catch (dbError: any) {
-          console.error("❌ Database user creation error:", dbError);
           const errorMessage = dbError?.response?.data?.message || dbError?.message || "Unknown error";
           
           if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
@@ -268,7 +259,6 @@ const Auth = () => {
         }
         
         if (isSignUp) {
-          console.error("⚠️ Supabase Auth user creation failed after database user was created");
           Alert.alert(
             "Partial Account Created", 
             "Database user created but email verification failed. Please contact support."
@@ -286,7 +276,6 @@ const Auth = () => {
       });
 
     } catch (err) {
-      console.error("Authentication error:", err);
       Alert.alert(
         "Connection Error",
         "Unable to connect to our servers. Please check your internet connection and try again."
@@ -298,7 +287,7 @@ const Auth = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, theme === "dark" && styles.containerDark]}
+      style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
@@ -431,7 +420,7 @@ const Auth = () => {
             disabled={loading || oauthLoading}
           >
             <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
-              {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
+              {isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
 
@@ -472,6 +461,10 @@ const Auth = () => {
           </Text>
         </View>
       </ScrollView>
+      <ScreenLoader
+        visible={loading || oauthLoading}
+        message="Hang tight — this may take a moment."
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -489,7 +482,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 40,
     paddingBottom: 40,
     flexGrow: 1,
   },
@@ -572,6 +564,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+    fontFamily: "Satoshi-Medium",
   },
   buttonTextDark: {
     color: "#000",

@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
+import { Design, iconNotification, iconSearch } from '@/utils/design';
+import { router } from 'expo-router';
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface HomeHeaderProps {
   userName: string;
@@ -10,7 +10,7 @@ interface HomeHeaderProps {
 }
 
 export function HomeHeader({ userName, profileImageUrl }: HomeHeaderProps) {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing, theme } = useTheme();
 
   return (
     <View style={[styles.container, { paddingHorizontal: spacing.md, gap: spacing.md }]}>
@@ -23,13 +23,13 @@ export function HomeHeader({ userName, profileImageUrl }: HomeHeaderProps) {
         <View style={{ flexDirection: 'column' }}>
           <Text style={[
             styles.greeting,
-            { color: isDark ? colors.text.darkPrimary : colors.text.primary }
+            { color: colors.textPrimary }
           ]}>
             Hi {userName}👋
           </Text>
           <Text style={[
             styles.subtext,
-            { color: isDark ? colors.text.darkSecondary : colors.text.slateSecondary }
+            { color: colors.textSecondary }
           ]}>
             Learn & earn more XP today
           </Text>
@@ -40,26 +40,26 @@ export function HomeHeader({ userName, profileImageUrl }: HomeHeaderProps) {
         <TouchableOpacity
           style={[
             styles.iconButton,
-            { backgroundColor: isDark ? colors.dark.surfaceElevated : colors.background.white, borderColor: isDark ? colors.dark.border : colors.border.hub }
+            { backgroundColor: colors.surfaceElevated, borderColor: colors.borderMuted }
           ]}
           onPress={() => router.push('/notifications')}
           activeOpacity={0.7}
         >
           <Image
-            source={isDark ? require('@/assets/images/icons/dark/notification.png') : require('@/assets/images/icons/notification.png')}
+            source={iconNotification(theme)}
             style={{ width: 20, height: 20 }}
           />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.iconButton,
-            { backgroundColor: isDark ? colors.dark.surfaceElevated : colors.background.white, borderColor: isDark ? colors.dark.border : colors.border.hub }
+            { backgroundColor: colors.surfaceElevated, borderColor: colors.borderMuted }
           ]}
           onPress={() => router.push('/search')}
           activeOpacity={0.7}
         >
           <Image
-            source={isDark ? require('@/assets/images/icons/dark/search.png') : require('@/assets/images/icons/search-normal.png')}
+            source={iconSearch(theme)}
             style={{ width: 20, height: 20 }}
           />
         </TouchableOpacity>
@@ -71,10 +71,10 @@ export function HomeHeader({ userName, profileImageUrl }: HomeHeaderProps) {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginTop: Design.spacing.lg,
     alignItems: 'center',
     justifyContent: 'space-between',
     flexDirection: 'row',
+    paddingBottom: Design.spacing.sm,
   },
   greeting: {
     fontFamily: Design.typography.fontFamily.urbanist.regular,

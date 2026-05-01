@@ -1,17 +1,17 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator } from "react-native";
-import React, { useState } from "react";
 import BackButton from "@/components/common/backButton";
-import useUserStore from "@/core/userState";
 import useActivityStore from "@/core/activityState";
-import { router } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
 import { WalletService } from "@/services/wallet.service";
-import Modal from "react-native-modal";
-import * as Clipboard from "expo-clipboard";
 import { supabase } from "@/utils/supabase";
-import { LinearGradient } from "expo-linear-gradient";
+import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useState } from "react";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import Modal from "react-native-modal";
 
 type Props = Record<string, never>;
 
@@ -87,7 +87,6 @@ async () => {
           Alert.alert("Error", response.error || "Failed to export private key");
         }
       } catch (error) {
-        console.error("Error exporting private key:", error);
         Alert.alert("Error", "Failed to export private key. Please try again later.");
       } finally {
         setLoading(false);
@@ -112,7 +111,6 @@ async () => {
               resetActivityState();
               router.push("/onboarding");
             } catch (error) {
-              console.error("Error deleting account:", error);
               Alert.alert("Error", "Failed to delete account. Please try again.");
             } finally {
               setLoading(false);
@@ -207,6 +205,28 @@ async () => {
             </View>
 
             <Image 
+              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
+              style={{ width: 24, height: 24 }}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/agents");
+            }}
+            disabled={loading}
+          >
+            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+              <Image
+                source={theme === "dark" ? require("@/assets/images/icons/aichat.png") : require("@/assets/images/icons/aichat.png")}
+                style={{ width: 24, height: 24 }}
+              />
+              <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Create learning agent</Text>
+            </View>
+
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />

@@ -1,21 +1,11 @@
 import BackButton from "@/components/common/backButton";
+import ScreenLoader from "@/components/common/ScreenLoader";
 import useUserStore from "@/core/userState";
 import { supabase } from "@/utils/supabase";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState, useEffect } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function SetupUsername() {
   const [username, setUsername] = useState("");
@@ -52,7 +42,6 @@ export default function SetupUsername() {
         const data = await response.json();
         setIsAvailable(data.usernameAvailable);
       } catch (error) {
-        console.error('Availability check error:', error);
       } finally {
         setChecking(false);
       }
@@ -91,16 +80,12 @@ export default function SetupUsername() {
         return;
       }
 
-      console.log('Submitting username:', username, 'for user:', user.id);
-
       const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
       const requestBody = {
         userId: user.id,
         username: username
       };
 
-      console.log('API URL:', `${API_URL}/auth/complete-profile`);
-      console.log('Request body:', requestBody);
 
       const response = await fetch(`${API_URL}/auth/complete-profile`, {
         method: 'PUT',
@@ -111,23 +96,19 @@ export default function SetupUsername() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error response:', errorData);
         throw new Error(errorData.message || 'Failed to update profile');
       }
 
       const responseData = await response.json();
-      console.log('Success response:', responseData);
 
       await useUserStore.getState().setUserAsync();
 
       Alert.alert('Success', 'Profile updated successfully!');
       router.push('/auth/identity');
     } catch (error: any) {
-      console.error('Username submission error:', error);
       Alert.alert('Update failed', error.message || 'Please try again');
     } finally {
       setLoading(false);
@@ -210,16 +191,13 @@ export default function SetupUsername() {
             onPress={handleSubmit}
             disabled={loading || !isAvailable || username.length < 3}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color={isDark ? '#000' : '#00FF80'} />
-            ) : (
-              <Text style={[styles.buttonText, isDark && styles.buttonTextDark]}>
-                Continue
-              </Text>
-            )}
+            <Text style={[styles.buttonText, isDark && styles.buttonTextDark]}>
+              Continue
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <ScreenLoader visible={loading} message="Saving your profile..." />
     </KeyboardAvoidingView>
   );
 }

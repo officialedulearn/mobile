@@ -1,12 +1,10 @@
 import useUserStore from "@/core/userState";
-import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Image, View, useColorScheme } from "react-native";
-import { useNotifications } from "@/hooks/useNotifications";
 
 export default function Index() {
   const { setTheme, setUserAsync} = useUserStore();
@@ -19,9 +17,9 @@ export default function Index() {
         const theme = await AsyncStorage.getItem("theme");
         theme ? await setTheme(theme as "light" | "dark") : await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
         
-        const supabaseUser = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (supabaseUser.data.user) {
+        if (session?.access_token) {
           await setUserAsync();
           setTimeout(() => {
             router.replace("/(tabs)");
@@ -30,7 +28,6 @@ export default function Index() {
           router.replace("/onboarding");
         }
       } catch (error) {
-        console.error("Authentication error:", error);
         router.replace("/onboarding");
       }
     };

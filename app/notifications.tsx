@@ -1,14 +1,16 @@
-import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
-import React, { useEffect, useState, useCallback, memo } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import BackButton from '@/components/common/backButton';
-import useUserStore from '@/core/userState';
 import useNotificationsStore from '@/core/notificationsState';
+import useUserStore from '@/core/userState';
 import type { Notification } from '@/services/notifications.service';
-import * as Haptics from 'expo-haptics';
+import { getScreenTopPadding } from '@/utils/design';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
+import React, { memo, useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function formatNotificationDate(date: Date | string): string {
   const notificationDate = typeof date === 'string' ? new Date(date) : date;
@@ -42,14 +44,12 @@ const NotificationItem = memo(function NotificationItem({
   theme,
 }: NotificationItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await onDelete(notification.id);
     } catch (error) {
-      console.error('Failed to delete notification:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -129,6 +129,10 @@ const Notifications = () => {
     refreshNotifications,
   } = useNotificationsStore();
   const [refreshing, setRefreshing] = useState(false);
+  
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
+
 
   useEffect(() => {
     if (user?.id) {
@@ -193,7 +197,7 @@ const Notifications = () => {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, paddingTop: topPadding, backgroundColor: theme === 'dark' ? '#0D0D0D' : '#F9FBFC' }}>
       <View
         style={[
           styles.container,
@@ -303,9 +307,8 @@ const styles = StyleSheet.create({
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
     backgroundColor: '#F9FBFC',
-    marginTop: 50,
     gap: 16,
   },
   topNavText: {

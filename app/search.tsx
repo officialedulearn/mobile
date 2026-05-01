@@ -1,22 +1,21 @@
+import BackButton from "@/components/common/backButton";
+import useUserStore from "@/core/userState";
+import { User } from "@/interface/User";
+import { UserService } from "@/services/auth.service";
+import { debounce } from "@/utils/utils";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  FlatList,
+  Image,
   StyleSheet,
   Text,
-  View,
   TextInput,
   TouchableOpacity,
-  Image,
-  FlatList,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import BackButton from "@/components/common/backButton";
-import { UserService } from "@/services/auth.service";
-import { User } from "@/interface/User";
-import { debounce } from "@/utils/utils";
-import { StatusBar } from "expo-status-bar";
-import { router } from "expo-router";
-import theme from "./theme";
-import useUserStore from "@/core/userState";
 
 type SearchResultProps = {
   id: string;
@@ -159,7 +158,6 @@ const Search = (props: Props) => {
         const results = await userService.searchUsers(query);
         setUsers(results);
       } catch (err) {
-        console.error("Search error:", err);
         setError("Failed to search users. Please try again.");
         setUsers([]);
       } finally {

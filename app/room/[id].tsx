@@ -1,53 +1,53 @@
+import AnimatedPressable from "@/components/common/AnimatedPressable";
+import BackButton from "@/components/common/backButton";
+import useCommunityStore from "@/core/communityState";
+import useUserStore from "@/core/userState";
+import type {
+  Community,
+  CommunityMember,
+  NewMessageEvent,
+  ReactionEvent,
+  RoomMessage,
+  RoomMessageWithUI,
+} from "@/interface/Community";
+import { CommunityService } from "@/services/community.service";
+import Entypo from "@expo/vector-icons/Entypo";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  TextInput,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { FlashList, FlashListRef } from "@shopify/flash-list";
+import * as Haptics from "expo-haptics";
+import { router, useLocalSearchParams } from "expo-router";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
   ActivityIndicator,
   Animated,
+  Image,
   LayoutChangeEvent,
   RefreshControl,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
   type StyleProp,
   type TextStyle,
 } from "react-native";
-import React, {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
-import { FlashList, FlashListRef } from "@shopify/flash-list";
 import {
   KeyboardChatScrollView,
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
 import { useSharedValue } from "react-native-reanimated";
-import BackButton from "@/components/common/backButton";
-import useUserStore from "@/core/userState";
-import useCommunityStore from "@/core/communityState";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import Entypo from "@expo/vector-icons/Entypo";
-import {
-  BottomSheetModal,
-  BottomSheetBackdrop,
-  BottomSheetView,
-} from "@gorhom/bottom-sheet";
-import * as Haptics from "expo-haptics";
-import AnimatedPressable from "@/components/common/AnimatedPressable";
-import { router, useLocalSearchParams } from "expo-router";
-import { CommunityService } from "@/services/community.service";
-import type {
-  Community,
-  CommunityMember,
-  RoomMessage,
-  NewMessageEvent,
-  ReactionEvent,
-  RoomMessageWithUI,
-} from "@/interface/Community";
 
 const communityService = new CommunityService();
 
@@ -276,7 +276,7 @@ const Room = () => {
           if (response?.error) {
             console.error("Error joining room:", response.error);
           } else {
-            console.log("✅ Successfully joined room:", communityId);
+          
           }
         });
 
@@ -304,7 +304,6 @@ const Room = () => {
 
         communityService.onUserStatus((data) => {
           if (data.status === "online" || data.status === "offline") {
-            console.log("User status changed:", data.userId, data.status);
           }
         });
 
@@ -429,7 +428,7 @@ const Room = () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     };
   }, [id, user?.id, moderatorId]);
 
@@ -698,15 +697,9 @@ const Room = () => {
       () => flashListRef.current?.scrollToEnd({ animated: true }),
       100,
     );
-    console.log("📤 Sending message:", {
-      tempId,
-      content: messageContent,
-      communityId,
-    });
 
     try {
       if (!communityService.isConnected()) {
-        console.log("🔄 WebSocket not connected, reconnecting...");
         await communityService.connectWebSocket();
         communityService.joinRoom(communityId, user.id);
         await new Promise((resolve) => setTimeout(resolve, 200));
@@ -725,8 +718,6 @@ const Room = () => {
         }
       }
 
-      console.log("🚀 Emitting send_message event");
-
       let callbackReceived = false;
 
       setTimeout(() => {
@@ -744,7 +735,6 @@ const Room = () => {
         user.id,
         async (response) => {
           callbackReceived = true;
-          console.log("📨 Message callback received:", response);
 
           if (response?.error) {
             console.error("Error sending message:", response.error);
@@ -757,10 +747,8 @@ const Room = () => {
                 ? "Connection issue. Please try again."
                 : response.error || "Failed to send message";
 
-            console.error("Error details:", errorMessage);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           } else if (response?.message) {
-            console.log("✅ Message sent successfully, replacing temp message");
             try {
               const reactions = await communityService.getMessageReactions(
                 response.message.id,

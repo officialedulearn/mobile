@@ -1,4 +1,4 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
 export type FlashcardDeck = {
   id: string;
@@ -15,4 +15,13 @@ export type Flashcard = {
   front: string;
   back: string;
   sortOrder: number;
+};
+
+export type FlashcardDeckWithFlashcards = {
+  deck: FlashcardDeck;
+  flashcards: Flashcard[];
+};
+
+export type FlashcardDeckResponse = {
+  decks: FlashcardDeck[];
 };

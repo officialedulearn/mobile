@@ -1,20 +1,20 @@
 import BackButton from "@/components/common/backButton";
-import QuizRefreshModal from "@/components/quiz/QuizRefreshModal";
-import useUserStore from "@/core/userState";
-import useQuizStore from "@/core/quizState";
-import useChatStore from "@/core/chatState";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import * as Haptics from "expo-haptics";
-import * as StoreReview from "expo-store-review";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, Text, StyleSheet } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { QuizLoadingScreen } from "@/components/quiz/QuizLoadingScreen";
 import { QuizErrorScreen } from "@/components/quiz/QuizErrorScreen";
-import { QuizQuestionsScreen } from "@/components/quiz/QuizQuestionsScreen";
-import { QuizResultsScreen } from "@/components/quiz/QuizResultsScreen";
+import { QuizLoadingScreen } from "@/components/quiz/QuizLoadingScreen";
 import { QuizProgress } from "@/components/quiz/QuizProgress";
+import { QuizQuestionsScreen } from "@/components/quiz/QuizQuestionsScreen";
+import QuizRefreshModal from "@/components/quiz/QuizRefreshModal";
+import { QuizResultsScreen } from "@/components/quiz/QuizResultsScreen";
+import useChatStore from "@/core/chatState";
+import useQuizStore from "@/core/quizState";
+import useUserStore from "@/core/userState";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
+import { router, useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import * as StoreReview from "expo-store-review";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 const Quiz = () => {
   const { chatId } = useLocalSearchParams<{ chatId: string }>();
@@ -67,7 +67,6 @@ const Quiz = () => {
         } catch {}
       }, 2000);
     } catch (err) {
-      console.error("Quiz submission error:", err);
     }
   }, [quizState, user?.id, chatId, chatTitle, updateUserPointsFromQuiz]);
 

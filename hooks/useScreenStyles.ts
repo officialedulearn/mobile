@@ -4,14 +4,14 @@ import { useTheme } from './useTheme';
 import { Design, getScreenTopPadding } from '@/utils/design';
 
 export function useScreenStyles() {
-  const { isDark, colors, spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
 
   return useMemo(() => ({
     container: {
       flex: 1,
-      backgroundColor: isDark ? colors.dark.canvas : colors.background.canvas,
+      backgroundColor: colors.canvas,
       paddingTop: topPadding,
     },
     scrollContent: {
@@ -20,13 +20,13 @@ export function useScreenStyles() {
       paddingBottom: spacing.lg,
     },
     surface: {
-      backgroundColor: isDark ? colors.dark.surface : colors.background.white,
-      borderColor: isDark ? colors.dark.border : colors.border.default,
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
     },
     text: {
-      primary: isDark ? colors.text.darkPrimary : colors.text.primary,
-      secondary: isDark ? colors.text.darkSecondary : colors.text.secondary,
-      tertiary: isDark ? colors.text.darkTertiary : colors.text.tertiary,
+      primary: colors.textPrimary,
+      secondary: colors.textSecondary,
+      tertiary: colors.textTertiary,
     },
-  }), [isDark, colors, spacing, topPadding]);
+  }), [colors, spacing, topPadding]);
 }

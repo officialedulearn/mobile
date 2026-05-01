@@ -7,7 +7,7 @@ import React, {
   type ReactNode,
 } from "react";
 import { View } from "react-native";
-import Toast, { type ToastType } from "@/components/Toast";
+import Toast, { type ToastType } from "@/components/common/Toast";
 
 export type ToastShowOptions = {
   type: ToastType;
