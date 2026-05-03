@@ -6,25 +6,26 @@ import { WalletService } from "@/services/wallet.service";
 import { supabase } from "@/utils/supabase";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Modal from "react-native-modal";
 
 type Props = Record<string, never>;
 
 const Settings = (_props: Props) => {
-    const {user, logout, clearAllUserData, theme} = useUserStore();
-    const {resetState: resetActivityState} = useActivityStore();
-    const [loading, setLoading] = useState(false);
-    const [privateKeyModalVisible, setPrivateKeyModalVisible] = useState(false);
-    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
-    const [privateKey, setPrivateKey] = useState<string | null>(null);
-    const userService = new UserService();
-    const _payPro = 
-async (userId: string) => {
+  const { user, logout, clearAllUserData, theme } = useUserStore();
+  const { resetState: resetActivityState } = useActivityStore();
+  const [loading, setLoading] = useState(false);
+  const [privateKeyModalVisible, setPrivateKeyModalVisible] = useState(false);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [privateKey, setPrivateKey] = useState<string | null>(null);
+  const userService = new UserService();
+  const _payPro =
+    async (userId: string) => {
       // if (!userId) {
       //   Alert.alert("Error", "User information not available");
       //   return;
@@ -59,9 +60,9 @@ async (userId: string) => {
       // }
 
     }
-    
-    const _exportPrivateKey = 
-async () => {
+
+  const _exportPrivateKey =
+    async () => {
       if (!user?.id) {
         Alert.alert("Error", "User information not available");
         return;
@@ -69,57 +70,57 @@ async () => {
       setConfirmModalVisible(true);
     }
 
-    const confirmExportPrivateKey = async () => {
-      if (!user?.id) {
-        Alert.alert("Error", "User information not available");
-        return;
-      }
-      setConfirmModalVisible(false);
-      setLoading(true);
-      
-      const walletService = new WalletService();
-      try {
-        const response = await walletService.decryptPrivateKey(user.id);
-        if (response.success) {
-          setPrivateKey(response.privateKey || null);
-          setPrivateKeyModalVisible(true);
-        } else {
-          Alert.alert("Error", response.error || "Failed to export private key");
-        }
-      } catch (error) {
-        Alert.alert("Error", "Failed to export private key. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
+  const confirmExportPrivateKey = async () => {
+    if (!user?.id) {
+      Alert.alert("Error", "User information not available");
+      return;
     }
+    setConfirmModalVisible(false);
+    setLoading(true);
 
-    const deleteAccount = async () => {
-      Alert.alert("Delete Account", "Are you sure you want to delete your account? This action is irreversible.", [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await userService.deleteUser(user?.id as unknown as string, (await supabase.auth.getUser()).data.user?.id as string);
-
-              await clearAllUserData();
-              resetActivityState();
-              router.push("/onboarding");
-            } catch (error) {
-              Alert.alert("Error", "Failed to delete account. Please try again.");
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]);
-
+    const walletService = new WalletService();
+    try {
+      const response = await walletService.decryptPrivateKey(user.id);
+      if (response.success) {
+        setPrivateKey(response.privateKey || null);
+        setPrivateKeyModalVisible(true);
+      } else {
+        Alert.alert("Error", response.error || "Failed to export private key");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to export private key. Please try again later.");
+    } finally {
+      setLoading(false);
     }
+  }
+
+  const deleteAccount = async () => {
+    Alert.alert("Delete Account", "Are you sure you want to delete your account? This action is irreversible.", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setLoading(true);
+            await userService.deleteUser(user?.id as unknown as string, (await supabase.auth.getUser()).data.user?.id as string);
+
+            await clearAllUserData();
+            resetActivityState();
+            router.push("/onboarding");
+          } catch (error) {
+            Alert.alert("Error", "Failed to delete account. Please try again.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+
+  }
 
   return (
     <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
@@ -129,10 +130,10 @@ async () => {
           <BackButton />
           <Text style={[styles.headerTitle, theme === "dark" && { color: "#E0E0E0" }]}>Settings</Text>
         </View>
-        
+
         <View style={styles.settings}>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.getPro, theme === "dark" && styles.getProDark]}
             activeOpacity={0.8}
             onPress={() => {
@@ -148,10 +149,10 @@ async () => {
                 style={styles.getProGradient}
               >
                 <View style={styles.getProContent}>
-                  <View style={{flexDirection: "row", alignItems: "center", gap: 12}}>
-                    <Image 
-                      source={require("@/assets/images/mainlogo.png")} 
-                      style={styles.getProLogo} 
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <Image
+                      source={require("@/assets/images/mainlogo.png")}
+                      style={styles.getProLogo}
                     />
                     <View>
                       <Text style={styles.getProTitle}>Get Pro</Text>
@@ -159,9 +160,9 @@ async () => {
                     </View>
                   </View>
                   <View style={styles.getProButtonDark}>
-                    <Image 
-                      source={require("@/assets/images/icons/dark/CaretRight.png")} 
-                      style={{ width: 20, height: 20 }} 
+                    <Image
+                      source={require("@/assets/images/icons/dark/CaretRight.png")}
+                      style={{ width: 20, height: 20 }}
                     />
                   </View>
                 </View>
@@ -174,10 +175,10 @@ async () => {
                 style={styles.getProGradient}
               >
                 <View style={styles.getProContent}>
-                  <View style={{flexDirection: "row", alignItems: "center", gap: 12}}>
-                    <Image 
-                      source={require("@/assets/images/mainlogo.png")} 
-                      style={styles.getProLogo} 
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <Image
+                      source={require("@/assets/images/mainlogo.png")}
+                      style={styles.getProLogo}
                     />
                     <View>
                       <Text style={styles.getProTitleLight}>Get Pro</Text>
@@ -185,9 +186,9 @@ async () => {
                     </View>
                   </View>
                   <View style={styles.getProButtonLight}>
-                    <Image 
-                      source={require("@/assets/images/icons/CaretRight.png")} 
-                      style={{ width: 20, height: 20, tintColor: "#000" }} 
+                    <Image
+                      source={require("@/assets/images/icons/CaretRight.png")}
+                      style={{ width: 20, height: 20, tintColor: "#000" }}
                     />
                   </View>
                 </View>
@@ -196,15 +197,15 @@ async () => {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/editProfile')} style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
-            <View  style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user2.png")}
-                style={{ width: 24, height: 24 }} 
+                style={{ width: 24, height: 24 }}
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Edit Profile Info</Text>
             </View>
 
-            <Image 
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
@@ -218,7 +219,7 @@ async () => {
             }}
             disabled={loading}
           >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/aichat.png") : require("@/assets/images/icons/aichat.png")}
                 style={{ width: 24, height: 24 }}
@@ -232,79 +233,79 @@ async () => {
             />
           </TouchableOpacity>
 
-        
 
-          <TouchableOpacity 
-            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+
+          <TouchableOpacity
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/theme")}
             disabled={loading}
           >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/moon.png") : require("@/assets/images/icons/moon.png")}
-                style={{ width: 24, height: 24 }} 
+                style={{ width: 24, height: 24 }}
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Theme</Text>
             </View>
 
-            <Image 
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+          <TouchableOpacity
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => deleteAccount()}
             disabled={loading}
           >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/delete.png") : require("@/assets/images/icons/delete.png")}
-                style={{ width: 24, height: 24 }} 
+                style={{ width: 24, height: 24 }}
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Delete Account</Text>
             </View>
 
-            <Image 
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+          <TouchableOpacity
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/community")}
             disabled={loading}
           >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/message.png") : require("@/assets/images/icons/message.png")}
-                style={{ width: 24, height: 24 }} 
+                style={{ width: 24, height: 24 }}
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Community</Text>
             </View>
 
-            <Image 
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]} 
+          <TouchableOpacity
+            style={[styles.settingItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
             onPress={() => router.push("/feedback")}
             disabled={loading}
           >
-            <View style={{alignItems: "center", flexDirection: "row", gap: 10}}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Image
                 source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
-                style={{ width: 24, height: 24 }} 
+                style={{ width: 24, height: 24 }}
               />
               <Text style={[styles.settingText, theme === "dark" && { color: "#E0E0E0" }]}>Give Feedback</Text>
             </View>
 
-            <Image 
+            <Image
               source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
               style={{ width: 24, height: 24 }}
             />
@@ -361,14 +362,14 @@ async () => {
           <Text style={[styles.modalDescription, theme === "dark" && { color: "#B3B3B3" }]}>
             Keep this private key secure. Anyone with access to this key will have full control over your wallet.
           </Text>
-          
+
           <View style={[styles.privateKeyContainer, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}>
             <Text style={[styles.privateKeyText, theme === "dark" && { color: "#E0E0E0" }]} selectable={true}>
               {privateKey}
             </Text>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.copyButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
             onPress={async () => {
               await Clipboard.setStringAsync(privateKey || "");
@@ -383,8 +384,8 @@ async () => {
               <Text style={[styles.copyButtonText, theme === "dark" && { color: "#000" }]}>Copy to clipboard</Text>
             </View>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={[styles.closeButton, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}
             onPress={() => {
               setPrivateKeyModalVisible(false);
@@ -409,16 +410,16 @@ async () => {
             Are you sure you want to export your private key? This key provides complete access to your wallet and funds.
             Only proceed if you are in a secure location.
           </Text>
-          
+
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.cancelButton, theme === "dark" && { backgroundColor: "#2E3033", borderColor: "#2E3033" }]}
               onPress={() => setConfirmModalVisible(false)}
             >
               <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#E0E0E0" }]}>Cancel</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.confirmButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
               onPress={async () => confirmExportPrivateKey()}
               disabled={loading}

@@ -2,6 +2,8 @@ import useActivityStore from '@/core/activityState';
 import useRewardsStore from '@/core/rewardsState';
 import useUserStore from '@/core/userState';
 import { useTheme } from '@/hooks/useTheme';
+import { WalletService } from '@/services/wallet.service';
+import { levels } from '@/utils/constants';
 import {
   iconCalendar,
   iconCaretRight,
@@ -9,15 +11,13 @@ import {
   iconMedalXp,
   iconSealCheck,
 } from '@/utils/design';
-import { WalletService } from '@/services/wallet.service';
-import { levels } from '@/utils/constants';
+import { Image } from "expo-image";
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
-  Image,
   ImageBackground,
   Modal,
   ScrollView,
@@ -268,7 +268,7 @@ const Rewards = (props: Props) => {
           <Text style={[styles.nftHeaderText, { color: colors.slate }]}>Your Badges</Text>
           <TouchableOpacity
             style={[styles.seeMoreButton, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]}
-            onPress={() => router.push("/nfts")}
+            onPress={() => router.push("/nft")}
           >
             <Text style={[styles.subText, { color: colors.slate }]}>See All</Text>
             <Image

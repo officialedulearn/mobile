@@ -5,11 +5,11 @@ import useUserStore from "@/core/userState";
 import { Chat } from "@/interface/Chat";
 import Design from "@/utils/design";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -50,30 +50,91 @@ type Props = {
   onAfterNavigate: () => void;
 };
 
-const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
-  const user = useUserStore((s) => s.user);
+type ChatListItemProps = {
+  id: string;
+  title: string | null | undefined;
+  isDark: boolean;
+  isNavigating: boolean;
+  onPress: (id: string) => void;
+};
+
+const ChatListItem = React.memo(
+  ({ id, title, isDark, isNavigating, onPress }: ChatListItemProps) => {
+    const handlePress = React.useCallback(() => {
+      onPress(id);
+    }, [id, onPress]);
+
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        style={[
+          styles.chatItem,
+          isDark && styles.chatItemDark,
+          isNavigating && styles.disabledChatItem,
+        ]}
+        disabled={isNavigating}
+        activeOpacity={0.7}
+      >
+        <View style={styles.chatInfo}>
+          <Text
+            style={[styles.chatTitle, isDark && styles.chatTitleDark]}
+            numberOfLines={1}
+          >
+            {title || "Untitled Chat"}
+          </Text>
+        </View>
+        {!isNavigating && (
+          <Image
+            source={
+              isDark
+                ? require("@/assets/images/icons/dark/CaretRight.png")
+                : require("@/assets/images/icons/CaretRight.png")
+            }
+            style={[styles.arrowIcon, isDark && styles.arrowIconDark]}
+          />
+        )}
+      </TouchableOpacity>
+    );
+  },
+  (prev, next) =>
+    prev.id === next.id &&
+    prev.title === next.title &&
+    prev.isDark === next.isDark &&
+    prev.isNavigating === next.isNavigating &&
+    prev.onPress === next.onPress,
+);
+ChatListItem.displayName = "ChatListItem";
+
+const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
+  const userId = useUserStore((s) => s.user?.id);
+  const userName = useUserStore((s) => s.user?.name);
+  const username = useUserStore((s) => s.user?.username);
+  const profilePictureURL = useUserStore((s) => s.user?.profilePictureURL);
   const theme = useUserStore((s) => s.theme);
+  const isDark = theme === "dark";
   const router = useRouter();
   const { isNavigating, navigateToChat, createNewChat } = useChatNavigation();
-  const { chatList: chats, isLoading, fetchChatList } = useChatStore();
+  const chats = useChatStore((s) => s.chatList);
+  const isLoading = useChatStore((s) => s.isLoading);
+  const fetchChatList = useChatStore((s) => s.fetchChatList);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const displayName = React.useMemo(() => {
-    const n = user?.name?.trim();
+    const n = userName?.trim();
     if (n) return n;
-    const u = user?.username?.trim();
+    const u = username?.trim();
     if (u) return u.startsWith("@") ? u : `@${u}`;
     return "Account";
-  }, [user?.name, user?.username]);
+  }, [userName, username]);
 
   const avatarInitials = React.useMemo(() => {
-    const n = user?.name?.trim() || user?.username?.trim() || "?";
+    const n = userName?.trim() || username?.trim() || "?";
     const parts = n.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) {
       return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
     }
     return n.slice(0, 2).toUpperCase();
-  }, [user?.name, user?.username]);
+  }, [userName, username]);
 
   const handleGoHome = React.useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -97,10 +158,10 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
   }, [filteredChats]);
 
   React.useEffect(() => {
-    if (user?.id) {
-      fetchChatList(user.id as unknown as string);
+    if (userId) {
+      fetchChatList(userId as unknown as string);
     }
-  }, [user?.id, fetchChatList]);
+  }, [userId, fetchChatList]);
 
   const goToChat = React.useCallback(
     (id: string) => {
@@ -117,57 +178,29 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
     onAfterNavigate();
   }, [isNavigating, createNewChat, onAfterNavigate]);
 
-  const renderChatSection = (title: string, sectionChats: Chat[]) => {
+  const renderChatSection = React.useCallback((title: string, sectionChats: Chat[]) => {
     if (sectionChats.length === 0) return null;
 
     return (
       <View style={styles.chatSection} key={title}>
         <Text
-          style={[styles.sectionHeader, theme === "dark" && { color: "#E0E0E0" }]}
+          style={[styles.sectionHeader, isDark && styles.textDark]}
         >
           {title}
         </Text>
         {sectionChats.map((chat) => (
-          <TouchableOpacity
+          <ChatListItem
             key={chat.id}
-            onPress={() => goToChat(chat.id)}
-            style={[
-              styles.chatItem,
-              theme === "dark" && { backgroundColor: "#0D0D0D" },
-              isNavigating && styles.disabledChatItem,
-            ]}
-            disabled={isNavigating}
-            activeOpacity={0.7}
-          >
-            <View style={styles.chatInfo}>
-              <Text
-                style={[
-                  styles.chatTitle,
-                  theme === "dark" && { color: "#B3B3B3" },
-                ]}
-                numberOfLines={1}
-              >
-                {chat.title || "Untitled Chat"}
-              </Text>
-            </View>
-            {!isNavigating && (
-              <Image
-                source={
-                  theme === "dark"
-                    ? require("@/assets/images/icons/dark/CaretRight.png")
-                    : require("@/assets/images/icons/CaretRight.png")
-                }
-                style={[
-                  styles.arrowIcon,
-                  theme === "dark" && { tintColor: "#777777" },
-                ]}
-              />
-            )}
-          </TouchableOpacity>
+            id={chat.id}
+            title={chat.title}
+            isDark={isDark}
+            isNavigating={isNavigating}
+            onPress={goToChat}
+          />
         ))}
       </View>
     );
-  };
+  }, [goToChat, isDark, isNavigating]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -175,10 +208,10 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             size="large"
-            color={theme === "dark" ? "#00FF80" : "#2D3C52"}
+            color={isDark ? "#00FF80" : "#2D3C52"}
           />
           <Text
-            style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}
+            style={[styles.loadingText, isDark && styles.textDark]}
           >
             Loading chats...
           </Text>
@@ -190,14 +223,14 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
       return (
         <View style={styles.emptyState}>
           <Text
-            style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}
+            style={[styles.emptyStateText, isDark && styles.textDark]}
           >
             No chat history yet
           </Text>
           <Text
             style={[
               styles.emptyStateSubtext,
-              theme === "dark" && { color: "#B3B3B3" },
+              isDark && styles.subtextDark,
             ]}
           >
             Tap the pen above to start a chat.
@@ -210,14 +243,14 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
       return (
         <View style={styles.emptyState}>
           <Text
-            style={[styles.emptyStateText, theme === "dark" && { color: "#E0E0E0" }]}
+            style={[styles.emptyStateText, isDark && styles.textDark]}
           >
             No chats found
           </Text>
           <Text
             style={[
               styles.emptyStateSubtext,
-              theme === "dark" && { color: "#B3B3B3" },
+              isDark && styles.subtextDark,
             ]}
           >
             Try adjusting your search terms
@@ -242,19 +275,15 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
 
   return (
     <View
-      style={[styles.root, theme === "dark" && { backgroundColor: "#131313" }]}
+      style={[styles.root, isDark && styles.rootDark]}
     >
-      <View style={[styles.header, theme === "dark" && { borderBottomColor: "#2E3033" }]}>
+      <View style={[styles.header, isDark && styles.headerDark]}>
         <TextInput
           placeholder="Search chats..."
-          placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+          placeholderTextColor={isDark ? "#B3B3B3" : "#61728C"}
           style={[
             styles.searchInput,
-            theme === "dark" && {
-              backgroundColor: "#0D0D0D",
-              borderColor: "#2E3033",
-              color: "#E0E0E0",
-            },
+            isDark && styles.searchInputDark,
           ]}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -263,10 +292,7 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
         <TouchableOpacity
           style={[
             styles.button,
-            theme === "dark" && {
-              backgroundColor: "#0D0D0D",
-              borderColor: "#2E3033",
-            },
+            isDark && styles.buttonDark,
             isNavigating && styles.disabledButton,
           ]}
           activeOpacity={0.8}
@@ -276,12 +302,12 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
           {isNavigating ? (
             <ActivityIndicator
               size="small"
-              color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
+              color={isDark ? "#E0E0E0" : "#2D3C52"}
             />
           ) : (
             <Image
               source={
-                theme === "dark"
+                isDark
                   ? require("@/assets/images/icons/dark/pen.png")
                   : require("@/assets/images/icons/pen.png")
               }
@@ -298,25 +324,22 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
       <View
         style={[
           styles.profileFooter,
-          theme === "dark" && {
-            backgroundColor: "#0D0D0D",
-            borderTopColor: "#2E3033",
-          },
+          isDark && styles.profileFooterDark,
         ]}
       >
         <Avatar
           size="small"
           initials={avatarInitials}
           source={
-            user?.profilePictureURL
-              ? { uri: user.profilePictureURL }
+            profilePictureURL
+              ? { uri: profilePictureURL }
               : undefined
           }
         />
         <Text
           style={[
             styles.profileName,
-            theme === "dark" && { color: "#E0E0E0" },
+            isDark && styles.textDark,
           ]}
           numberOfLines={1}
         >
@@ -328,16 +351,13 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
           onPress={handleGoHome}
           style={[
             styles.homeButton,
-            theme === "dark" && {
-              backgroundColor: "#131313",
-              borderColor: "#2E3033",
-            },
+            isDark && styles.homeButtonDark,
           ]}
           activeOpacity={0.85}
         >
           <Image
             source={
-              theme === "dark"
+              isDark
                 ? require("@/assets/images/icons/dark/home.png")
                 : require("@/assets/images/icons/home.png")
             }
@@ -347,7 +367,8 @@ const ChatSidebarPanel = ({ onAfterNavigate }: Props) => {
       </View>
     </View>
   );
-};
+});
+ChatSidebarPanel.displayName = "ChatSidebarPanel";
 
 export default ChatSidebarPanel;
 
@@ -355,6 +376,9 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  rootDark: {
+    backgroundColor: "#131313",
   },
   header: {
     flexDirection: "row",
@@ -365,6 +389,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#EDF3FC",
+  },
+  headerDark: {
+    borderBottomColor: "#2E3033",
   },
   body: {
     flex: 1,
@@ -397,6 +424,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 2,
   },
+  chatItemDark: {
+    backgroundColor: "#0D0D0D",
+  },
   disabledChatItem: {
     opacity: 0.6,
   },
@@ -409,9 +439,15 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     marginBottom: 4,
   },
+  chatTitleDark: {
+    color: "#B3B3B3",
+  },
   arrowIcon: {
     width: 16,
     height: 16,
+    tintColor: "#777777",
+  },
+  arrowIconDark: {
     tintColor: "#777777",
   },
   emptyState: {
@@ -447,6 +483,11 @@ const styles = StyleSheet.create({
     color: "#2D3C52",
     marginRight: 12,
   },
+  searchInputDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
+    color: "#E0E0E0",
+  },
   emptyStateText: {
     fontFamily: "Satoshi-Regular",
     fontSize: 16,
@@ -460,6 +501,12 @@ const styles = StyleSheet.create({
     color: "#777777",
     textAlign: "center",
   },
+  textDark: {
+    color: "#E0E0E0",
+  },
+  subtextDark: {
+    color: "#B3B3B3",
+  },
   profileFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -469,6 +516,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#EDF3FC",
     backgroundColor: "#FFFFFF",
+  },
+  profileFooterDark: {
+    backgroundColor: "#0D0D0D",
+    borderTopColor: "#2E3033",
   },
   profileName: {
     flex: 1,
@@ -486,6 +537,10 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#EDF3FC",
   },
+  homeButtonDark: {
+    backgroundColor: "#131313",
+    borderColor: "#2E3033",
+  },
   homeIcon: {
     width: 22,
     height: 22,
@@ -501,6 +556,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     backgroundColor: "#FFFFFF",
+  },
+  buttonDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
   },
   disabledButton: {
     opacity: 0.6,

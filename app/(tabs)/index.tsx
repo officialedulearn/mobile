@@ -146,11 +146,21 @@ const Home = () => {
               onPress={() => router.push('/quizzes')}
             />
             <HomeCard
+              icon={require('@/assets/images/icons/notebook.png')}
+              title="Flashcards"
+              subtitle="Review decks from your AI sessions"
+              onPress={() => router.push('/flashcards' as never)}
+            />
+          </View>
+
+          <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+            <HomeCard
               icon={require('@/assets/images/icons/leaderboard.png')}
               title="Leaderboard"
               subtitle="View rankings among users"
               onPress={() => router.push('/leaderboard')}
             />
+            <View style={{ flex: 1, marginHorizontal: 8 }} />
           </View>
 
           <ActivitySection activities={activities} isLoading={isLoading} />

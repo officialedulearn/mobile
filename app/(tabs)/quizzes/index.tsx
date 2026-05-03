@@ -6,13 +6,13 @@ import { useTheme } from '@/hooks/useTheme';
 import type { PublicQuizListItem } from '@/types/quizzes.types';
 import { Design } from '@/utils/design';
 import { LegendList } from '@legendapp/list';
+import { Image } from "expo-image";
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
-    Image,
     Platform,
     ScrollView,
     StyleSheet,

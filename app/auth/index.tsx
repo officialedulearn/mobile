@@ -1,14 +1,15 @@
+import OAuthButtons from "@/components/auth/OAuthButtons";
 import ScreenLoader from "@/components/common/ScreenLoader";
 import useUserStore from "@/core/userState";
 import { UserService } from "@/services/auth.service";
 import { getScreenTopPadding } from "@/utils/design";
 import { supabase } from "@/utils/supabase";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -28,6 +29,7 @@ const Auth = () => {
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
   const [isSignUp, setIsSignUp] = useState(signUp === "1");
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -37,7 +39,6 @@ const Auth = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [oauthLoading] = useState(false);
 
   useEffect(() => {
     setIsSignUp(signUp === "1");
@@ -173,7 +174,7 @@ const Auth = () => {
             setLoading(false);
             return;
           }
-        } catch (availabilityError) { 
+        } catch (availabilityError) {
           Alert.alert(
             "Connection Error",
             "Failed to verify availability. Please try again."
@@ -214,7 +215,7 @@ const Auth = () => {
           const { generateUUID } = await import('@/utils/constants');
           const userService = new UserService();
           const userId = generateUUID();
-          
+
           const newUser = await userService.createUser({
             id: userId,
             name: formData.name,
@@ -231,7 +232,7 @@ const Auth = () => {
 
         } catch (dbError: any) {
           const errorMessage = dbError?.response?.data?.message || dbError?.message || "Unknown error";
-          
+
           if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
             Alert.alert(
               "Account Already Exists",
@@ -257,10 +258,10 @@ const Auth = () => {
         } else {
           Alert.alert("Authentication Error", error.message);
         }
-        
+
         if (isSignUp) {
           Alert.alert(
-            "Partial Account Created", 
+            "Partial Account Created",
             "Database user created but email verification failed. Please contact support."
           );
         }
@@ -269,7 +270,7 @@ const Auth = () => {
 
       router.push({
         pathname: '/auth/verifyOtp',
-        params: { 
+        params: {
           email: formData.email,
           isLogin: isSignUp ? "0" : "1"
         },
@@ -311,13 +312,13 @@ const Auth = () => {
             ]}
             onPress={() => router.back()}
           >
-            <Image 
+            <Image
               source={
                 theme === "dark"
                   ? require("@/assets/images/icons/dark/CaretLeft.png")
                   : require("@/assets/images/icons/CaretLeft.png")
-              } 
-              style={styles.backButtonIcon} 
+              }
+              style={styles.backButtonIcon}
             />
           </TouchableOpacity>
         </View>
@@ -404,7 +405,7 @@ const Auth = () => {
                   autoCorrect={false}
                   returnKeyType="done"
                   textContentType="username"
-                  
+
                 />
               </View>
             </>
@@ -424,14 +425,14 @@ const Auth = () => {
             </Text>
           </TouchableOpacity>
 
-          
-          {/* <View style={styles.dividerContainer}>
+
+          <View style={styles.dividerContainer}>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
             <Text style={[styles.dividerText, theme === "dark" && styles.dividerTextDark]}>OR</Text>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
           </View>
 
-          <OAuthButtons onLoadingChange={setOauthLoading} /> */}
+          <OAuthButtons onLoadingChange={setOauthLoading} />
           {isSignUp && (
             <View style={styles.privacyContainer}>
               <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>

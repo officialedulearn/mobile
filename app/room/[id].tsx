@@ -20,6 +20,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, {
   useCallback,
@@ -31,7 +32,6 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
-  Image,
   LayoutChangeEvent,
   RefreshControl,
   ScrollView,

@@ -15,7 +15,9 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, {
@@ -27,7 +29,6 @@ import React, {
 } from "react";
 import {
   Alert,
-  Image,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -66,6 +67,36 @@ const chatAiService = new AIService();
 
 const DRAWER_TIMING_MS = 280;
 const EASE_OUT_RN_EASE = Easing.bezier(0, 0, 0.58, 1);
+const KEYBOARD_MAINTAIN_SCROLL_AT_END = {
+  animated: false,
+  on: {
+    dataChange: true,
+    itemLayout: true,
+    layout: true,
+  },
+} as const;
+
+const DEFAULT_HEADER_TITLE = "AI Tutor Chat";
+
+const keyExtractor = (item: Message) => item.id;
+const dismissKeyboard = () => Keyboard.dismiss();
+
+const areMessageArraysEqual = (prev: Message[], next: Message[]) => {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let index = 0; index < prev.length; index += 1) {
+    const prevMessage = prev[index];
+    const nextMessage = next[index];
+    if (
+      prevMessage?.id !== nextMessage?.id ||
+      prevMessage?.role !== nextMessage?.role ||
+      prevMessage?.content !== nextMessage?.content
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
 
 type Props = {
   title: string;
@@ -81,7 +112,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const messagesRef = React.useRef<Message[]>([]);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isGenerating, setIsGenerating] = useState(false);
-  const user = useUserStore((s) => s.user);
+  const userId = useUserStore((s) => s.user?.id);
+  const userCredits = useUserStore((s) => s.user?.credits);
+  const userQuizLimit = useUserStore((s) => s.user?.quizLimit);
   const theme = useUserStore((s) => s.theme);
   const updateUserCredits = useUserStore((s) => s.updateUserCredits);
   const [inputText, setInputText] = useState("");
@@ -95,7 +128,14 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [waitingForStream, setWaitingForStream] = useState(false);
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [selectedAttachments, setSelectedAttachments] = useState<
+    {
+      uri: string;
+      kind: "image" | "document";
+      name?: string;
+      mimeType?: string;
+    }[]
+  >([]);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
     null,
   );
@@ -108,13 +148,15 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const { userHasAgent, fetchUserAgent, agent } = useAgentStore();
+  const userHasAgent = useAgentStore((s) => s.userHasAgent);
+  const agentName = useAgentStore((s) => s.agent?.name);
+  const fetchUserAgent = useAgentStore((s) => s.fetchUserAgent);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchUserAgent(user.id);
+    if (userId) {
+      fetchUserAgent(userId);
     }
-  }, [user?.id, fetchUserAgent]);
+  }, [userId, fetchUserAgent]);
 
   const waveAnimation1 = useSharedValue(0);
   const waveAnimation2 = useSharedValue(0);
@@ -203,17 +245,21 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
-      safeSetMessages(initialMessages);
+      safeSetMessages((currentMessages) =>
+        areMessageArraysEqual(currentMessages, initialMessages)
+          ? currentMessages
+          : initialMessages,
+      );
     }
   }, [initialMessages, safeSetMessages]);
 
   const fetchSuggestions = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     try {
       setLoadingSuggestions(true);
       const fetchedSuggestions = await chatAiService.generateSuggestions({
-        userId: user.id,
+        userId,
       });
       setSuggestions(fetchedSuggestions || []);
     } catch (error) {
@@ -227,13 +273,13 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       setLoadingSuggestions(false);
 
     }
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
-    if (user?.id && messages && messages.length === 0) {
+    if (userId && messages.length === 0) {
       fetchSuggestions();
     }
-  }, [user?.id, fetchSuggestions, messages.length]);
+  }, [userId, fetchSuggestions, messages.length]);
 
   const flushScrollToBottom = useCallback(() => {
     isNearBottomRef.current = true;
@@ -269,13 +315,13 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     [],
   );
 
-  const handleSendMessage = async (messageText?: string) => {
+  const handleSendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || inputText.trim();
     if (textToSend === "" || isGenerating || isNavigating) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const currentCredits = Number(user?.credits) || 0;
+    const currentCredits = Number(userCredits) || 0;
 
     if (currentCredits <= 0.5) {
       router.push("/freeTrialIntro");
@@ -284,18 +330,99 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
     updateUserCredits(currentCredits - 0.5);
 
+    const attachmentsDraft = selectedAttachments;
     setInputText("");
-    setSelectedImageUri(null);
+    setSelectedAttachments([]);
+
+    const inferMimeTypeFromUri = (uri: string, kind: "image" | "document") => {
+      const ext = uri.split("?")[0]?.split("#")[0]?.split(".").pop()?.toLowerCase();
+      if (kind === "image") {
+        if (ext === "png") return "image/png";
+        if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+        if (ext === "webp") return "image/webp";
+        if (ext === "heic") return "image/heic";
+        return "image/jpeg";
+      }
+      if (ext === "pdf") return "application/pdf";
+      if (ext === "txt") return "text/plain";
+      if (ext === "md") return "text/markdown";
+      if (ext === "json") return "application/json";
+      if (ext === "docx")
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      return "application/octet-stream";
+    };
+
+    let attachmentsPayload: {
+      data: string;
+      mimeType: string;
+      name?: string;
+      kind?: "image" | "document";
+      localUri?: string;
+    }[] = [];
+
+    if (attachmentsDraft.length > 0) {
+      try {
+        attachmentsPayload = await Promise.all(
+          attachmentsDraft.map(async (att) => {
+            const data = await FileSystem.readAsStringAsync(att.uri, {
+              // Some Expo runtimes/types don't expose EncodingType; string literal is supported.
+              encoding: ("base64" as any),
+            });
+            return {
+              data,
+              mimeType:
+                att.mimeType ||
+                inferMimeTypeFromUri(att.uri, att.kind),
+              name: att.name,
+              kind: att.kind,
+              localUri: att.uri,
+            };
+          }),
+        );
+      } catch (e) {
+        console.error("Failed to read attachment:", e);
+        Alert.alert(
+          "Attachment error",
+          "Couldn't attach that file. Try again with a smaller file.",
+        );
+      }
+    }
 
     const newMessage: Message = {
       id: generateUUID(),
       role: "user",
-      content: textToSend,
+      content:
+        attachmentsPayload.length > 0
+          ? { text: textToSend, attachments: attachmentsPayload }
+          : textToSend,
       createdAt: new Date(),
       chatId: chatId,
     };
 
-    const updatedMessages = [...(messages || []), newMessage];
+    const updatedMessages = [...(messagesRef.current || []), newMessage];
+
+    const messagesForApi = updatedMessages.map((m) => {
+      if (
+        m &&
+        typeof m.content === "object" &&
+        m.content &&
+        "attachments" in (m.content as any) &&
+        Array.isArray((m.content as any).attachments)
+      ) {
+        const c: any = m.content;
+        return {
+          ...m,
+          content: {
+            ...c,
+            attachments: c.attachments.map((a: any) => {
+              const { localUri, ...rest } = a || {};
+              return rest;
+            }),
+          },
+        };
+      }
+      return m;
+    });
     safeSetMessages(updatedMessages);
     addMessage(chatId, newMessage);
     setIsGenerating(true);
@@ -309,9 +436,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     try {
       const cleanup = await chatAiService.generateMessagesStream(
         {
-          messages: updatedMessages,
+          messages: messagesForApi,
           chatId: chatId,
-          userId: user?.id as unknown as string,
+          userId: userId as unknown as string,
         },
         (token: string, _type?: string) => {
           if (!messageCreated) {
@@ -346,7 +473,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
             );
             if (messageIndex === -1) return currentMessages;
             const message = messagesCopy[messageIndex];
-            message.content = newContent;
+            messagesCopy[messageIndex] = {
+              ...message,
+              content: newContent,
+            };
             return messagesCopy;
           });
         },
@@ -407,7 +537,21 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         error.message || "Failed to start streaming. Please try again.",
       );
     }
-  };
+  }, [
+    addMessage,
+    chatId,
+    inputText,
+    isGenerating,
+    isNavigating,
+    refreshChatList,
+    router,
+    safeSetMessages,
+    selectedAttachments,
+    syncMessagesToStore,
+    updateUserCredits,
+    userCredits,
+    userId,
+  ]);
 
   const dismissKeyboardJs = useCallback(() => {
     Keyboard.dismiss();
@@ -557,9 +701,17 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
       });
     }
-  }, [recorderState.isRecording]);
+  }, [
+    inputContainerOpacity,
+    micButtonRotation,
+    micButtonScale,
+    recorderState.isRecording,
+    recordingContainerScale,
+    recordingOpacity,
+    waveAnimations,
+  ]);
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -584,9 +736,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       micButtonScale.value = withTiming(1, { duration: 150 });
       micButtonRotation.value = withTiming(0, { duration: 150 });
     }
-  };
+  }, [audioRecorder, micButtonRotation, micButtonScale]);
 
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await audioRecorder.stop();
@@ -612,7 +764,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       console.error("Error stopping recording:", error);
       Alert.alert("Error", "Failed to stop recording");
     }
-  };
+  }, [audioRecorder]);
 
   const filteredMessages = useMemo(() => {
     if (!messages || !Array.isArray(messages)) return [];
@@ -664,8 +816,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   const handleHeaderQuiz = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const quizLimit = user?.quizLimit ?? 0;
-    const currentCredits = Number(user?.credits) || 0;
+    const quizLimit = userQuizLimit ?? 0;
+    const currentCredits = Number(userCredits) || 0;
     if (quizLimit <= 0) {
       setShowQuizRefreshModal(true);
       return;
@@ -678,7 +830,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       pathname: "/quiz",
       params: { chatId },
     });
-  }, [user?.quizLimit, user?.credits, chatId, router]);
+  }, [userQuizLimit, userCredits, chatId, router]);
 
   const handleConfirmDeleteChat = useCallback(async () => {
     try {
@@ -738,10 +890,16 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                 ]}
               >
                 <View style={{ flex: 1 }}>
-                  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                  <TouchableWithoutFeedback onPress={dismissKeyboard}>
                     <View>
                       <ChatHeaderBar
-                        title={title || (userHasAgent ? agent?.name || "AI Tutor Chat" : "AI Tutor Chat") as string}
+                        title={
+                          title && title !== DEFAULT_HEADER_TITLE
+                            ? title
+                            : userHasAgent
+                              ? agentName || DEFAULT_HEADER_TITLE
+                              : DEFAULT_HEADER_TITLE
+                        }
                         theme={theme}
                         isEmpty={!messages || messages.length === 0}
                         onOpenDrawer={openDrawer}
@@ -767,7 +925,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     style={styles.chatContent}
                   >
                     {!messages || messages.length === 0 ? (
-                      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                      <TouchableWithoutFeedback onPress={dismissKeyboard}>
                         <View style={styles.emptyStateContainer}>
                         <View style={styles.emptyImageContainer}>
                           <Image
@@ -796,21 +954,14 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                           extraData={listExtraData}
                           initialScrollAtEnd
                           keyboardShouldPersistTaps="handled"
-                          maintainScrollAtEnd={{
-                            animated: false,
-                            on: {
-                              dataChange: true,
-                              itemLayout: true,
-                              layout: true,
-                            },
-                          }}
+                          maintainScrollAtEnd={KEYBOARD_MAINTAIN_SCROLL_AT_END}
                           maintainScrollAtEndThreshold={0.16}
                           maintainVisibleContentPosition
-                          keyExtractor={(item) => item.id}
+                          keyExtractor={keyExtractor}
                           renderItem={renderMessage}
                           ListFooterComponent={listFooter}
                           onScroll={handleScroll}
-                          onScrollBeginDrag={Keyboard.dismiss}
+                          onScrollBeginDrag={dismissKeyboard}
                           scrollEventThrottle={16}
                           showsVerticalScrollIndicator={false}
                           style={styles.messagesScroll}
@@ -913,11 +1064,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                             isTranscribing={isTranscribing}
                             isGenerating={isGenerating}
                             isNavigating={isNavigating}
-                            handleSendMessage={() => {
-                              void handleSendMessage();
-                            }}
-                            selectedImageUri={selectedImageUri}
-                            setSelectedImageUri={setSelectedImageUri}
+                            handleSendMessage={handleSendMessage}
+                            selectedAttachments={selectedAttachments}
+                            setSelectedAttachments={setSelectedAttachments}
                             startRecording={startRecording}
                             inputContainerOpacity={inputContainerOpacity}
                             micButtonScale={micButtonScale}

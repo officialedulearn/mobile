@@ -1,8 +1,8 @@
 import useUserStore from "@/core/userState";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
 import {
-  Image,
   StyleSheet,
   ViewStyle,
 } from "react-native";

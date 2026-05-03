@@ -1,14 +1,15 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, ActivityIndicator, RefreshControl } from 'react-native';
-import React, { useState, useEffect, useCallback } from 'react';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import useUserStore from '@/core/userState';
-import { router } from 'expo-router';
 import useCommunityStore from '@/core/communityState';
-import { FlashList } from '@shopify/flash-list';
-import type { UserCommunity } from '@/interface/Community';
-import { useTheme } from '@/hooks/useTheme';
+import useUserStore from '@/core/userState';
 import { useScreenStyles } from '@/hooks/useScreenStyles';
+import { useTheme } from '@/hooks/useTheme';
+import type { UserCommunity } from '@/interface/Community';
 import { Design } from '@/utils/design';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { FlashList } from '@shopify/flash-list';
+import { Image } from "expo-image";
+import { router } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const Hub = () => {
   const [activeTab, setActiveTab] = useState<'communities' | 'trending'>('communities');

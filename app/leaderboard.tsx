@@ -2,9 +2,10 @@ import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
 import { User } from "@/interface/User";
 import { UserService } from "@/services/auth.service";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { DataTable } from "react-native-paper";
 
 function getNextSunday(): Date {

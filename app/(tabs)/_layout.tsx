@@ -2,15 +2,16 @@ import useUserStore from "@/core/userState";
 import { getThemedColors, tabIconGift, tabIconHome, tabIconUser } from "@/utils/design";
 import { Tabs, usePathname, useSegments } from "expo-router";
 
-import React, { useEffect, useState, useRef, createContext, useContext } from "react";
-import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View, Dimensions } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { Image } from "expo-image";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Dimensions, Keyboard, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Animated, { 
+import Animated, {
   Easing,
-  useAnimatedStyle, 
-  useSharedValue, 
+  useAnimatedStyle,
+  useSharedValue,
   withSequence,
   withSpring,
   withTiming,
@@ -125,6 +126,7 @@ const TabLayout = (props: Props) => {
   const previousPathRef = useRef(pathname);
   const isChatTab = (segments as string[]).includes("chat");
   const isQuizDetailScreen = /^\/quizzes\/[^/]+$/.test(pathname);
+  const isFlashcardDetailScreen = /^\/flashcards\/[^/]+$/.test(pathname);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
@@ -176,7 +178,7 @@ const TabLayout = (props: Props) => {
             borderColor: colors.tabBarBg,
             borderWidth: 1,
           },
-          (isKeyboardVisible || streakModalVisible || isChatTab || isQuizDetailScreen) && {
+          (isKeyboardVisible || streakModalVisible || isChatTab || isQuizDetailScreen || isFlashcardDetailScreen) && {
             display: "none",
           },
         ],
@@ -264,6 +266,12 @@ const TabLayout = (props: Props) => {
 
       <Tabs.Screen
         name="quizzes"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="flashcards"
         options={{
           href: null,
         }}

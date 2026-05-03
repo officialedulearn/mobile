@@ -3,13 +3,13 @@ import useUserStore from "@/core/userState";
 import { User } from "@/interface/User";
 import { UserService } from "@/services/auth.service";
 import { debounce } from "@/utils/utils";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TextInput,

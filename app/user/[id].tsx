@@ -1,19 +1,20 @@
-import { StyleSheet, Text, View, Image, ScrollView, Dimensions, TouchableOpacity, ImageBackground, Pressable, ActivityIndicator, SafeAreaView, Switch } from "react-native";
-import React, { useEffect } from "react";
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BackButton from "@/components/common/backButton";
-import { useLocalSearchParams, router } from "expo-router";
-import { UserService } from "@/services/auth.service";
 import DailyCheckInStreak from "@/components/rewards/streak";
-import { getUserMetrics } from "@/utils/utils";
-import { ActivityService } from "@/services/activity.service";
 import useRewardsStore from "@/core/rewardsState";
 import useSocialStore from "@/core/socialState";
-import { NotificationPreferences } from "@/services/social.service";
 import useUserStore from "@/core/userState";
-import * as Haptics from "expo-haptics";
+import { ActivityService } from "@/services/activity.service";
+import { UserService } from "@/services/auth.service";
+import { NotificationPreferences } from "@/services/social.service";
 import { getScreenTopPadding } from '@/utils/design';
+import { getUserMetrics } from "@/utils/utils";
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, Dimensions, ImageBackground, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = Record<string, never>;
 

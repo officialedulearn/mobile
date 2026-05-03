@@ -1,5 +1,5 @@
+import { Image } from 'expo-image';
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

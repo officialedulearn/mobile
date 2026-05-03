@@ -10,8 +10,9 @@ import useUserStore from '@/core/userState';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Presets } from 'react-native-pulsar';
+import { createPublicQuizDeepLink } from '@/utils/quizLinks';
 
 export default function PublicQuizDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -207,6 +208,17 @@ export default function PublicQuizDetailScreen() {
         }
     }, [quizId, userId, fetchQuiz, joinQuiz]);
 
+    const shareQuiz = useCallback(async () => {
+        if (!quizId) return;
+        const title = detail?.title ?? 'EduLearn quiz';
+        const url = createPublicQuizDeepLink(quizId);
+        await Share.share({
+            title,
+            message: `Try this EduLearn quiz: ${url}`,
+            url,
+        });
+    }, [detail?.title, quizId]);
+
     const renderBody = () => {
         if (!userId) {
             return (
@@ -289,6 +301,16 @@ export default function PublicQuizDetailScreen() {
                 <Text style={[styles.header, theme === 'dark' && { color: '#E0E0E0' }]}>
                     {quizCompleted ? 'Quiz Results' : 'Ongoing quiz'}
                 </Text>
+                <TouchableOpacity
+                    style={[styles.shareButton, theme === 'dark' && styles.shareButtonDark]}
+                    onPress={shareQuiz}
+                    activeOpacity={0.8}
+                >
+                    <Image
+                        source={require('@/assets/images/icons/share.png')}
+                        style={[styles.shareIcon, theme === 'dark' && { tintColor: '#00FF80' }]}
+                    />
+                </TouchableOpacity>
             </View>
             {submitError ? (
                 <Text style={[styles.submitErr, theme === 'dark' && { color: '#FF6B6B' }]}>
@@ -323,6 +345,26 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         fontFamily: 'Satoshi-Regular',
         color: '#2D3C52',
+        flex: 1,
+    },
+    shareButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 0.5,
+        borderColor: '#EDF3FC',
+    },
+    shareButtonDark: {
+        backgroundColor: '#131313',
+        borderColor: '#2E3033',
+    },
+    shareIcon: {
+        width: 19,
+        height: 19,
+        resizeMode: 'contain',
     },
     fallbackText: {
         fontFamily: 'Satoshi-Regular',

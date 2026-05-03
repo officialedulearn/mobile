@@ -1,10 +1,9 @@
-import useAgentStore from "@/core/agentStore";
 import Design from "@/utils/design";
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import React from "react";
 import {
   Alert,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,7 +20,7 @@ type Props = {
   onRequestDelete: () => void | Promise<void>;
 };
 
-const ChatHeaderBar = ({
+const ChatHeaderBar = React.memo(({
   title,
   theme,
   isEmpty,
@@ -31,29 +30,54 @@ const ChatHeaderBar = ({
   onRequestDelete,
 }: Props) => {
   const dark = theme === "dark";
-  const btnDark = dark && {
-    backgroundColor: "#0D0D0D",
-    borderColor: "#2E3033",
-  };
-  const { userHasAgent, agent } = useAgentStore();
+  const handleOpenDrawer = React.useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onOpenDrawer();
+  }, [onOpenDrawer]);
+
+  const handleNewChat = React.useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onNewChat();
+  }, [onNewChat]);
+
+  const handleQuizPress = React.useCallback(() => {
+    void onQuiz();
+  }, [onQuiz]);
+
+  const handleDeletePress = React.useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Delete Chat",
+      "Are you sure you want to delete this chat? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+          onPress: () =>
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void onRequestDelete();
+          },
+        },
+      ],
+    );
+  }, [onRequestDelete]);
 
   return (
     <View
       style={[
         styles.topNav,
-        dark && {
-          backgroundColor: "#131313",
-          borderBottomColor: "#2E3033",
-        },
+        dark && styles.topNavDark,
       ]}
     >
       <View style={styles.leftNavContainer}>
         <TouchableOpacity
-          style={[styles.button, btnDark]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onOpenDrawer();
-          }}
+          style={[styles.button, dark && styles.buttonDark]}
+          onPress={handleOpenDrawer}
           activeOpacity={0.8}
         >
           <Image
@@ -66,21 +90,18 @@ const ChatHeaderBar = ({
           />
         </TouchableOpacity>
         <Text
-          style={[styles.headerText, dark && { color: "#E0E0E0" }]}
+          style={[styles.headerText, dark && styles.headerTextDark]}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
-          {(userHasAgent ? agent?.name : "AI Tutor Chat")}
+          {title}
         </Text>
       </View>
       {isEmpty ? (
         <TouchableOpacity
-          style={[styles.button, btnDark]}
+          style={[styles.button, dark && styles.buttonDark]}
           activeOpacity={0.8}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onNewChat();
-          }}
+          onPress={handleNewChat}
         >
           <Image
             source={
@@ -92,10 +113,10 @@ const ChatHeaderBar = ({
           />
         </TouchableOpacity>
       ) : (
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={styles.headerActions}>
           <TouchableOpacity
-            style={[styles.button, btnDark]}
-            onPress={() => onQuiz()}
+            style={[styles.button, dark && styles.buttonDark]}
+            onPress={handleQuizPress}
           >
             <Image
               source={
@@ -107,29 +128,8 @@ const ChatHeaderBar = ({
             />
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.button, btnDark]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              Alert.alert(
-                "Delete Chat",
-                "Are you sure you want to delete this chat? This action cannot be undone.",
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                    onPress: () =>
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
-                  },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () => {
-                      void onRequestDelete();
-                    },
-                  },
-                ],
-              );
-            }}
+            style={[styles.button, dark && styles.buttonDark]}
+            onPress={handleDeletePress}
           >
             <Image
               source={
@@ -144,7 +144,8 @@ const ChatHeaderBar = ({
       )}
     </View>
   );
-};
+});
+ChatHeaderBar.displayName = "ChatHeaderBar";
 
 export default ChatHeaderBar;
 
@@ -159,6 +160,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     backgroundColor: "#FFFFFF",
+  },
+  buttonDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
   },
   headerText: {
     color: "#2D3C52",
@@ -187,5 +192,16 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
     marginRight: 10,
+  },
+  headerTextDark: {
+    color: "#E0E0E0",
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  topNavDark: {
+    backgroundColor: "#131313",
+    borderBottomColor: "#2E3033",
   },
 });

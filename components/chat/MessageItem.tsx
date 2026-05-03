@@ -1,11 +1,11 @@
 import useUserStore from "@/core/userState";
 import { Message } from "@/interface/Chat";
 import * as Clipboard from 'expo-clipboard';
+import { Image } from "expo-image";
 import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Linking,
   Share,
   StyleSheet,
@@ -136,6 +136,18 @@ function messageContentKey(content: unknown): string {
   return "";
 }
 
+function getMessageAttachments(content: unknown): {
+  kind?: "image" | "document";
+  name?: string;
+  localUri?: string;
+  mimeType?: string;
+}[] {
+  if (!content || typeof content !== "object") return [];
+  const attachments = (content as any).attachments;
+  if (!Array.isArray(attachments)) return [];
+  return attachments.filter((a: any) => a && typeof a === "object");
+}
+
 function areMessageItemPropsEqual(prev: Props, next: Props): boolean {
   if (prev.isStreaming !== next.isStreaming) return false;
   if (prev.theme !== next.theme) return false;
@@ -148,13 +160,16 @@ function areMessageItemPropsEqual(prev: Props, next: Props): boolean {
 
 function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
   const { show } = useToast();
-  const { agent } = useAgentStore();
+  const agentProfilePictureUrl = useAgentStore(
+    (s) => s.agent?.profile_picture_url,
+  );
   if (!message) {
     return null;
   }
   
   const isUser = message.role === "user";
   const isLoading = false;
+  const attachments = getMessageAttachments(message.content);
 
   const handleCopyMessage = async () => {
     try {
@@ -364,7 +379,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       ]}
     >
       {!isUser && (
-        <AgentAvatar profilePictureUrl={agent?.profile_picture_url} theme={theme} />
+        <AgentAvatar profilePictureUrl={agentProfilePictureUrl} theme={theme} />
       )}
 
 
@@ -401,6 +416,42 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
           </View>
         ) : (
           <View>
+            {isUser && attachments.length > 0 ? (
+              <View style={styles.attachmentsWrap}>
+                {attachments
+                  .filter(
+                    (a) => a.kind === "image" && typeof a.localUri === "string",
+                  )
+                  .map((img, idx) => (
+                    <Image
+                      key={`${img.localUri}-${idx}`}
+                      source={{ uri: img.localUri as string }}
+                      style={styles.attachmentImage}
+                    />
+                  ))}
+                {attachments
+                  .filter((a) => a.kind === "document")
+                  .map((doc, idx) => (
+                    <View
+                      key={`${doc.name ?? "doc"}-${idx}`}
+                      style={[
+                        styles.attachmentDocChip,
+                        theme === "dark" && styles.attachmentDocChipDark,
+                      ]}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.attachmentDocText,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                      >
+                        {doc.name ?? "document"}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
+            ) : null}
             {(() => {
               try {
                 const content = getMessageContent();
@@ -485,12 +536,15 @@ const MessageItem = React.memo(MessageItemImpl, areMessageItemPropsEqual);
 
 export const ThinkingMessage = () => {
   const theme = useUserStore((s) => s.theme);
-  const { agent, userHasAgent } = useAgentStore();
+  const userHasAgent = useAgentStore((s) => s.userHasAgent);
+  const agentProfilePictureUrl = useAgentStore(
+    (s) => s.agent?.profile_picture_url,
+  );
 
   return (
     <View style={styles.messageContainer}>
       <AgentAvatar
-        profilePictureUrl={userHasAgent ? agent?.profile_picture_url : null}
+        profilePictureUrl={userHasAgent ? agentProfilePictureUrl : null}
         theme={theme}
       />
 
@@ -558,6 +612,36 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
     marginBottom: 4,
+  },
+  attachmentsWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  attachmentImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 14,
+  },
+  attachmentDocChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D6DDE8",
+    backgroundColor: "#F1F5F9",
+    maxWidth: 260,
+  },
+  attachmentDocChipDark: {
+    backgroundColor: "#0D0D0D",
+    borderColor: "#2E3033",
+  },
+  attachmentDocText: {
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "Urbanist",
+    color: "#2D3C52",
   },
   userBubble: {
     backgroundColor: "#FFFFFF",

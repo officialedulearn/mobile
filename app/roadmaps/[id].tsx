@@ -4,10 +4,10 @@ import useUserStore from "@/core/userState";
 import { RoadmapStep, RoadmapWithSteps } from "@/interface/Roadmap";
 import { CardSharingService } from "@/services/cardSharing.service";
 import { RoadmapService } from "@/services/roadmap.service";
+import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const Roadmap = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useUserStore((state) => state.theme);

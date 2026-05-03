@@ -2,6 +2,7 @@ import { ChatProvider } from "@/contexts/ChatContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import useUserStore from "@/core/userState";
 import { supabase } from "@/utils/supabase";
+import { extractPublicQuizIdFromUrl } from "@/utils/quizLinks";
 import { syncEddyXpWidgetFromUser } from "@/utils/syncEddyXpWidget";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -13,6 +14,7 @@ import { AppState, Linking, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Purchases from "react-native-purchases";
+import { useNotifications } from "@/hooks/useNotifications";
 
 if (Platform.OS === "ios") {
   require("@/widgets/EddyXpWidget");
@@ -27,6 +29,7 @@ export default function RootLayout() {
   });
 
   const { theme, loadTheme, user } = useUserStore();
+  useNotifications();
 
   const getTheme = async () => {
     try {
@@ -132,7 +135,18 @@ export default function RootLayout() {
            
           }
         }
-      } else if (url.includes("quiz/")) {
+      } else {
+        const publicQuizId = extractPublicQuizIdFromUrl(url);
+        if (publicQuizId) {
+          router.push({
+            pathname: "/(tabs)/quizzes/[id]",
+            params: { id: publicQuizId },
+          } as any);
+          return;
+        }
+      }
+
+      if (url.includes("quiz/")) {
         const quizIdMatch = url.match(/quiz\/([^/?]+)/);
         if (quizIdMatch && quizIdMatch[1]) {
           const quizId = quizIdMatch[1];

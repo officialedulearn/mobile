@@ -24,4 +24,12 @@ export class NotificationsService extends BaseService {
     if (response.error) throw response.error;
     return response.data!;
   }
+
+  async clearAllNotifications(): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/notifications`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 }

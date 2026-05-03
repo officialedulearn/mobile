@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
+import { Image } from 'expo-image';
+import React from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ChatInputProps {
   value: string;

@@ -1,9 +1,10 @@
 import useRewardsStore from "@/core/rewardsState";
 import useUserStore from "@/core/userState";
 import { CardSharingService } from "@/services/cardSharing.service";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = Record<string, never>;
 
@@ -54,7 +55,7 @@ const NftClaimed = (_props: Props) => {
   }, [rewardId]);
 
   const handleViewNFTs = () => {
-    router.push("/nfts");
+    router.push("/nft");
   };
 
   const handleShareNFT = async () => {

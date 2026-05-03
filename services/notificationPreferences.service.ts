@@ -16,10 +16,10 @@ export class NotificationPreferencesService {
           sound: true,
         },
         trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: 19,
           minute: 0,
-          repeats: true,
-        } as Notifications.CalendarTriggerInput,
+        },
       });
     } catch (error) {
       console.error("Error scheduling daily reminder:", error);

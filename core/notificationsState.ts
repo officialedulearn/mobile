@@ -10,6 +10,7 @@ interface NotificationsState {
   
   fetchNotifications: (order?: 'asc' | 'desc') => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
   startPolling: (intervalMs?: number) => void;
   stopPolling: () => void;
   refreshNotifications: () => Promise<void>;
@@ -51,6 +52,20 @@ const useNotificationsStore = create<NotificationsState>((set, get) => ({
       }));
     } catch (error) {
       console.error('Failed to delete notification:', error);
+      throw error;
+    }
+  },
+
+  clearAllNotifications: async () => {
+    try {
+      await notificationsService.clearAllNotifications();
+      set({
+        notifications: [],
+        lastFetchedAt: new Date(),
+        error: null,
+      });
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
       throw error;
     }
   },

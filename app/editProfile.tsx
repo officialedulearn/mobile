@@ -1,10 +1,11 @@
 import BackButton from '@/components/common/backButton'
 import useUserStore from '@/core/userState'
-import { router } from 'expo-router'
+import { Image } from "expo-image"
 import * as ImagePicker from 'expo-image-picker'
+import { router } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import React, { useState } from 'react'
-import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 type Props = Record<string, never>
 

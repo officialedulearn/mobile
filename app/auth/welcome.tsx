@@ -1,9 +1,10 @@
 import useUserStore from "@/core/userState";
 import Design from "@/utils/design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Presets } from "react-native-pulsar";
 type Props = Record<string, never>;
 

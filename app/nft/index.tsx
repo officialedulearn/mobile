@@ -4,12 +4,12 @@ import useUserStore from "@/core/userState";
 import { RewardsService } from "@/services/rewards.service";
 import { format } from "date-fns";
 import { BlurView } from "expo-blur";
+import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Platform,
   StyleSheet,
   Text,

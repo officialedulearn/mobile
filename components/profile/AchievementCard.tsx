@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Image, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
+import { Image } from 'expo-image';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 const ACHIEVEMENT_IMAGES: { [key: string]: any } = {
   xp: require('@/assets/images/icons/medal-06.png'),

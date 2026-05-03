@@ -1,37 +1,50 @@
 import useAgentStore from "@/core/agentStore";
 import useUserStore from "@/core/userState";
-import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import React, { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
+  useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
 
-const ChatTypingIndicator = () => {
+const ChatTypingIndicator = React.memo(() => {
   const theme = useUserStore((s) => s.theme);
-  const { agent, userHasAgent } = useAgentStore();
-  const labelPulseStyle = useAnimatedStyle(() => ({
-    opacity: withRepeat(
+  const userHasAgent = useAgentStore((s) => s.userHasAgent);
+  const agentProfilePictureUrl = useAgentStore(
+    (s) => s.agent?.profile_picture_url,
+  );
+  const labelOpacity = useSharedValue(1);
+  const cursorOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    labelOpacity.value = withRepeat(
       withSequence(
         withTiming(0.45, { duration: 700 }),
         withTiming(1, { duration: 700 }),
       ),
       -1,
       true,
-    ),
-  }));
-
-  const cursorStyle = useAnimatedStyle(() => ({
-    opacity: withRepeat(
+    );
+    cursorOpacity.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 500 }),
         withTiming(0, { duration: 500 }),
       ),
       -1,
       false,
-    ),
+    );
+  }, [cursorOpacity, labelOpacity]);
+
+  const labelPulseStyle = useAnimatedStyle(() => ({
+    opacity: labelOpacity.value,
+  }));
+
+  const cursorStyle = useAnimatedStyle(() => ({
+    opacity: cursorOpacity.value,
   }));
 
   const dark = theme === "dark";
@@ -42,7 +55,7 @@ const ChatTypingIndicator = () => {
         <Image
           source={
             userHasAgent
-              ? { uri: agent?.profile_picture_url || "" }
+              ? { uri: agentProfilePictureUrl || "" }
               : theme === "dark"
               ? require("@/assets/images/icons/dark/LOGO.png")
               : require("@/assets/images/chatbotlogo.png")
@@ -78,7 +91,8 @@ const ChatTypingIndicator = () => {
       </View>
     </View>
   );
-};
+});
+ChatTypingIndicator.displayName = "ChatTypingIndicator";
 
 export default ChatTypingIndicator;
 

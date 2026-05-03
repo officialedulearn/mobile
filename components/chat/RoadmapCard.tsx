@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
-import AnimatedPressable from "../common/AnimatedPressable";
-import useUserStore from "@/core/userState";
 import useRoadmapStore from "@/core/roadmapState";
+import useUserStore from "@/core/userState";
 import { RoadmapWithSteps } from "@/interface/Roadmap";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import AnimatedPressable from "../common/AnimatedPressable";
 
 type Props = {
   roadmapId: string;

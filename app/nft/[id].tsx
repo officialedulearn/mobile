@@ -2,10 +2,10 @@ import BackButton from "@/components/common/backButton";
 import useRewardsStore from "@/core/rewardsState";
 import useUserStore from "@/core/userState";
 import { format } from "date-fns";
+import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 type Props = Record<string, never>;
 
 const NftPage = (_props: Props) => {

@@ -1,23 +1,23 @@
+import useUserStore from "@/core/userState";
+import { getScreenTopPadding } from '@/utils/design';
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useRef } from "react";
 import {
-  Image,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  Platform,
-  FlatList,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
   useWindowDimensions,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import useUserStore from "@/core/userState";
-import * as Haptics from "expo-haptics";
-import { getScreenTopPadding } from '@/utils/design';
 
 type OnBoardingSteps = {
   title: string;

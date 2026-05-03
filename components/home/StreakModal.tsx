@@ -1,7 +1,8 @@
 import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
+import { Image } from 'expo-image';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Presets } from 'react-native-pulsar';
 
 interface StreakModalProps {

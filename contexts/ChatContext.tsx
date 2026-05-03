@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { generateUUID } from '@/utils/constants';
 import useChatStore from '@/core/chatState';
@@ -42,17 +42,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     useChatStore.getState().refreshChatList();
   }, []);
 
+  const value = useMemo(
+    () => ({
+      isNavigating,
+      navigateToChat,
+      createNewChat,
+      refreshChatList,
+    }),
+    [isNavigating, navigateToChat, createNewChat, refreshChatList],
+  );
+
   return (
-    <ChatContext.Provider
-      value={{
-        isNavigating,
-        navigateToChat,
-        createNewChat,
-        refreshChatList,
-      }}
-    >
+    <ChatContext.Provider value={value}>
       {children}
     </ChatContext.Provider>
   );
 };
-

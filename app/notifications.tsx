@@ -124,11 +124,13 @@ const Notifications = () => {
     error,
     fetchNotifications,
     deleteNotification,
+    clearAllNotifications,
     startPolling,
     stopPolling,
     refreshNotifications,
   } = useNotificationsStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
@@ -159,6 +161,18 @@ const Notifications = () => {
     },
     [deleteNotification],
   );
+
+  const handleClearAll = useCallback(async () => {
+    if (isClearingAll) return;
+    try {
+      setIsClearingAll(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await clearAllNotifications();
+    } catch (e) {
+    } finally {
+      setIsClearingAll(false);
+    }
+  }, [clearAllNotifications, isClearingAll]);
 
   const renderItem: ListRenderItem<Notification> = useCallback(
     ({ item }) => (
@@ -220,7 +234,26 @@ const Notifications = () => {
           >
             Notifications
           </Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 40, alignItems: 'flex-end' }}>
+            {notifications.length > 0 ? (
+              <TouchableOpacity
+                onPress={handleClearAll}
+                disabled={isClearingAll}
+                activeOpacity={0.7}
+                style={{ padding: 8 }}
+              >
+                {isClearingAll ? (
+                  <ActivityIndicator size="small" color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'} />
+                ) : (
+                  <FontAwesome5
+                    name="trash"
+                    size={18}
+                    color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'}
+                  />
+                )}
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {isLoading && notifications.length === 0 ? (

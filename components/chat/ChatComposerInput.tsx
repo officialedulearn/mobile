@@ -1,9 +1,10 @@
-import React from "react";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import React from "react";
 import {
   Alert,
-  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -19,7 +20,7 @@ import Animated, {
 const BASE_HEIGHTS = [8, 12, 16, 14, 10];
 const MAX_HEIGHTS = [24, 28, 32, 26, 22];
 
-const WaveBar = ({
+const WaveBar = React.memo(({
   anim,
   index,
 }: {
@@ -44,9 +45,10 @@ const WaveBar = ({
       style={[styles.waveBar, { backgroundColor: "#FF4444" }, animatedStyle]}
     />
   );
-};
+});
+WaveBar.displayName = "WaveBar";
 
-const WaveVisualization = ({
+const WaveVisualization = React.memo(({
   waveAnimations,
 }: {
   waveAnimations: SharedValue<number>[];
@@ -56,23 +58,17 @@ const WaveVisualization = ({
       <WaveBar key={index} anim={anim} index={index} />
     ))}
   </View>
-);
+));
+WaveVisualization.displayName = "WaveVisualization";
 
-export const ChatTextInputRow = ({
-  theme,
-  inputText,
-  setInputText,
-  isTranscribing,
-  isGenerating,
-  isNavigating,
-  handleSendMessage,
-  selectedImageUri,
-  setSelectedImageUri,
-  startRecording,
-  inputContainerOpacity,
-  micButtonScale,
-  micButtonRotation,
-}: {
+type AttachmentDraft = {
+  uri: string;
+  kind: "image" | "document";
+  name?: string;
+  mimeType?: string;
+};
+
+type ChatTextInputRowProps = {
   theme: string;
   inputText: string;
   setInputText: (text: string) => void;
@@ -80,13 +76,29 @@ export const ChatTextInputRow = ({
   isGenerating: boolean;
   isNavigating: boolean;
   handleSendMessage: () => void;
-  selectedImageUri: string | null;
-  setSelectedImageUri: (uri: string | null) => void;
+  selectedAttachments: AttachmentDraft[];
+  setSelectedAttachments: React.Dispatch<React.SetStateAction<AttachmentDraft[]>>;
   startRecording: () => void;
   inputContainerOpacity: SharedValue<number>;
   micButtonScale: SharedValue<number>;
   micButtonRotation: SharedValue<number>;
-}) => {
+};
+
+export const ChatTextInputRow = React.memo(({
+  theme,
+  inputText,
+  setInputText,
+  isTranscribing,
+  isGenerating,
+  isNavigating,
+  handleSendMessage,
+  selectedAttachments,
+  setSelectedAttachments,
+  startRecording,
+  inputContainerOpacity,
+  micButtonScale,
+  micButtonRotation,
+}: ChatTextInputRowProps) => {
   const dark = theme === "dark";
   const disabled = isGenerating || isNavigating || isTranscribing;
   const trimmedInput = inputText.trim();
@@ -104,7 +116,7 @@ export const ChatTextInputRow = ({
     ],
   }));
 
-  const handlePickImage = async () => {
+  const handlePickImage = React.useCallback(async () => {
     if (disabled) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -118,9 +130,50 @@ export const ChatTextInputRow = ({
     });
 
     if (!result.canceled && result.assets[0]?.uri) {
-      setSelectedImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setSelectedAttachments((current) => [
+        ...current,
+        {
+          uri: asset.uri,
+          kind: "image",
+          name: asset.fileName ?? "image",
+          mimeType: (asset as any).mimeType,
+        },
+      ]);
     }
-  };
+  }, [disabled, setSelectedAttachments]);
+
+  const handlePickDocument = React.useCallback(async () => {
+    if (disabled) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+      setSelectedAttachments((current) => [
+        ...current,
+        {
+          uri: asset.uri,
+          kind: "document",
+          name: asset.name ?? "document",
+          mimeType: asset.mimeType ?? undefined,
+        },
+      ]);
+    } catch {
+      Alert.alert("Error", "Failed to pick a document.");
+    }
+  }, [disabled, setSelectedAttachments]);
+
+  const removeAttachmentAtIndex = React.useCallback((index: number) => {
+    setSelectedAttachments((current) => {
+      const next = current.slice();
+      next.splice(index, 1);
+      return next;
+    });
+  }, [setSelectedAttachments]);
 
   return (
     <Animated.View
@@ -133,17 +186,58 @@ export const ChatTextInputRow = ({
         animatedInputStyle,
       ]}
     >
-      {selectedImageUri ? (
+      {selectedAttachments.length > 0 ? (
         <View style={styles.attachmentPreviewRow}>
-          <Image source={{ uri: selectedImageUri }} style={styles.attachmentPreview} />
-          <TouchableOpacity
-            onPress={() => setSelectedImageUri(null)}
-            style={[styles.removeAttachmentButton, dark && { backgroundColor: "#2E3033" }]}
-            activeOpacity={0.8}
-            accessibilityLabel="Remove selected image"
-          >
-            <Ionicons name="close" size={14} color={dark ? "#E0E0E0" : "#2D3C52"} />
-          </TouchableOpacity>
+          {selectedAttachments.map((att, idx) => (
+            <View key={`${att.uri}-${idx}`} style={styles.attachmentChip}>
+              {att.kind === "image" ? (
+                <Image
+                  source={{ uri: att.uri }}
+                  style={styles.attachmentPreview}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.docPreview,
+                    dark && {
+                      backgroundColor: "#1D1F22",
+                      borderColor: "#2E3033",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="document-text-outline"
+                    size={18}
+                    color={dark ? "#E0E0E0" : "#2D3C52"}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.docName,
+                      { color: dark ? "#E0E0E0" : "#2D3C52" },
+                    ]}
+                  >
+                    {att.name ?? "document"}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                onPress={() => removeAttachmentAtIndex(idx)}
+                style={[
+                  styles.removeAttachmentButton,
+                  dark && { backgroundColor: "#2E3033" },
+                ]}
+                activeOpacity={0.8}
+                accessibilityLabel="Remove selected attachment"
+              >
+                <Ionicons
+                  name="close"
+                  size={14}
+                  color={dark ? "#E0E0E0" : "#2D3C52"}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
       ) : null}
       <View style={styles.inputWrapper}>
@@ -158,6 +252,22 @@ export const ChatTextInputRow = ({
         >
           <Ionicons
             name="image-outline"
+            size={22}
+            color={dark ? "#E0E0E0" : "#61728C"}
+            style={disabled && styles.disabledSend}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            void handlePickDocument();
+          }}
+          disabled={disabled}
+          activeOpacity={0.75}
+          accessibilityLabel="Pick document"
+        >
+          <Ionicons
+            name="document-attach-outline"
             size={22}
             color={dark ? "#E0E0E0" : "#61728C"}
             style={disabled && styles.disabledSend}
@@ -226,9 +336,10 @@ export const ChatTextInputRow = ({
       </View>
     </Animated.View>
   );
-};
+});
+ChatTextInputRow.displayName = "ChatTextInputRow";
 
-export const ChatRecordingRow = ({
+export const ChatRecordingRow = React.memo(({
   waveAnimations,
   theme,
   recordingOpacity,
@@ -279,7 +390,8 @@ export const ChatRecordingRow = ({
       </View>
     </Animated.View>
   );
-};
+});
+ChatRecordingRow.displayName = "ChatRecordingRow";
 
 const styles = StyleSheet.create({
   waveContainer: {
@@ -319,11 +431,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingTop: 4,
     paddingBottom: 8,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  attachmentChip: {
+    position: "relative",
   },
   attachmentPreview: {
     width: 56,
     height: 56,
     borderRadius: 14,
+  },
+  docPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D6DDE8",
+    backgroundColor: "#F1F5F9",
+    maxWidth: 240,
+  },
+  docName: {
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "Urbanist",
+    maxWidth: 200,
   },
   removeAttachmentButton: {
     width: 22,
@@ -332,8 +467,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: -12,
-    marginTop: -36,
+    position: "absolute",
+    top: -6,
+    right: -6,
   },
   recordingWrapper: {
     flexDirection: "row",

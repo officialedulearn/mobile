@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { Design, iconCaretRight } from '@/utils/design';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Activity {
   id: string;

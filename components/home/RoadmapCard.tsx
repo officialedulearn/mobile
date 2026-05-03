@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
 import { Design, iconCaretRight } from '@/utils/design';
+import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RoadmapCardProps {
   roadmapId: string;

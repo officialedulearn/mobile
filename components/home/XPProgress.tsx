@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { ProgressBar } from 'react-native-paper';
 import { useTheme } from '@/hooks/useTheme';
 import { Design } from '@/utils/design';
+import { Image } from 'expo-image';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { ProgressBar } from 'react-native-paper';
 
 interface XPProgressProps {
   currentXP: number;

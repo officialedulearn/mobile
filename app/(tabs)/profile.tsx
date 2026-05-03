@@ -6,7 +6,6 @@ import { useTheme } from '@/hooks/useTheme';
 import { UserService } from '@/services/auth.service';
 import { WalletService } from '@/services/wallet.service';
 import { levels } from '@/utils/constants';
-import { supabase } from '@/utils/supabase';
 import {
   iconClock,
   iconCopy,
@@ -15,12 +14,14 @@ import {
   iconSettings,
   iconWallet,
 } from '@/utils/design';
+import { supabase } from '@/utils/supabase';
 import { getUserMetrics } from '@/utils/utils';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import * as Clipboard from 'expo-clipboard';
+import { Image } from "expo-image";
 import { router } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Animated, Dimensions, Image, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Modal from 'react-native-modal';
 
 type Props = Record<string, never>;
