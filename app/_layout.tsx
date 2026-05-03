@@ -233,6 +233,16 @@ export default function RootLayout() {
                     gestureDirection: "horizontal",
                   }}
                 />
+
+                <Stack.Screen
+                  name="agents"
+                  options={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                    gestureEnabled: true,
+                    gestureDirection: "horizontal",
+                  }}
+                />
                 <Stack.Screen
                   name="theme"
                   options={{

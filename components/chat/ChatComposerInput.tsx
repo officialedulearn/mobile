@@ -1,7 +1,9 @@
 import React from "react";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import {
+  Alert,
   Image,
-  LayoutChangeEvent,
   StyleSheet,
   Text,
   TextInput,
@@ -57,7 +59,6 @@ const WaveVisualization = ({
 );
 
 export const ChatTextInputRow = ({
-  composerHeight,
   theme,
   inputText,
   setInputText,
@@ -65,13 +66,13 @@ export const ChatTextInputRow = ({
   isGenerating,
   isNavigating,
   handleSendMessage,
-  scrollToBottom,
+  selectedImageUri,
+  setSelectedImageUri,
   startRecording,
   inputContainerOpacity,
   micButtonScale,
   micButtonRotation,
 }: {
-  composerHeight: SharedValue<number>;
   theme: string;
   inputText: string;
   setInputText: (text: string) => void;
@@ -79,13 +80,16 @@ export const ChatTextInputRow = ({
   isGenerating: boolean;
   isNavigating: boolean;
   handleSendMessage: () => void;
-  scrollToBottom: () => void;
+  selectedImageUri: string | null;
+  setSelectedImageUri: (uri: string | null) => void;
   startRecording: () => void;
   inputContainerOpacity: SharedValue<number>;
   micButtonScale: SharedValue<number>;
   micButtonRotation: SharedValue<number>;
 }) => {
   const dark = theme === "dark";
+  const disabled = isGenerating || isNavigating || isTranscribing;
+  const trimmedInput = inputText.trim();
   const animatedInputStyle = useAnimatedStyle(() => ({
     opacity: inputContainerOpacity.value,
     transform: [
@@ -100,19 +104,65 @@ export const ChatTextInputRow = ({
     ],
   }));
 
+  const handlePickImage = async () => {
+    if (disabled) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow photo access to attach an image.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      setSelectedImageUri(result.assets[0].uri);
+    }
+  };
+
   return (
     <Animated.View
-      onLayout={(e: LayoutChangeEvent) => {
-        composerHeight.value = e.nativeEvent.layout.height;
-      }}
       style={[
-        styles.inputWrapper,
+        styles.composerShell,
         dark && {
           backgroundColor: "#0D0D0D",
+          borderColor: "#2E3033",
         },
         animatedInputStyle,
       ]}
     >
+      {selectedImageUri ? (
+        <View style={styles.attachmentPreviewRow}>
+          <Image source={{ uri: selectedImageUri }} style={styles.attachmentPreview} />
+          <TouchableOpacity
+            onPress={() => setSelectedImageUri(null)}
+            style={[styles.removeAttachmentButton, dark && { backgroundColor: "#2E3033" }]}
+            activeOpacity={0.8}
+            accessibilityLabel="Remove selected image"
+          >
+            <Ionicons name="close" size={14} color={dark ? "#E0E0E0" : "#2D3C52"} />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+      <View style={styles.inputWrapper}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            void handlePickImage();
+          }}
+          disabled={disabled}
+          activeOpacity={0.75}
+          accessibilityLabel="Pick image"
+        >
+          <Ionicons
+            name="image-outline"
+            size={22}
+            color={dark ? "#E0E0E0" : "#61728C"}
+            style={disabled && styles.disabledSend}
+          />
+        </TouchableOpacity>
       {isTranscribing ? (
         <View style={styles.transcribingContainer}>
           <Text style={[styles.transcribingText, dark && { color: "#E0E0E0" }]}>
@@ -126,14 +176,11 @@ export const ChatTextInputRow = ({
           style={[styles.textInput, dark && { color: "#E0E0E0" }]}
           value={inputText}
           onChangeText={setInputText}
-          returnKeyType="done"
+          returnKeyType="send"
           blurOnSubmit={true}
           onSubmitEditing={() => handleSendMessage()}
-          onFocus={() => {
-            setTimeout(() => scrollToBottom(), 100);
-          }}
           multiline={true}
-          editable={!isGenerating && !isNavigating && !isTranscribing}
+          editable={!disabled}
           textAlignVertical="center"
         />
       )}
@@ -141,7 +188,7 @@ export const ChatTextInputRow = ({
         <TouchableOpacity
           style={styles.micButton}
           onPress={startRecording}
-          disabled={isGenerating || isNavigating || isTranscribing}
+          disabled={disabled}
           activeOpacity={0.7}
         >
           <Animated.View style={animatedMicStyle}>
@@ -150,8 +197,7 @@ export const ChatTextInputRow = ({
               style={[
                 { width: 24, height: 24 },
                 dark && { tintColor: "#E0E0E0" },
-                (isGenerating || isNavigating || isTranscribing) &&
-                  styles.disabledSend,
+                disabled && styles.disabledSend,
               ]}
             />
           </Animated.View>
@@ -160,10 +206,8 @@ export const ChatTextInputRow = ({
           style={styles.sendButton}
           onPress={() => handleSendMessage()}
           disabled={
-            inputText.trim() === "" ||
-            isGenerating ||
-            isNavigating ||
-            isTranscribing
+            trimmedInput === "" ||
+            disabled
           }
         >
           <Image
@@ -174,28 +218,23 @@ export const ChatTextInputRow = ({
             }
             style={[
               { width: 24, height: 24 },
-              (inputText.trim() === "" ||
-                isGenerating ||
-                isNavigating ||
-                isTranscribing) &&
-                styles.disabledSend,
+              (trimmedInput === "" || disabled) && styles.disabledSend,
             ]}
           />
         </TouchableOpacity>
+      </View>
       </View>
     </Animated.View>
   );
 };
 
 export const ChatRecordingRow = ({
-  composerHeight,
   waveAnimations,
   theme,
   recordingOpacity,
   recordingContainerScale,
   onStop,
 }: {
-  composerHeight: SharedValue<number>;
   waveAnimations: SharedValue<number>[];
   theme: string;
   recordingOpacity: SharedValue<number>;
@@ -210,9 +249,6 @@ export const ChatRecordingRow = ({
 
   return (
     <Animated.View
-      onLayout={(e: LayoutChangeEvent) => {
-        composerHeight.value = e.nativeEvent.layout.height;
-      }}
       style={[
         styles.recordingWrapper,
         dark && {
@@ -259,15 +295,45 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF4444",
     minHeight: 4,
   },
+  composerShell: {
+    backgroundColor: "#F0F4FF",
+    borderColor: "#DDE7F7",
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minHeight: 48,
+  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0F4FF",
+  },
+  iconButton: {
+    padding: 7,
     borderRadius: 999,
-    overflow: "hidden",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    minHeight: 48,
+  },
+  attachmentPreviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  attachmentPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+  },
+  removeAttachmentButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: -12,
+    marginTop: -36,
   },
   recordingWrapper: {
     flexDirection: "row",

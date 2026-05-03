@@ -3,8 +3,9 @@ import { supabase } from "@/utils/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import LottieView from "lottie-react-native";
 import { useEffect } from "react";
-import { Image, View, useColorScheme } from "react-native";
+import { View, useColorScheme } from "react-native";
 
 export default function Index() {
   const { setTheme, setUserAsync} = useUserStore();
@@ -57,7 +58,13 @@ export default function Index() {
       }}
     >
       <StatusBar style="light" />
-      <Image source={require("../assets/images/logo.png")} style={{ width: 280, height: 57 }} />
+      <LottieView
+        autoPlay
+        loop={false}
+        source={require("../assets/animations/edulearn.json")}
+        style={{ width: 280, height: 280 }}
+        speed={2}
+      />
       
       {/* {(showMinSplash || isLoading) && (
         <View style={{ marginTop: 40, alignItems: "center" }}>

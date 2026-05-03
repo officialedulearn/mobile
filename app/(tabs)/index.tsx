@@ -7,6 +7,7 @@ import { RoadmapCard } from '@/components/home/RoadmapCard';
 import { StreakModal } from '@/components/home/StreakModal';
 import { XPProgress } from '@/components/home/XPProgress';
 import useActivityStore from '@/core/activityState';
+import useAgentStore from '@/core/agentStore';
 import useRoadmapStore from '@/core/roadmapState';
 import useUserStore from '@/core/userState';
 import { useScreenStyles } from '@/hooks/useScreenStyles';
@@ -24,6 +25,7 @@ import { Modal, View } from 'react-native';
 
 const Home = () => {
   const { user } = useUserStore();
+  const { userHasAgent, agent, fetchUserAgent } = useAgentStore();
   const { activities, fetchActivities, isLoading } = useActivityStore();
   const { colors, statusBarStyle, blurTint } = useTheme();
   const screenStyles = useScreenStyles();
@@ -33,9 +35,9 @@ const Home = () => {
   const latestRoadmap = roadmaps.length > 0 ? roadmapWithStepsById[roadmaps[0].id] : null;
   const roadmapProgress = latestRoadmap
     ? {
-        completed: latestRoadmap.steps.filter((s) => s.done).length,
-        total: latestRoadmap.steps.length,
-      }
+      completed: latestRoadmap.steps.filter((s) => s.done).length,
+      total: latestRoadmap.steps.length,
+    }
     : { completed: 0, total: 0 };
 
   const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
@@ -50,6 +52,8 @@ const Home = () => {
     const load = async () => {
       if (!user?.id) return;
       fetchActivities(user.id);
+      await fetchUserAgent(user.id);
+      console.log('userHasAgent', agent);
       try {
         await fetchRoadmaps(user.id);
         const state = useRoadmapStore.getState();
@@ -60,7 +64,7 @@ const Home = () => {
       }
     };
     load();
-  }, [user?.id, fetchActivities, fetchRoadmaps, fetchRoadmapById]);
+  }, [user?.id, fetchActivities, fetchRoadmaps, fetchRoadmapById, fetchUserAgent]);
 
   useEffect(() => {
     const checkAndShowModal = async () => {

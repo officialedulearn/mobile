@@ -50,6 +50,13 @@ interface UserState {
   updateUserPointsFromQuiz: (xpEarned: number) => void;
   updateUserCredits: (credits: number) => void;
   updateUserQuizzes: (quizzesCompleted: number) => void;
+  uploadProfilePicture: (imageUri: string) => Promise<void>;
+  editProfileFields: (params: {
+    name: string;
+    email: string;
+    username: string;
+    learning?: string;
+  }) => Promise<void>;
 }
 
 const userService = new UserService();
@@ -343,6 +350,49 @@ const useUserStore = create<UserState>((set, get) => ({
     } catch (error) {
       console.error("Failed to load theme:", error);
     }
+  },
+
+  uploadProfilePicture: async (imageUri: string) => {
+    const currentUser = get().user;
+    if (!currentUser?.email) {
+      throw new Error("Not signed in");
+    }
+    const { profilePictureURL } =
+      await userService.uploadProfilePicture(imageUri);
+    const nextUser = { ...currentUser, profilePictureURL };
+    set({ user: nextUser });
+    syncEddyXpWidgetFromUser(nextUser);
+  },
+
+  editProfileFields: async ({
+    name,
+    email,
+    username,
+    learning,
+  }: {
+    name: string;
+    email: string;
+    username: string;
+    learning?: string;
+  }) => {
+    const updated = await userService.editUser({
+      name,
+      email,
+      username,
+      learning,
+    });
+    const current = get().user;
+    if (!current || !updated) {
+      throw new Error("Update failed");
+    }
+    const nextUser = {
+      ...current,
+      name: updated.name ?? current.name,
+      username: updated.username ?? current.username,
+      learning: updated.learning ?? current.learning,
+    };
+    set({ user: nextUser });
+    syncEddyXpWidgetFromUser(nextUser);
   },
 }));
 

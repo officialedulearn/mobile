@@ -1,6 +1,7 @@
+import useAgentStore from "@/core/agentStore";
+import Design from "@/utils/design";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import Design from "@/utils/design";
 import {
   Alert,
   Image,
@@ -34,6 +35,7 @@ const ChatHeaderBar = ({
     backgroundColor: "#0D0D0D",
     borderColor: "#2E3033",
   };
+  const { userHasAgent, agent } = useAgentStore();
 
   return (
     <View
@@ -68,7 +70,7 @@ const ChatHeaderBar = ({
           numberOfLines={1}
           ellipsizeMode="tail"
         >
-          {title || "AI Tutor Chat"}
+          {(userHasAgent ? agent?.name : "AI Tutor Chat")}
         </Text>
       </View>
       {isEmpty ? (

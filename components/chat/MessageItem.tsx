@@ -1,7 +1,7 @@
 import useUserStore from "@/core/userState";
 import { Message } from "@/interface/Chat";
 import * as Clipboard from 'expo-clipboard';
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,7 +13,10 @@ import {
   type TextStyle,
   View,
 } from "react-native";
-import Markdown from "react-native-markdown-display";
+import {
+  EnrichedMarkdownText,
+  type MarkdownStyle,
+} from "react-native-enriched-markdown";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -21,7 +24,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-// eslint-disable-next-line import/no-named-as-default
+ 
 import { useToast } from "@/contexts/ToastContext";
 import useAgentStore from "@/core/agentStore";
 import AnimatedPressable from "../common/AnimatedPressable";
@@ -83,6 +86,33 @@ type Props = {
   theme: "light" | "dark";
 };
 
+type AgentAvatarProps = {
+  profilePictureUrl?: string | null;
+  theme: "light" | "dark";
+};
+
+const AgentAvatar = React.memo(
+  ({ profilePictureUrl, theme }: AgentAvatarProps) => (
+    <View style={styles.avatarContainer}>
+      <Image
+        source={
+          profilePictureUrl
+            ? { uri: profilePictureUrl }
+            : theme === "dark"
+              ? require("@/assets/images/icons/dark/LOGO.png")
+              : require("@/assets/images/chatbotlogo.png")
+        }
+        style={[
+          styles.avatar,
+          theme === "dark" &&
+            !profilePictureUrl && { width: 20, height: 20, borderRadius: 0 },
+        ]}
+      />
+    </View>
+  ),
+);
+AgentAvatar.displayName = "AgentAvatar";
+
 function messageContentKey(content: unknown): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
@@ -120,7 +150,6 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
   const { show } = useToast();
   const { agent } = useAgentStore();
   if (!message) {
-    console.error('MessageItem received undefined message');
     return null;
   }
   
@@ -132,7 +161,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       const messageText = getMessageContent();
       await Clipboard.setStringAsync(messageText);
       show("success", "Message copied to clipboard!");
-    } catch (_error) {
+    } catch {
       show("error", "Failed to copy message");
     }
   };
@@ -144,7 +173,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
         message: messageText,
         title: "AI Response",
       });
-    } catch (_error) {
+    } catch {
       Alert.alert("Error", "Failed to share message");
     }
   };
@@ -164,7 +193,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       } else {
         Alert.alert("Error", "No email app available to send the report");
       }
-    } catch (_error) {
+    } catch {
       Alert.alert("Error", "Failed to open email client");
     }
   };
@@ -179,12 +208,12 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
     } else if (Array.isArray(message.content)) {
       return message.content
         .map((item: any) => {
-          if (typeof item === 'string') return item;
-          if (item && typeof item === 'object' && item.text) return item.text;
-          if (item && typeof item === 'object' && item.type === 'text' && item.text) return item.text;
-          return '';
+          if (typeof item === "string") return item;
+          if (item && typeof item === "object" && item.text) return item.text;
+          if (item && typeof item === "object" && item.type === "text" && item.text) return item.text;
+          return "";
         })
-        .join('');
+        .join("");
     } else if (
       message.content &&
       typeof message.content === "object" &&
@@ -202,109 +231,87 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
     lineHeight: 22,
   };
 
-  const mdDisplayStyles = useMemo(
-    () => ({
-      body: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Urbanist",
-        fontSize: 14,
-        lineHeight: 22,
-      },
-      heading1: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Satoshi-Regular",
-        fontSize: 18,
-        fontWeight: "700" as const,
-        marginTop: 12,
-        marginBottom: 8,
-      },
-      heading2: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Satoshi-Regular",
-        fontSize: 16,
-        fontWeight: "700" as const,
-        marginTop: 10,
-        marginBottom: 8,
-      },
-      heading3: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Satoshi-Regular",
-        fontSize: 15,
-        fontWeight: "700" as const,
-        marginTop: 8,
-        marginBottom: 6,
-      },
-      strong: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontWeight: "700" as const,
-      },
-      em: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontStyle: "italic" as const,
-      },
-      bullet_list: { marginBottom: 8 },
-      ordered_list: { marginBottom: 8 },
-      list_item: {
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Urbanist",
-        fontSize: 14,
-        lineHeight: 22,
-        marginBottom: 4,
-      },
-      link: {
-        color: theme === "dark" ? "#7DD3FC" : "#2563EB",
-        textDecorationLine: "underline" as const,
-      },
-      blockquote: {
-        backgroundColor: theme === "dark" ? "#1A1A1A" : "#F8F9FC",
-        borderLeftColor: theme === "dark" ? "#00FF80" : "#2D3C52",
-        borderLeftWidth: 4,
-        paddingLeft: 10,
-        paddingVertical: 8,
-        marginVertical: 8,
-      },
-      code_inline: {
-        backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
-        color: theme === "dark" ? "#00FF80" : "#2D3C52",
-        fontFamily: "Urbanist",
-        fontSize: 13,
-        borderRadius: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-      },
-      code_block: {
-        backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Urbanist",
-        fontSize: 13,
-        borderRadius: 8,
-        padding: 12,
-        marginVertical: 8,
-      },
-      fence: {
-        backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
-        color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
-        fontFamily: "Urbanist",
-        fontSize: 13,
-        borderRadius: 8,
-        padding: 12,
-        marginVertical: 8,
-      },
-    }),
-    [theme],
-  );
+  const markdownStyles: MarkdownStyle = {
+    paragraph: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 14,
+      lineHeight: 22,
+      marginBottom: 10,
+    },
+    h1: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Satoshi-Regular",
+      fontSize: 18,
+      fontWeight: "700",
+      marginTop: 12,
+      marginBottom: 8,
+    },
+    h2: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Satoshi-Regular",
+      fontSize: 16,
+      fontWeight: "700",
+      marginTop: 10,
+      marginBottom: 8,
+    },
+    h3: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Satoshi-Regular",
+      fontSize: 15,
+      fontWeight: "700",
+      marginTop: 8,
+      marginBottom: 6,
+    },
+    strong: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontWeight: "bold",
+    },
+    em: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontStyle: "italic",
+    },
+    list: {
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 14,
+      lineHeight: 22,
+      marginBottom: 4,
+      markerColor: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+    },
+    code: {
+      backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
+      color: theme === "dark" ? "#00FF80" : "#2D3C52",
+      fontFamily: "Urbanist",
+      fontSize: 13,
+    },
+    codeBlock: {
+      backgroundColor: theme === "dark" ? "#2E3033" : "#F0F4FF",
+      color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+      padding: 12,
+      borderRadius: 8,
+      fontFamily: "Urbanist",
+      fontSize: 13,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    link: {
+      color: theme === "dark" ? "#7DD3FC" : "#2563EB",
+      underline: true,
+    },
+  };
 
   const renderMarkdown = (content: string, key?: string) => (
-    <Markdown
+    <EnrichedMarkdownText
       key={key}
-      style={mdDisplayStyles}
-      onLinkPress={(url) => {
-        void Linking.openURL(url);
-        return true;
+      flavor="commonmark"
+      markdown={content}
+      markdownStyle={markdownStyles}
+      selectable={isUser || !isStreaming}
+      onLinkPress={(event) => {
+        void Linking.openURL(event.url);
       }}
-    >
-      {content}
-    </Markdown>
+    />
   );
 
   const renderContentWithEmbeds = (content: string) => {
@@ -331,6 +338,24 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
     );
   };
 
+  const renderStreamingContent = (content: string) => {
+    const marker = " ▊";
+    const parts = content.split(EMBED_SPLIT);
+    const lastTextIndex = parts
+      .map((part, index) => ({ part, index }))
+      .reverse()
+      .find(({ part }) => part.trim().length > 0 && parseEmbed(part) === null)
+      ?.index;
+
+    if (lastTextIndex == null) {
+      return renderContentWithEmbeds(`${content}${marker}`);
+    }
+
+    const nextParts = [...parts];
+    nextParts[lastTextIndex] = `${nextParts[lastTextIndex]}${marker}`;
+    return renderContentWithEmbeds(nextParts.join(""));
+  };
+
   return (
     <View
       style={[
@@ -339,21 +364,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       ]}
     >
       {!isUser && (
-        <View style={styles.avatarContainer}>
-          <Image
-            source={
-              agent?.profile_picture_url
-                ? { uri: agent.profile_picture_url }
-                : theme === "dark"
-                  ? require("@/assets/images/icons/dark/LOGO.png")
-                  : require("@/assets/images/chatbotlogo.png")
-            }
-            style={[
-              styles.avatar,
-              theme === "dark" && { width: 20, height: 20 },
-            ]}
-          />
-        </View>
+        <AgentAvatar profilePictureUrl={agent?.profile_picture_url} theme={theme} />
       )}
 
 
@@ -370,9 +381,6 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
               ]
             : [
                 styles.botBubble,
-                theme === "dark" && {
-                  backgroundColor: "#131313",
-                },
               ],
         ]}
       >
@@ -418,31 +426,18 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
                   );
                 }
 
-                const body = renderContentWithEmbeds(content);
                 if (isStreaming && !isUser) {
-                  return (
-                    <View style={styles.streamRow}>
-                      <View style={styles.streamMarkdownWrap}>
-                        {body}
-                      </View>
-                      <StreamBlinkCursor
-                        color={
-                          theme === "dark" ? "#E0E0E0" : "#2D3C52"
-                        }
-                      />
-                    </View>
-                  );
+                  return renderStreamingContent(content);
                 }
-                return body;
-              } catch (_error) {
-                console.error('Error rendering markdown:', _error);
-                const content = getMessageContent() || '';
+                return renderContentWithEmbeds(content);
+              } catch {
+                const content = getMessageContent() || "";
                 return (
                   <Text style={[
                     baseTextStyle,
                     theme === "dark" && { color: "#E0E0E0" }
                   ]}>
-                    {content}{isStreaming && !isUser ? ' ▊' : ''}
+                    {content}{isStreaming && !isUser ? " ▊" : ""}
                   </Text>
                 );
               }
@@ -490,19 +485,14 @@ const MessageItem = React.memo(MessageItemImpl, areMessageItemPropsEqual);
 
 export const ThinkingMessage = () => {
   const theme = useUserStore((s) => s.theme);
+  const { agent, userHasAgent } = useAgentStore();
 
   return (
     <View style={styles.messageContainer}>
-      <View style={styles.avatarContainer}>
-        <Image
-          source={
-            theme === "dark"
-              ? require("@/assets/images/icons/dark/LOGO.png")
-              : require("@/assets/images/chatbotlogo.png")
-          }
-          style={[styles.avatar, theme === "dark" && { width: 20, height: 20 }]}
-        />
-      </View>
+      <AgentAvatar
+        profilePictureUrl={userHasAgent ? agent?.profile_picture_url : null}
+        theme={theme}
+      />
 
       <View
         style={[
@@ -535,43 +525,52 @@ export const ThinkingMessage = () => {
 const styles = StyleSheet.create({
   messageContainer: {
     flexDirection: "row",
-    marginVertical: 8,
-    paddingHorizontal: 16,
+    marginVertical: 10,
+    paddingHorizontal: 8,
     alignItems: "flex-start",
   },
   userMessageContainer: {
     justifyContent: "flex-end",
+    paddingLeft: 52,
   },
   botMessageContainer: {
     justifyContent: "flex-start",
+    paddingRight: 20,
   },
   avatarContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 7,
+    marginRight: 10,
+    marginTop: 2,
+    backgroundColor: "#F0F4FF",
   },
   avatar: {
-    width: 50,
-    height: 50,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     resizeMode: "contain",
   },
   messageBubble: {
-    maxWidth: "75%",
-    borderRadius: 16,
-    padding: 16,
+    maxWidth: "88%",
+    borderRadius: 20,
+    padding: 14,
     marginBottom: 4,
   },
   userBubble: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#EDF3FC",
-    borderTopRightRadius: 4,
+    borderTopRightRadius: 8,
   },
   botBubble: {
-    borderTopLeftRadius: 4,
+    flex: 1,
+    maxWidth: "100%",
+    paddingHorizontal: 0,
+    paddingVertical: 2,
+    borderTopLeftRadius: 8,
   },
   messageText: {
     fontSize: 16,
@@ -601,24 +600,13 @@ const styles = StyleSheet.create({
   editIcon: {
     width: 16,
     height: 16,
-    tintColor:  "#E0E0E0",
+    tintColor: "#E0E0E0",
   },
   messageActionContainer: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 8,
-    justifyContent: "flex-end",
-  },
-  streamRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    flexWrap: "nowrap",
-    maxWidth: "100%",
-  },
-  streamMarkdownWrap: {
-    flex: 1,
-    minWidth: 0,
-    flexShrink: 1,
+    marginTop: 10,
+    justifyContent: "flex-start",
   },
   streamCursor: {
     marginLeft: 2,

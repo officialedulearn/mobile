@@ -1,13 +1,19 @@
+import { ScreenLoader } from "@/components";
 import BackButton from "@/components/common/backButton";
+import useAgentStore from "@/core/agentStore";
+import useUserStore from "@/core/userState";
 import { useScreenStyles } from "@/hooks/useScreenStyles";
 import { useTheme } from "@/hooks/useTheme";
 import { Design, getScreenTopPadding } from "@/utils/design";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image as ExpoImage } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -49,25 +55,43 @@ const CreateAgent = () => {
   const screen = useScreenStyles();
   const { colors, isDark, spacing, typography } = useTheme();
 
+  const createAgentFn = useAgentStore((s) => s.createAgent);
+  const uploadAgentProfilePictureFn = useAgentStore(
+    (s) => s.uploadAgentProfilePicture,
+  );
+  const fetchUserAgentFn = useAgentStore((s) => s.fetchUserAgent);
+  const userHasAgent = useAgentStore((s) => s.userHasAgent);
+  const existingAgent = useAgentStore((s) => s.agent);
+  const isAgentLoading = useAgentStore((s) => s.isLoading);
+  const authUser = useUserStore((s) => s.user);
+
   const [phase, setPhase] = useState<"intro" | "form">("intro");
   const [name, setName] = useState("");
   const [purpose, setPurpose] = useState("");
   const [profilePictureUrl, setProfilePictureUrl] = useState("");
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+  const [createBusy, setCreateBusy] = useState(false);
 
-  const showRemoteAvatar = isHttpUrl(profilePictureUrl) && !avatarLoadFailed;
+  const trimmedUrl = profilePictureUrl.trim();
+  const avatarPreviewUri =
+    localImageUri ??
+    (trimmedUrl.length > 0 && isHttpUrl(trimmedUrl) && !avatarLoadFailed ? trimmedUrl : null);
+  const showAvatarPreview = avatarPreviewUri != null;
   const initial = useMemo(() => (name.trim()[0] || "A").toUpperCase(), [name]);
   const displayName = name.trim() || "Your agent";
 
   const onUrlChange = useCallback((t: string) => {
     setProfilePictureUrl(t);
     setAvatarLoadFailed(false);
+    setLocalImageUri(null);
   }, []);
 
   const clearPhotoUrl = useCallback(() => {
     hapticLight();
     setProfilePictureUrl("");
     setAvatarLoadFailed(false);
+    setLocalImageUri(null);
   }, []);
 
   const appendSnippet = useCallback((snippet: string) => {
@@ -78,6 +102,23 @@ const CreateAgent = () => {
   const pickPreset = useCallback((url: string) => {
     hapticLight();
     setProfilePictureUrl(url);
+    setAvatarLoadFailed(false);
+    setLocalImageUri(null);
+  }, []);
+
+  const pickFromLibrary = useCallback(async () => {
+    hapticLight();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]?.uri) return;
+    setLocalImageUri(result.assets[0].uri);
+    setProfilePictureUrl("");
     setAvatarLoadFailed(false);
   }, []);
 
@@ -90,6 +131,111 @@ const CreateAgent = () => {
     hapticLight();
     setPhase("intro");
   }, []);
+
+  const handleCreateAgent = useCallback(async () => {
+    if (!authUser?.id) return;
+    if (!name.trim() || !purpose.trim()) return;
+    setCreateBusy(true);
+    try {
+      const fallback = AVATAR_PRESETS[0].url;
+      const urlPart =
+        trimmedUrl.length > 0 && isHttpUrl(trimmedUrl) ? trimmedUrl : fallback;
+
+      const created = await createAgentFn({
+        userId: authUser.id,
+        name: name.trim(),
+        purpose: purpose.trim(),
+        profile_picture_url: urlPart,
+      });
+
+      if (!created) {
+        return;
+      }
+
+      let successImageUrl = created.profile_picture_url || "";
+      if (localImageUri) {
+        const uploaded = await uploadAgentProfilePictureFn(
+          created.id,
+          localImageUri,
+        );
+        successImageUrl = uploaded.profile_picture_url;
+      }
+
+      hapticCta();
+      router.replace({
+        pathname: "/agents/success",
+        params: {
+          agentName: created.name,
+          agentImage: successImageUrl,
+        },
+      });
+    } catch {
+    } finally {
+      setCreateBusy(false);
+    }
+  }, [
+    authUser?.id,
+    createAgentFn,
+    localImageUri,
+    name,
+    purpose,
+    trimmedUrl,
+    uploadAgentProfilePictureFn,
+  ]);
+
+  useEffect(() => {
+    if (!authUser?.id) return;
+    void fetchUserAgentFn(authUser.id);
+  }, [authUser?.id, fetchUserAgentFn]);
+
+  if (isAgentLoading && !userHasAgent) {
+    return (
+      <View style={[styles.fill, { backgroundColor: colors.canvas }]}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <ScreenLoader visible message="Loading agent..." />
+      </View>
+    );
+  }
+
+  if (userHasAgent && existingAgent) {
+    return (
+      <View style={[styles.fill, { backgroundColor: colors.canvas, paddingTop: topPad }]}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <View style={styles.introHeader}>
+          <BackButton />
+        </View>
+        <View style={styles.agentDetailsContent}>
+          <View style={[styles.agentDetailsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {existingAgent.profile_picture_url ? (
+              <ExpoImage
+                source={{ uri: existingAgent.profile_picture_url }}
+                style={[styles.detailsAvatar, { borderColor: colors.borderMuted }]}
+                contentFit="cover"
+              />
+            ) : (
+              <View
+                style={[
+                  styles.detailsAvatar,
+                  styles.smallAvatarPlaceholder,
+                  { backgroundColor: colors.modalIconBg, borderColor: colors.border },
+                ]}
+              >
+                <Text style={{ fontFamily: "Satoshi-Bold", fontSize: 28, color: colors.brand }}>
+                  {(existingAgent.name?.[0] || "A").toUpperCase()}
+                </Text>
+              </View>
+            )}
+            <Text style={[typography.styles.sectionTitle, { color: colors.textPrimary, marginTop: 14 }]}>
+              {existingAgent.name}
+            </Text>
+            <Text style={[styles.detailsPurpose, { color: colors.textSecondary }]}>
+              {existingAgent.purpose}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   if (phase === "intro") {
     return (
@@ -175,13 +321,17 @@ const CreateAgent = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.softCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {showRemoteAvatar ? (
+            {showAvatarPreview && avatarPreviewUri ? (
               <ExpoImage
-                source={{ uri: profilePictureUrl.trim() }}
+                source={{ uri: avatarPreviewUri }}
                 style={[styles.smallAvatar, { borderColor: colors.borderMuted }]}
                 contentFit="cover"
                 transition={150}
-                onError={() => setAvatarLoadFailed(true)}
+                onError={() => {
+                  if (!localImageUri) {
+                    setAvatarLoadFailed(true);
+                  }
+                }}
               />
             ) : (
               <View
@@ -250,7 +400,7 @@ const CreateAgent = () => {
             <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 13, color: colors.textTertiary, marginBottom: 6 }}>Photo</Text>
             <View style={styles.presetRow}>
               {AVATAR_PRESETS.map((p) => {
-                const active = profilePictureUrl.trim() === p.url;
+                const active = localImageUri == null && profilePictureUrl.trim() === p.url;
                 return (
                   <Pressable
                     key={p.id}
@@ -265,6 +415,22 @@ const CreateAgent = () => {
                 );
               })}
             </View>
+            <Pressable
+              onPress={pickFromLibrary}
+              style={({ pressed }) => [
+                styles.uploadPhotoRow,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.canvas,
+                  opacity: pressed ? 0.88 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="images-outline" size={18} color={colors.brand} />
+              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 14, color: colors.textPrimary, marginLeft: 8 }}>
+                Choose from library
+              </Text>
+            </Pressable>
             <View
               style={[
                 styles.urlRow,
@@ -282,7 +448,7 @@ const CreateAgent = () => {
                 keyboardType="url"
                 style={[styles.urlField, { color: colors.textPrimary }]}
               />
-              {profilePictureUrl.length > 0 ? (
+              {profilePictureUrl.length > 0 || localImageUri ? (
                 <Pressable onPress={clearPhotoUrl} hitSlop={8}>
                   <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
                 </Pressable>
@@ -298,12 +464,25 @@ const CreateAgent = () => {
           ]}
         >
           <Pressable
-            onPress={hapticCta}
-            style={({ pressed }) => [styles.cta, { backgroundColor: colors.ctaPrimaryBg, opacity: pressed ? 0.92 : 1 }]}
+            onPress={handleCreateAgent}
+            disabled={createBusy || !authUser?.id}
+            style={({ pressed }) => [
+              styles.cta,
+              {
+                backgroundColor: colors.ctaPrimaryBg,
+                opacity:
+                  pressed || createBusy || !authUser?.id ? 0.72 : 1,
+              },
+            ]}
           >
-            <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 16, color: colors.ctaPrimaryFg }}>Create agent</Text>
+            {createBusy ? (
+              <ActivityIndicator color={colors.ctaPrimaryFg} />
+            ) : (
+              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 16, color: colors.ctaPrimaryFg }}>Create agent</Text>
+            )}
           </Pressable>
         </View>
+        <ScreenLoader visible={createBusy} message="Creating agent..." />
       </KeyboardAvoidingView>
     </View>
   );
@@ -411,6 +590,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   presetRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 10 },
+  uploadPhotoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
   preset: {
     width: 48,
     height: 48,
@@ -422,4 +610,28 @@ const styles = StyleSheet.create({
   urlField: { flex: 1, fontSize: 15, paddingVertical: 12, fontFamily: "Satoshi-Regular" },
   footer: { borderTopWidth: 1, paddingHorizontal: Design.spacing.md, paddingTop: 10 },
   cta: { borderRadius: 999, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
+  agentDetailsContent: {
+    flex: 1,
+    paddingHorizontal: Design.spacing.md,
+    justifyContent: "center",
+  },
+  agentDetailsCard: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+  },
+  detailsAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 1,
+  },
+  detailsPurpose: {
+    fontFamily: "Satoshi-Regular",
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: 8,
+  },
 });

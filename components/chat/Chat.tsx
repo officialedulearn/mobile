@@ -6,7 +6,8 @@ import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
 import { generateUUID } from "@/utils/constants";
 import Design, { getScreenTopPadding } from "@/utils/design";
-import { LegendList, type LegendListRef } from "@legendapp/list";
+import { type LegendListRef } from "@legendapp/list";
+import { KeyboardChatLegendList } from "@legendapp/list/keyboard-chat";
 import {
   AudioModule,
   RecordingPresets,
@@ -28,8 +29,6 @@ import {
   Alert,
   Image,
   Keyboard,
-  LayoutChangeEvent,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,9 +39,8 @@ import {
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import {
-  KeyboardChatScrollView,
+  KeyboardGestureArea,
   KeyboardStickyView,
-  useKeyboardState,
 } from "react-native-keyboard-controller";
 import Animated, {
   Easing,
@@ -94,11 +92,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const scrollRafRef = useRef<number | null>(null);
   const isNearBottomRef = useRef(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [footerHeight, setFooterHeight] = useState(0);
-  const composerHeight = useSharedValue(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [waitingForStream, setWaitingForStream] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
     null,
   );
@@ -106,6 +103,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const messageContentRef = useRef<Map<string, string>>(new Map());
   const streamingAssistantIdRef = useRef<string | null>(null);
   const showScrollButtonRef = useRef(false);
+  const streamCleanupRef = useRef<null | (() => void)>(null);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
@@ -138,7 +136,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const isKeyboardVisible = useKeyboardState((s) => s.isVisible);
   const { width: windowWidth } = useWindowDimensions();
   const sidebarWidth = windowWidth * 0.8;
   const topPadding = getScreenTopPadding(insets);
@@ -186,6 +183,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         cancelAnimationFrame(scrollRafRef.current);
         scrollRafRef.current = null;
       }
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
     },
     [],
   );
@@ -242,32 +241,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       cancelAnimationFrame(scrollRafRef.current);
       scrollRafRef.current = null;
     }
-    setTimeout(() => {
-      legendListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    void legendListRef.current?.scrollToEnd({ animated: true });
   }, []);
-
-  const throttledScrollToBottom = useCallback(() => {
-    if (!isNearBottomRef.current) return;
-    if (scrollRafRef.current != null) return;
-    scrollRafRef.current = requestAnimationFrame(() => {
-      scrollRafRef.current = null;
-      if (!isNearBottomRef.current) return;
-      legendListRef.current?.scrollToEnd({ animated: false });
-    });
-  }, []);
-
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      flushScrollToBottom();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
-
-  useEffect(() => {
-    if (!streamingMessageId || messages.length === 0) return;
-    flushScrollToBottom();
-  }, [messages, streamingMessageId, flushScrollToBottom]);
 
   const handleScroll = useCallback(
     (event: {
@@ -310,6 +285,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     updateUserCredits(currentCredits - 0.5);
 
     setInputText("");
+    setSelectedImageUri(null);
 
     const newMessage: Message = {
       id: generateUUID(),
@@ -324,6 +300,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     addMessage(chatId, newMessage);
     setIsGenerating(true);
     setWaitingForStream(true);
+    streamCleanupRef.current?.();
+    streamCleanupRef.current = null;
 
     const assistantMessageId = generateUUID();
     let messageCreated = false;
@@ -375,12 +353,12 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         (_fullMessage: Message) => {
           messageContentRef.current.delete(assistantMessageId);
           streamingAssistantIdRef.current = null;
+          streamCleanupRef.current = null;
           setIsGenerating(false);
           setStreamingMessageId(null);
           queueMicrotask(() => {
             syncMessagesToStore(chatId, messagesRef.current);
             refreshChatList();
-            flushScrollToBottom();
           });
         },
         (error: Error) => {
@@ -389,6 +367,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
           messageContentRef.current.delete(assistantMessageId);
           streamingAssistantIdRef.current = null;
+          streamCleanupRef.current = null;
 
           if (messageCreated) {
             safeSetMessages((currentMessages) =>
@@ -405,6 +384,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           );
         },
       );
+      streamCleanupRef.current = cleanup ?? null;
     } catch (error: any) {
       console.error("Error generating message:", error);
       setInputText(textToSend);
@@ -414,6 +394,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
       messageContentRef.current.delete(assistantMessageId);
       streamingAssistantIdRef.current = null;
+      streamCleanupRef.current = null;
 
       if (messageCreated) {
         safeSetMessages((currentMessages) =>
@@ -488,12 +469,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     focusMainPane();
     createNewChat();
   }, [createNewChat, focusMainPane]);
-
-  const handleGoHome = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Keyboard.dismiss();
-    router.navigate("/(tabs)");
-  }, [router]);
 
   const handleSuggestionPress = useCallback(
     (suggestion: string) => {
@@ -679,19 +654,12 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     [streamingMessageId, theme],
   );
 
-  const renderScrollComponent = useCallback(
-    (props: React.ComponentProps<typeof KeyboardChatScrollView>) => (
-      <KeyboardChatScrollView
-        {...props}
-        applyWorkaroundForContentInsetHitTestBug
-        extraContentPadding={composerHeight}
-        keyboardDismissMode="interactive"
-        keyboardLiftBehavior="whenAtEnd"
-        offset={footerHeight}
-        style={[styles.scrollDismissHitTarget, props.style]}
-      />
-    ),
-    [composerHeight, footerHeight],
+  const anchoredEndSpace = useMemo(
+    () =>
+      filteredMessages.length > 0
+        ? { anchorIndex: filteredMessages.length - 1, anchorOffset: 16 }
+        : undefined,
+    [filteredMessages.length],
   );
 
   const handleHeaderQuiz = useCallback(async () => {
@@ -740,7 +708,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           styles.container,
           {
             paddingTop: topPadding,
-            paddingBottom: isKeyboardVisible ? 0 : insets.bottom,
           },
           theme === "dark" && { backgroundColor: "#131313" },
         ]}
@@ -794,7 +761,11 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     }}
                   />
 
-                  <View style={styles.chatContent}>
+                  <KeyboardGestureArea
+                    interpolator="ios"
+                    offset={60}
+                    style={styles.chatContent}
+                  >
                     {!messages || messages.length === 0 ? (
                       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.emptyStateContainer}>
@@ -816,23 +787,27 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                       </TouchableWithoutFeedback>
                     ) : (
                       <View style={styles.messagesContainer}>
-                        <LegendList
+                        <KeyboardChatLegendList
                           ref={legendListRef}
                           data={filteredMessages}
-                          alignItemsAtEnd={false}
+                          alignItemsAtEnd
+                          anchoredEndSpace={anchoredEndSpace}
                           estimatedItemSize={140}
                           extraData={listExtraData}
+                          initialScrollAtEnd
                           keyboardShouldPersistTaps="handled"
                           maintainScrollAtEnd={{
-                            onDataChange: true,
-                            onItemLayout: true,
-                            onLayout: true,
+                            animated: false,
+                            on: {
+                              dataChange: true,
+                              itemLayout: true,
+                              layout: true,
+                            },
                           }}
-                          maintainScrollAtEndThreshold={0.2}
-                          nestedScrollEnabled={Platform.OS === "android"}
+                          maintainScrollAtEndThreshold={0.16}
+                          maintainVisibleContentPosition
                           keyExtractor={(item) => item.id}
                           renderItem={renderMessage}
-                          renderScrollComponent={renderScrollComponent}
                           ListFooterComponent={listFooter}
                           onScroll={handleScroll}
                           onScrollBeginDrag={Keyboard.dismiss}
@@ -840,6 +815,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                           showsVerticalScrollIndicator={false}
                           style={styles.messagesScroll}
                           contentContainerStyle={styles.messagesScrollContent}
+                          keyboardDismissMode="interactive"
+                          keyboardLiftBehavior="whenAtEnd"
+                          applyWorkaroundForContentInsetHitTestBug
                         />
 
                         {showScrollButton && (
@@ -856,14 +834,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                         )}
                       </View>
                     )}
-                  </View>
+                  </KeyboardGestureArea>
 
-                  <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-                    <View
-                      onLayout={(e: LayoutChangeEvent) => {
-                        setFooterHeight(e.nativeEvent.layout.height);
-                      }}
-                    >
+                  <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+                    <View>
 
 
                       {(!messages || messages.length === 0) &&
@@ -916,6 +890,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                       <View
                         style={[
                           styles.inputContainer,
+                          { paddingBottom: Math.max(insets.bottom, 8) },
                           theme === "dark" && {
                             borderTopColor: "#2E3033",
                             backgroundColor: "#131313",
@@ -924,7 +899,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                       >
                         {recorderState.isRecording ? (
                           <ChatRecordingRow
-                            composerHeight={composerHeight}
                             waveAnimations={waveAnimations}
                             theme={theme}
                             recordingOpacity={recordingOpacity}
@@ -933,7 +907,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                           />
                         ) : (
                           <ChatTextInputRow
-                            composerHeight={composerHeight}
                             theme={theme}
                             inputText={inputText}
                             setInputText={setInputText}
@@ -943,7 +916,8 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                             handleSendMessage={() => {
                               void handleSendMessage();
                             }}
-                            scrollToBottom={flushScrollToBottom}
+                            selectedImageUri={selectedImageUri}
+                            setSelectedImageUri={setSelectedImageUri}
                             startRecording={startRecording}
                             inputContainerOpacity={inputContainerOpacity}
                             micButtonScale={micButtonScale}

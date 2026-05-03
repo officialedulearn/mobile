@@ -1,3 +1,4 @@
+import useAgentStore from "@/core/agentStore";
 import useUserStore from "@/core/userState";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
@@ -10,7 +11,7 @@ import Animated, {
 
 const ChatTypingIndicator = () => {
   const theme = useUserStore((s) => s.theme);
-
+  const { agent, userHasAgent } = useAgentStore();
   const labelPulseStyle = useAnimatedStyle(() => ({
     opacity: withRepeat(
       withSequence(
@@ -40,7 +41,9 @@ const ChatTypingIndicator = () => {
       <View style={styles.avatarContainer}>
         <Image
           source={
-            dark
+            userHasAgent
+              ? { uri: agent?.profile_picture_url || "" }
+              : theme === "dark"
               ? require("@/assets/images/icons/dark/LOGO.png")
               : require("@/assets/images/chatbotlogo.png")
           }

@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
 import { Message } from '@/interface/Chat';
+import { Design } from '@/utils/design';
+import React from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 interface ChatMessageProps {
   message: Message;

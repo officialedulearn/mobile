@@ -1,7 +1,7 @@
 import BackButton from '@/components/common/backButton'
 import useUserStore from '@/core/userState'
-import { UserService } from '@/services/auth.service'
 import { router } from 'expo-router'
+import * as ImagePicker from 'expo-image-picker'
 import { StatusBar } from 'expo-status-bar'
 import React, { useState } from 'react'
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
@@ -10,9 +10,9 @@ type Props = Record<string, never>
 
 const EditProfile = (_props: Props) => {
   const user = useUserStore((state) => state.user)
-  const setUser = useUserStore((state) => state.setUser)
+  const uploadProfilePicture = useUserStore((state) => state.uploadProfilePicture)
+  const editProfileFields = useUserStore((state) => state.editProfileFields)
   const theme = useUserStore((state) => state.theme)
-  const userService = new UserService()
   
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -21,6 +21,7 @@ const EditProfile = (_props: Props) => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [pfpBusy, setPfpBusy] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -40,21 +41,12 @@ const EditProfile = (_props: Props) => {
     setIsLoading(true);
 
     try {
-      const updatedUser = await userService.editUser({
+      await editProfileFields({
         name: formData.name,
         email: user?.email as string,
         username: formData.username,
         learning: formData.learning
       });
-      
-      if (user) {
-        setUser({
-          ...user,
-          name: updatedUser.name,
-          username: updatedUser.username,
-          learning: updatedUser.learning
-        });
-      }
 
       setIsError(false);
       setModalMessage("Profile updated successfully!");
@@ -78,6 +70,38 @@ const EditProfile = (_props: Props) => {
     router.back();
   };
 
+  const handlePickProfilePhoto = async () => {
+    if (!user?.email) return;
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setIsError(true);
+      setModalMessage("Photo library access is required to upload a profile picture.");
+      setShowModal(true);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets[0]?.uri) return;
+
+    setPfpBusy(true);
+    try {
+      await uploadProfilePicture(result.assets[0].uri);
+    } catch (error) {
+      setIsError(true);
+      setModalMessage(error instanceof Error ? error.message : "Failed to upload profile photo.");
+      setShowModal(true);
+    } finally {
+      setPfpBusy(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
@@ -91,6 +115,35 @@ const EditProfile = (_props: Props) => {
 
       <View style={styles.contentContainer}>
         <View style={styles.content}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            onPress={handlePickProfilePhoto}
+            disabled={pfpBusy}
+            activeOpacity={0.85}
+            style={styles.avatarRow}
+          >
+            <View style={[styles.avatarWrap, theme === "dark" && { borderColor: "#2E3033" }]}>
+              {user?.profilePictureURL ? (
+                <Image source={{ uri: user.profilePictureURL }} style={styles.avatarImg} />
+              ) : (
+                <View style={[styles.avatarPlaceholder, theme === "dark" && { backgroundColor: "#1A1A1A" }]}>
+                  <Text style={[styles.avatarInitial, theme === "dark" && { color: "#00FF80" }]}>
+                    {(user?.name || user?.email || "?").trim().charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              {pfpBusy ? (
+                <View style={styles.avatarOverlay}>
+                  <ActivityIndicator color={theme === "dark" ? "#00FF80" : "#000"} />
+                </View>
+              ) : null}
+            </View>
+            <Text style={[styles.avatarHint, theme === "dark" && { color: "#B3B3B3" }]}>
+              {pfpBusy ? "Uploading…" : "Tap to change photo"}
+            </Text>
+          </TouchableOpacity>
+
           <View>
             <Text style={[styles.inputLabel, theme === "dark" && { color: "#B3B3B3" }]}>Full Name</Text>
             <View style={[styles.inputContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
@@ -364,5 +417,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  }
+  },
+  avatarRow: {
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  avatarWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EDF3FC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F5F8FC',
+  },
+  avatarInitial: {
+    fontSize: 32,
+    fontFamily: 'Satoshi-Medium',
+    color: '#2D3C52',
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarHint: {
+    fontFamily: 'Satoshi-Regular',
+    fontSize: 13,
+    color: '#61728C',
+    textAlign: 'center',
+  },
 })

@@ -10,6 +10,7 @@ export interface Agent {
 }
 
 export interface createAgentRequest {
+  userId: string;
   name: string;
   purpose: string;
   profile_picture_url: string;

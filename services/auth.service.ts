@@ -50,6 +50,36 @@ export class UserService extends BaseService {
     return response.data!;
   }
 
+  async uploadProfilePicture(
+    imageUri: string,
+  ): Promise<{ profilePictureURL: string }> {
+    const lower = imageUri.toLowerCase();
+    let type = "image/jpeg";
+    let name = "photo.jpg";
+    if (lower.includes(".png")) {
+      type = "image/png";
+      name = "photo.png";
+    } else if (lower.includes(".webp")) {
+      type = "image/webp";
+      name = "photo.webp";
+    }
+    const formData = new FormData();
+    formData.append("image", {
+      uri: imageUri,
+      type,
+      name,
+    } as any);
+    const response = await this.executeRequest<{ profilePictureURL: string }>(
+      this.getClient().post("/auth/profile-picture/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
+
   async updateUserAddress(email: string, address: string): Promise<User> {
     const response = await this.executeRequest<User>(
       this.getClient().put(`/auth/address?email=${email}&address=${address}`)

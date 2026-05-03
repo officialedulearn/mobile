@@ -8,6 +8,55 @@ function scheduleAfterReactRender(fn: () => void) {
   setTimeout(fn, 0);
 }
 
+function parseStreamPayload(raw: string): unknown[] {
+  try {
+    return [JSON.parse(raw)];
+  } catch {
+    return raw
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^data:\s*/, "").trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return line;
+        }
+      });
+  }
+}
+
+function extractToken(payload: unknown, currentText: string): string {
+  if (typeof payload === "string") return payload;
+  if (!payload || typeof payload !== "object") return "";
+
+  const data = payload as Record<string, any>;
+  const choicesText = data.choices
+    ?.map((choice: any) => choice?.delta?.content ?? choice?.text ?? "")
+    .join("");
+  const candidate =
+    data.token ??
+    data.delta ??
+    data.content ??
+    data.text ??
+    data.message?.content ??
+    choicesText ??
+    "";
+
+  if (typeof candidate !== "string" || candidate.length === 0) return "";
+  if (currentText && candidate.startsWith(currentText)) {
+    return candidate.slice(currentText.length);
+  }
+  return candidate;
+}
+
+function isCompletePayload(payload: unknown): boolean {
+  if (payload === "[DONE]") return true;
+  if (!payload || typeof payload !== "object") return false;
+  const data = payload as Record<string, any>;
+  return Boolean(data.complete || data.done || data.event === "done");
+}
+
 export class AIService extends BaseService {
   async getTitle(message: Message) {
     const response = await this.executeRequest(
@@ -18,7 +67,7 @@ export class AIService extends BaseService {
   }
 
   async generateMessages(dto: {
-    messages: Array<Message>;
+    messages: Message[];
     chatId: string;
     userId: string;
   }) {
@@ -47,7 +96,7 @@ export class AIService extends BaseService {
 
   async generateMessagesStream(
     dto: {
-      messages: Array<Message>;
+      messages: Message[];
       chatId: string;
       userId: string;
     },
@@ -86,20 +135,20 @@ export class AIService extends BaseService {
 
       eventSource.addEventListener("message", (event: any) => {
         try {
-          const data = JSON.parse(event.data);
+          const payloads = parseStreamPayload(event.data);
 
-          if (data.complete || data.id) {
-            if (data.id) {
-              responseId = data.id;
+          for (const data of payloads) {
+            if (data && typeof data === "object" && "id" in data) {
+              responseId = String((data as { id?: string }).id ?? responseId);
             }
 
-            if (data.complete) {
+            if (isCompletePayload(data)) {
               streamCompleted = true;
               eventSource.close();
 
               scheduleAfterReactRender(() => {
                 onComplete({
-                  id: data.id || responseId || generateUUID(),
+                  id: responseId || generateUUID(),
                   role: "assistant",
                   content: fullResponse,
                   createdAt: new Date(),
@@ -108,13 +157,20 @@ export class AIService extends BaseService {
               });
               return;
             }
-          }
 
-          if (data.token) {
-            fullResponse += data.token;
-            onToken(data.token, data.type);
+            const token = extractToken(data, fullResponse);
+            if (token) {
+              fullResponse += token;
+              onToken(
+                token,
+                typeof data === "object" && data
+                  ? (data as { type?: string }).type
+                  : undefined,
+              );
+            }
+
           }
-        } catch (parseError) {}
+        } catch {}
       });
 
       eventSource.addEventListener("error", () => {
