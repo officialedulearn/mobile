@@ -1,10 +1,11 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, Linking, Alert } from "react-native";
-import React from "react";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
+import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type Props = {};
+type Props = Record<string, never>;
 
 const Community = (props: Props) => {
   const { theme } = useUserStore();

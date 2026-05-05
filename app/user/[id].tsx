@@ -1,19 +1,22 @@
-import { StyleSheet, Text, View, Image, ScrollView, Dimensions, FlatList, TouchableOpacity, ImageBackground, Pressable, ActivityIndicator, SafeAreaView, Switch } from "react-native";
-import React, { useEffect } from "react";
-import { Ionicons } from '@expo/vector-icons';
-import BackButton from "@/components/backButton";
-import { useLocalSearchParams, router } from "expo-router";
-import { UserService } from "@/services/auth.service";
-import DailyCheckInStreak from "@/components/streak";
-import { getUserMetrics } from "@/utils/utils";
-import { ActivityService } from "@/services/activity.service";
+import BackButton from "@/components/common/backButton";
+import DailyCheckInStreak from "@/components/rewards/streak";
 import useRewardsStore from "@/core/rewardsState";
 import useSocialStore from "@/core/socialState";
-import { NotificationPreferences } from "@/services/social.service";
 import useUserStore from "@/core/userState";
+import { ActivityService } from "@/services/activity.service";
+import { UserService } from "@/services/auth.service";
+import { NotificationPreferences } from "@/services/social.service";
+import { getScreenTopPadding } from '@/utils/design';
+import { getUserMetrics } from "@/utils/utils";
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, Dimensions, ImageBackground, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = {};
+type Props = Record<string, never>;
 
 const ACHIEVEMENT_IMAGES = {
   xp: require("@/assets/images/icons/medal-06.png"),
@@ -47,6 +50,8 @@ const User = (props: Props) => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useUserStore((state) => state.theme);
   const currentUser = useUserStore((state) => state.user);
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   const [user, setUser] = React.useState<any>();
   const [joinedAt, setJoinedAt] = React.useState<string | undefined>();
   const [userMetrics, setUserMetrics] = React.useState({
@@ -117,6 +122,7 @@ const User = (props: Props) => {
     };
 
     fetchUser();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -148,6 +154,7 @@ const User = (props: Props) => {
       }
     };
 
+     
     loadFollowStatus();
   }, [id, currentUser?.id]);
 
@@ -197,6 +204,7 @@ const User = (props: Props) => {
           console.error("Failed to fetch quiz activities:", error);
         }
       }
+     
     }
     fetchMetrics();
   }, [id]);
@@ -220,7 +228,7 @@ const User = (props: Props) => {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
+    <SafeAreaView style={[styles.safeArea, theme === "dark" && {backgroundColor: '#0D0D0D'}, { paddingTop: topPadding }]}>
       <ScrollView 
         style={[styles.container, theme === "dark" && {backgroundColor: '#0D0D0D'}]} 
         contentContainerStyle={{ paddingBottom: 30 }}

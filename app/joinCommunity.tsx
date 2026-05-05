@@ -1,19 +1,19 @@
-import { StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, ScrollView } from 'react-native'
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react'
-import BackButton from '@/components/backButton'
-import { ActivityIndicator } from 'react-native'
-import * as Haptics from 'expo-haptics' 
-import { BottomSheetModal, BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet'
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
-import { CommunityService } from '@/services/community.service'
-import type { Community } from '@/interface/Community'
-import useUserStore from '@/core/userState'
+import BackButton from '@/components/common/backButton'
 import useCommunityStore from '@/core/communityState'
+import useUserStore from '@/core/userState'
+import type { Community } from '@/interface/Community'
+import { CommunityService } from '@/services/community.service'
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5'
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
+import * as Haptics from 'expo-haptics'
+import { Image } from 'expo-image'
 import { router } from 'expo-router'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 
 const communityService = new CommunityService()
 
-const joinCommunity = () => {
+const JoinCommunity = () => {
     const user = useUserStore(s => s.user)
     const theme = useUserStore(s => s.theme)
     const {
@@ -83,7 +83,6 @@ const joinCommunity = () => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
             setCode('')
         } catch (err: any) {
-            console.error('Error finding community:', err)
             setError(true)
             setErrorMessage(err?.response?.data?.message || 'Invalid invite code')
             setSuccess(false)
@@ -105,7 +104,6 @@ const joinCommunity = () => {
             setBottomSheetStep('success')
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
         } catch (err: any) {
-            console.error('Error requesting to join:', err)
             handleCloseBottomSheet()
             setError(true)
             setErrorMessage(err?.response?.data?.message || 'Failed to send join request')
@@ -231,7 +229,7 @@ const joinCommunity = () => {
               <View style={styles.bottomSheetHeader}>
                 <View>
                     <Text style={[styles.bottomSheetTitle, theme === 'dark' && styles.darkText]}>Request to Join Community</Text>
-                    <Text style={[styles.bottomSheetDescription, theme === 'dark' && styles.darkSecondaryText]}>You are about to request access to join community. You'll be allowed to join once a moderator approves your request. Do you want to continue?</Text>
+                    <Text style={[styles.bottomSheetDescription, theme === 'dark' && styles.darkSecondaryText]}>You are about to request access to join community. You&apos;ll be allowed to join once a moderator approves your request. Do you want to continue?</Text>
                 </View>
               </View>
 
@@ -290,7 +288,7 @@ const joinCommunity = () => {
         />
                 </View>
                 <Text style={[styles.successMessage, theme === 'dark' && styles.darkSecondaryText]}>
-                  Your request to join <Text style={[styles.communityNameBold, theme === 'dark' && styles.darkText]}>{selectedCommunity.title}</Text> has been submitted. You'll be allowed to join once a moderator approves your request.
+                  Your request to join <Text style={[styles.communityNameBold, theme === 'dark' && styles.darkText]}>{selectedCommunity.title}</Text> has been submitted. You&apos;ll be allowed to join once a moderator approves your request.
                 </Text>
               </View>
 
@@ -317,7 +315,7 @@ const joinCommunity = () => {
   )
 }
 
-export default joinCommunity
+export default JoinCommunity
 
 const styles = StyleSheet.create({
   container: {

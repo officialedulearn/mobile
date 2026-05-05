@@ -1,11 +1,12 @@
-import BackButton from "@/components/backButton";
-import React, { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View, ActivityIndicator, TouchableOpacity } from "react-native";
-import { DataTable } from "react-native-paper";
-import { UserService } from "@/services/auth.service";
-import { User } from "@/interface/User";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
+import { User } from "@/interface/User";
+import { UserService } from "@/services/auth.service";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { DataTable } from "react-native-paper";
 
 function getNextSunday(): Date {
   const now = new Date();
@@ -75,7 +76,6 @@ const Leaderboard = () => {
         setUsers(response.users);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch leaderboard:', err);
         setError('Failed to load leaderboard data');
       } finally {
         setLoading(false);
@@ -83,6 +83,7 @@ const Leaderboard = () => {
     };
 
     fetchLeaderboard();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -92,9 +93,9 @@ const Leaderboard = () => {
         const data = await userService.getWeeklyLeaderboard();
         setWeeklyUsers(data);
       } catch (err) {
-        console.error("Failed to fetch weekly leaderboard:", err);
       }
     };
+     
     fetchWeekly();
   }, [activeTab]);
 

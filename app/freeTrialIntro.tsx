@@ -1,18 +1,18 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-} from "react-native";
-import React, { useState, useEffect } from "react";
 import useUserStore from "@/core/userState";
-import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Purchases from "react-native-purchases";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const trialFeatures = [
   {
@@ -68,7 +68,6 @@ const FreeTrialIntro = () => {
           }
         }
       } catch (error) {
-        console.log('Error checking trial eligibility:', error);
       }
     };
     checkTrialEligibility();

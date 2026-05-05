@@ -1,13 +1,13 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Share } from "react-native";
-import React, { useState, useEffect } from "react";
-import BackButton from "@/components/backButton";
-import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
-import { RoadmapWithSteps, RoadmapStep } from "@/interface/Roadmap";
+import BackButton from "@/components/common/backButton";
 import useRoadmapStore from "@/core/roadmapState";
-import { RoadmapService } from "@/services/roadmap.service";
 import useUserStore from "@/core/userState";
+import { RoadmapStep, RoadmapWithSteps } from "@/interface/Roadmap";
 import { CardSharingService } from "@/services/cardSharing.service";
-
+import { RoadmapService } from "@/services/roadmap.service";
+import { Image } from "expo-image";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 const Roadmap = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useUserStore((state) => state.theme);
@@ -34,8 +34,7 @@ const Roadmap = () => {
     try {
       const data = await fetchRoadmapById(id as string);
       setRoadmapData(data ?? null);
-    } catch (error: any) {
-      console.error("Failed to fetch roadmap:", error);
+    } catch (error: any) {  
       Alert.alert("Error", error.message || "Failed to load roadmap");
     } finally {
       setIsLoading(false);
@@ -44,10 +43,12 @@ const Roadmap = () => {
 
   useEffect(() => {
     fetchRoadmap();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useFocusEffect(
     React.useCallback(() => {
+       
       fetchRoadmap();
     }, [id])
   );
@@ -72,7 +73,6 @@ const Roadmap = () => {
         });
       }
     } catch (error: any) {
-      console.error("Failed to start step:", error);
       Alert.alert("Error", error.message || "Failed to start step. Please try again.");
     } finally {
       setStartingStep(null);
@@ -95,14 +95,13 @@ const Roadmap = () => {
       
       await cardSharingService.shareRoadmapProgressCard(id as string, roadmapData?.roadmap.title || "");
     } catch (error: any) {
-      console.error("Failed to share:", error);
     }
   };
 
   if (isLoading || !roadmapData) {
     return (
       <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-        <View style={styles.topNav}>
+        <View style={styles.topNav}> 
           <BackButton />
           <Text style={[styles.title, theme === "dark" && { color: "#E0E0E0" }]}>
             Learning Path

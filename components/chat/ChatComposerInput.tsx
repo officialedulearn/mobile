@@ -1,7 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import React from "react";
 import {
-  Image,
-  LayoutChangeEvent,
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +20,7 @@ import Animated, {
 const BASE_HEIGHTS = [8, 12, 16, 14, 10];
 const MAX_HEIGHTS = [24, 28, 32, 26, 22];
 
-const WaveBar = ({
+const WaveBar = React.memo(({
   anim,
   index,
 }: {
@@ -42,9 +45,10 @@ const WaveBar = ({
       style={[styles.waveBar, { backgroundColor: "#FF4444" }, animatedStyle]}
     />
   );
-};
+});
+WaveBar.displayName = "WaveBar";
 
-const WaveVisualization = ({
+const WaveVisualization = React.memo(({
   waveAnimations,
 }: {
   waveAnimations: SharedValue<number>[];
@@ -54,24 +58,17 @@ const WaveVisualization = ({
       <WaveBar key={index} anim={anim} index={index} />
     ))}
   </View>
-);
+));
+WaveVisualization.displayName = "WaveVisualization";
 
-export const ChatTextInputRow = ({
-  composerHeight,
-  theme,
-  inputText,
-  setInputText,
-  isTranscribing,
-  isGenerating,
-  isNavigating,
-  handleSendMessage,
-  scrollToBottom,
-  startRecording,
-  inputContainerOpacity,
-  micButtonScale,
-  micButtonRotation,
-}: {
-  composerHeight: SharedValue<number>;
+type AttachmentDraft = {
+  uri: string;
+  kind: "image" | "document";
+  name?: string;
+  mimeType?: string;
+};
+
+type ChatTextInputRowProps = {
   theme: string;
   inputText: string;
   setInputText: (text: string) => void;
@@ -79,13 +76,32 @@ export const ChatTextInputRow = ({
   isGenerating: boolean;
   isNavigating: boolean;
   handleSendMessage: () => void;
-  scrollToBottom: () => void;
+  selectedAttachments: AttachmentDraft[];
+  setSelectedAttachments: React.Dispatch<React.SetStateAction<AttachmentDraft[]>>;
   startRecording: () => void;
   inputContainerOpacity: SharedValue<number>;
   micButtonScale: SharedValue<number>;
   micButtonRotation: SharedValue<number>;
-}) => {
+};
+
+export const ChatTextInputRow = React.memo(({
+  theme,
+  inputText,
+  setInputText,
+  isTranscribing,
+  isGenerating,
+  isNavigating,
+  handleSendMessage,
+  selectedAttachments,
+  setSelectedAttachments,
+  startRecording,
+  inputContainerOpacity,
+  micButtonScale,
+  micButtonRotation,
+}: ChatTextInputRowProps) => {
   const dark = theme === "dark";
+  const disabled = isGenerating || isNavigating || isTranscribing;
+  const trimmedInput = inputText.trim();
   const animatedInputStyle = useAnimatedStyle(() => ({
     opacity: inputContainerOpacity.value,
     transform: [
@@ -100,19 +116,163 @@ export const ChatTextInputRow = ({
     ],
   }));
 
+  const handlePickImage = React.useCallback(async () => {
+    if (disabled) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow photo access to attach an image.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+    });
+
+    if (!result.canceled && result.assets[0]?.uri) {
+      const asset = result.assets[0];
+      setSelectedAttachments((current) => [
+        ...current,
+        {
+          uri: asset.uri,
+          kind: "image",
+          name: asset.fileName ?? "image",
+          mimeType: (asset as any).mimeType,
+        },
+      ]);
+    }
+  }, [disabled, setSelectedAttachments]);
+
+  const handlePickDocument = React.useCallback(async () => {
+    if (disabled) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+      setSelectedAttachments((current) => [
+        ...current,
+        {
+          uri: asset.uri,
+          kind: "document",
+          name: asset.name ?? "document",
+          mimeType: asset.mimeType ?? undefined,
+        },
+      ]);
+    } catch {
+      Alert.alert("Error", "Failed to pick a document.");
+    }
+  }, [disabled, setSelectedAttachments]);
+
+  const removeAttachmentAtIndex = React.useCallback((index: number) => {
+    setSelectedAttachments((current) => {
+      const next = current.slice();
+      next.splice(index, 1);
+      return next;
+    });
+  }, [setSelectedAttachments]);
+
   return (
     <Animated.View
-      onLayout={(e: LayoutChangeEvent) => {
-        composerHeight.value = e.nativeEvent.layout.height;
-      }}
       style={[
-        styles.inputWrapper,
+        styles.composerShell,
         dark && {
           backgroundColor: "#0D0D0D",
+          borderColor: "#2E3033",
         },
         animatedInputStyle,
       ]}
     >
+      {selectedAttachments.length > 0 ? (
+        <View style={styles.attachmentPreviewRow}>
+          {selectedAttachments.map((att, idx) => (
+            <View key={`${att.uri}-${idx}`} style={styles.attachmentChip}>
+              {att.kind === "image" ? (
+                <Image
+                  source={{ uri: att.uri }}
+                  style={styles.attachmentPreview}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.docPreview,
+                    dark && {
+                      backgroundColor: "#1D1F22",
+                      borderColor: "#2E3033",
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="document-text-outline"
+                    size={18}
+                    color={dark ? "#E0E0E0" : "#2D3C52"}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.docName,
+                      { color: dark ? "#E0E0E0" : "#2D3C52" },
+                    ]}
+                  >
+                    {att.name ?? "document"}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                onPress={() => removeAttachmentAtIndex(idx)}
+                style={[
+                  styles.removeAttachmentButton,
+                  dark && { backgroundColor: "#2E3033" },
+                ]}
+                activeOpacity={0.8}
+                accessibilityLabel="Remove selected attachment"
+              >
+                <Ionicons
+                  name="close"
+                  size={14}
+                  color={dark ? "#E0E0E0" : "#2D3C52"}
+                />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      <View style={styles.inputWrapper}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            void handlePickImage();
+          }}
+          disabled={disabled}
+          activeOpacity={0.75}
+          accessibilityLabel="Pick image"
+        >
+          <Ionicons
+            name="image-outline"
+            size={22}
+            color={dark ? "#E0E0E0" : "#61728C"}
+            style={disabled && styles.disabledSend}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => {
+            void handlePickDocument();
+          }}
+          disabled={disabled}
+          activeOpacity={0.75}
+          accessibilityLabel="Pick document"
+        >
+          <Ionicons
+            name="document-attach-outline"
+            size={22}
+            color={dark ? "#E0E0E0" : "#61728C"}
+            style={disabled && styles.disabledSend}
+          />
+        </TouchableOpacity>
       {isTranscribing ? (
         <View style={styles.transcribingContainer}>
           <Text style={[styles.transcribingText, dark && { color: "#E0E0E0" }]}>
@@ -126,14 +286,11 @@ export const ChatTextInputRow = ({
           style={[styles.textInput, dark && { color: "#E0E0E0" }]}
           value={inputText}
           onChangeText={setInputText}
-          returnKeyType="done"
+          returnKeyType="send"
           blurOnSubmit={true}
           onSubmitEditing={() => handleSendMessage()}
-          onFocus={() => {
-            setTimeout(() => scrollToBottom(), 100);
-          }}
           multiline={true}
-          editable={!isGenerating && !isNavigating && !isTranscribing}
+          editable={!disabled}
           textAlignVertical="center"
         />
       )}
@@ -141,7 +298,7 @@ export const ChatTextInputRow = ({
         <TouchableOpacity
           style={styles.micButton}
           onPress={startRecording}
-          disabled={isGenerating || isNavigating || isTranscribing}
+          disabled={disabled}
           activeOpacity={0.7}
         >
           <Animated.View style={animatedMicStyle}>
@@ -150,8 +307,7 @@ export const ChatTextInputRow = ({
               style={[
                 { width: 24, height: 24 },
                 dark && { tintColor: "#E0E0E0" },
-                (isGenerating || isNavigating || isTranscribing) &&
-                  styles.disabledSend,
+                disabled && styles.disabledSend,
               ]}
             />
           </Animated.View>
@@ -160,10 +316,8 @@ export const ChatTextInputRow = ({
           style={styles.sendButton}
           onPress={() => handleSendMessage()}
           disabled={
-            inputText.trim() === "" ||
-            isGenerating ||
-            isNavigating ||
-            isTranscribing
+            trimmedInput === "" ||
+            disabled
           }
         >
           <Image
@@ -174,28 +328,24 @@ export const ChatTextInputRow = ({
             }
             style={[
               { width: 24, height: 24 },
-              (inputText.trim() === "" ||
-                isGenerating ||
-                isNavigating ||
-                isTranscribing) &&
-                styles.disabledSend,
+              (trimmedInput === "" || disabled) && styles.disabledSend,
             ]}
           />
         </TouchableOpacity>
       </View>
+      </View>
     </Animated.View>
   );
-};
+});
+ChatTextInputRow.displayName = "ChatTextInputRow";
 
-export const ChatRecordingRow = ({
-  composerHeight,
+export const ChatRecordingRow = React.memo(({
   waveAnimations,
   theme,
   recordingOpacity,
   recordingContainerScale,
   onStop,
 }: {
-  composerHeight: SharedValue<number>;
   waveAnimations: SharedValue<number>[];
   theme: string;
   recordingOpacity: SharedValue<number>;
@@ -210,9 +360,6 @@ export const ChatRecordingRow = ({
 
   return (
     <Animated.View
-      onLayout={(e: LayoutChangeEvent) => {
-        composerHeight.value = e.nativeEvent.layout.height;
-      }}
       style={[
         styles.recordingWrapper,
         dark && {
@@ -243,7 +390,8 @@ export const ChatRecordingRow = ({
       </View>
     </Animated.View>
   );
-};
+});
+ChatRecordingRow.displayName = "ChatRecordingRow";
 
 const styles = StyleSheet.create({
   waveContainer: {
@@ -259,21 +407,77 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF4444",
     minHeight: 4,
   },
+  composerShell: {
+    backgroundColor: "#F0F4FF",
+    borderColor: "#DDE7F7",
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    minHeight: 48,
+  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0F4FF",
-    borderRadius: 24,
-    paddingHorizontal: 16,
+  },
+  iconButton: {
+    padding: 7,
+    borderRadius: 999,
+  },
+  attachmentPreviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingTop: 4,
+    paddingBottom: 8,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  attachmentChip: {
+    position: "relative",
+  },
+  attachmentPreview: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+  },
+  docPreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
     paddingVertical: 8,
-    minHeight: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D6DDE8",
+    backgroundColor: "#F1F5F9",
+    maxWidth: 240,
+  },
+  docName: {
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "Urbanist",
+    maxWidth: 200,
+  },
+  removeAttachmentButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    top: -6,
+    right: -6,
   },
   recordingWrapper: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#FFE6E6",
-    borderRadius: 24,
+    borderRadius: 999,
+    overflow: "hidden",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderWidth: 2,
@@ -322,7 +526,8 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     fontFamily: "Urbanist",
     fontSize: 16,
     color: "#2D3C52",

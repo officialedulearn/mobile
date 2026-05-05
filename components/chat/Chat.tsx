@@ -1,57 +1,102 @@
+import { useChatNavigation } from "@/contexts/ChatContext";
+import useAgentStore from "@/core/agentStore";
+import useChatStore from "@/core/chatState";
 import useUserStore from "@/core/userState";
 import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
-import { useChatNavigation } from "@/contexts/ChatContext";
 import { generateUUID } from "@/utils/constants";
+import Design, { getScreenTopPadding } from "@/utils/design";
+import { type LegendListRef } from "@legendapp/list";
+import { KeyboardChatLegendList } from "@legendapp/list/keyboard-chat";
+import {
+  AudioModule,
+  RecordingPresets,
+  setAudioModeAsync,
+  useAudioRecorder,
+  useAudioRecorderState,
+} from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
 import React, {
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
-  useCallback,
-  useMemo,
 } from "react";
 import {
-  Image,
+  Alert,
   Keyboard,
-  LayoutChangeEvent,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  useWindowDimensions,
   View,
-  Alert,
 } from "react-native";
-import { FlashList, FlashListRef } from "@shopify/flash-list";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import {
-  KeyboardChatScrollView,
+  KeyboardGestureArea,
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
-import * as Haptics from "expo-haptics";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import {
-  useAudioRecorder,
-  AudioModule,
-  RecordingPresets,
-  setAudioModeAsync,
-  useAudioRecorderState,
-} from "expo-audio";
-import ChatDrawer from "./ChatDrawer";
-import ChatHeaderBar from "./ChatHeaderBar";
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import QuizRefreshModal from "../quiz/QuizRefreshModal";
 import { ChatRecordingRow, ChatTextInputRow } from "./ChatComposerInput";
+import ChatHeaderBar from "./ChatHeaderBar";
+import ChatSidebarPanel from "./ChatSidebarPanel";
 import ChatTypingIndicator from "./ChatTypingIndicator";
 import { MessageItem } from "./MessageItem";
-import QuizRefreshModal from "../QuizRefreshModal";
-import { useRouter } from "expo-router";
-import {
-  withRepeat,
-  withTiming,
-  withSequence,
-  useSharedValue,
-  Easing,
-} from "react-native-reanimated";
-import useChatStore from "@/core/chatState";
+
+const chatAiService = new AIService();
+
+const DRAWER_TIMING_MS = 280;
+const EASE_OUT_RN_EASE = Easing.bezier(0, 0, 0.58, 1);
+const KEYBOARD_MAINTAIN_SCROLL_AT_END = {
+  animated: false,
+  on: {
+    dataChange: true,
+    itemLayout: true,
+    layout: true,
+  },
+} as const;
+
+const DEFAULT_HEADER_TITLE = "AI Tutor Chat";
+
+const keyExtractor = (item: Message) => item.id;
+const dismissKeyboard = () => Keyboard.dismiss();
+
+const areMessageArraysEqual = (prev: Message[], next: Message[]) => {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let index = 0; index < prev.length; index += 1) {
+    const prevMessage = prev[index];
+    const nextMessage = next[index];
+    if (
+      prevMessage?.id !== nextMessage?.id ||
+      prevMessage?.role !== nextMessage?.role ||
+      prevMessage?.content !== nextMessage?.content
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
 
 type Props = {
   title: string;
@@ -60,43 +105,71 @@ type Props = {
 };
 
 const Chat = ({ title, initialMessages = [], chatId }: Props) => {
-  const aiService = new AIService();
-  const {
-    deleteChat,
-    addMessage,
-    setMessages: syncMessagesToStore,
-  } = useChatStore();
+  const deleteChat = useChatStore((s) => s.deleteChat);
+  const addMessage = useChatStore((s) => s.addMessage);
+  const syncMessagesToStore = useChatStore((s) => s.setMessages);
   const { isNavigating, createNewChat, refreshChatList } = useChatNavigation();
   const messagesRef = React.useRef<Message[]>([]);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isGenerating, setIsGenerating] = useState(false);
-  const user = useUserStore((s) => s.user);
+  const userId = useUserStore((s) => s.user?.id);
+  const userCredits = useUserStore((s) => s.user?.credits);
+  const userQuizLimit = useUserStore((s) => s.user?.quizLimit);
   const theme = useUserStore((s) => s.theme);
   const updateUserCredits = useUserStore((s) => s.updateUserCredits);
   const [inputText, setInputText] = useState("");
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const dragStartOffset = useSharedValue(0);
+  const sidebarWidthSV = useSharedValue(0);
   const [showQuizRefreshModal, setShowQuizRefreshModal] = useState(false);
-  const flashListRef = useRef<FlashListRef<Message>>(null);
+  const legendListRef = useRef<LegendListRef | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const isNearBottomRef = useRef(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [footerHeight, setFooterHeight] = useState(0);
-  const composerHeight = useSharedValue(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [waitingForStream, setWaitingForStream] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<
+    {
+      uri: string;
+      kind: "image" | "document";
+      name?: string;
+      mimeType?: string;
+    }[]
+  >([]);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
     null,
   );
 
-  const tokenQueueRef = useRef<string[]>([]);
-  const processingTokensRef = useRef(false);
+  const messageContentRef = useRef<Map<string, string>>(new Map());
+  const streamingAssistantIdRef = useRef<string | null>(null);
+  const showScrollButtonRef = useRef(false);
+  const streamCleanupRef = useRef<null | (() => void)>(null);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const userHasAgent = useAgentStore((s) => s.userHasAgent);
+  const agentName = useAgentStore((s) => s.agent?.name);
+  const fetchUserAgent = useAgentStore((s) => s.fetchUserAgent);
 
-  const waveAnimations = useRef(
-    Array.from({ length: 5 }, () => useSharedValue(0)),
-  ).current;
+  useEffect(() => {
+    if (userId) {
+      fetchUserAgent(userId);
+    }
+  }, [userId, fetchUserAgent]);
+
+  const waveAnimation1 = useSharedValue(0);
+  const waveAnimation2 = useSharedValue(0);
+  const waveAnimation3 = useSharedValue(0);
+  const waveAnimation4 = useSharedValue(0);
+  const waveAnimation5 = useSharedValue(0);
+  const waveAnimations = useRef([
+    waveAnimation1,
+    waveAnimation2,
+    waveAnimation3,
+    waveAnimation4,
+    waveAnimation5,
+  ]).current;
 
   const micButtonScale = useSharedValue(1);
   const micButtonRotation = useSharedValue(0);
@@ -104,6 +177,19 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const recordingContainerScale = useSharedValue(0.95);
 
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
+  const sidebarWidth = windowWidth * 0.8;
+  const topPadding = getScreenTopPadding(insets);
+  const rowTranslateX = useSharedValue(-sidebarWidth);
+
+  useEffect(() => {
+    sidebarWidthSV.value = sidebarWidth;
+    rowTranslateX.value = Math.max(
+      -sidebarWidth,
+      Math.min(0, rowTranslateX.value),
+    );
+  }, [sidebarWidth, rowTranslateX, sidebarWidthSV]);
 
   const safeSetMessages = useCallback(
     (updater: Message[] | ((prev: Message[]) => Message[])) => {
@@ -133,29 +219,47 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     })();
   }, []);
 
+  useEffect(
+    () => () => {
+      if (scrollRafRef.current != null) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
+    },
+    [],
+  );
+
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
+    const len = messages?.length ?? 0;
+    if (len <= 2 && showScrollButtonRef.current) {
+      showScrollButtonRef.current = false;
+      setShowScrollButton(false);
+    }
+  }, [messages?.length]);
+
+  useEffect(() => {
     if (initialMessages && Array.isArray(initialMessages)) {
-      safeSetMessages(initialMessages);
+      safeSetMessages((currentMessages) =>
+        areMessageArraysEqual(currentMessages, initialMessages)
+          ? currentMessages
+          : initialMessages,
+      );
     }
   }, [initialMessages, safeSetMessages]);
 
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages]);
-
   const fetchSuggestions = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     try {
       setLoadingSuggestions(true);
-      const fetchedSuggestions = await aiService.generateSuggestions({
-        userId: user.id,
+      const fetchedSuggestions = await chatAiService.generateSuggestions({
+        userId,
       });
       setSuggestions(fetchedSuggestions || []);
     } catch (error) {
@@ -167,67 +271,24 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       ]);
     } finally {
       setLoadingSuggestions(false);
+
     }
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
-    if (user?.id && messages && messages.length === 0) {
+    if (userId && messages.length === 0) {
       fetchSuggestions();
     }
-  }, [user?.id, fetchSuggestions, messages]);
+  }, [userId, fetchSuggestions, messages.length]);
 
-  const scrollToBottom = useCallback(() => {
-    setTimeout(() => {
-      if (flashListRef.current) {
-        flashListRef.current.scrollToEnd({ animated: true });
-      }
-    }, 100);
+  const flushScrollToBottom = useCallback(() => {
+    isNearBottomRef.current = true;
+    if (scrollRafRef.current != null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+    void legendListRef.current?.scrollToEnd({ animated: true });
   }, []);
-
-  const processTokenQueue = useCallback(
-    (assistantMessageId: string) => {
-      if (processingTokensRef.current || tokenQueueRef.current.length === 0) {
-        return;
-      }
-
-      processingTokensRef.current = true;
-
-      const processChunk = () => {
-        if (tokenQueueRef.current.length === 0) {
-          processingTokensRef.current = false;
-          return;
-        }
-
-        const allTokens = tokenQueueRef.current
-          .splice(0, tokenQueueRef.current.length)
-          .join("");
-
-        safeSetMessages((currentMessages) => {
-          const messagesCopy = [...currentMessages];
-          const messageIndex = messagesCopy.findIndex(
-            (msg) => msg && msg.id === assistantMessageId,
-          );
-
-          if (messageIndex !== -1) {
-            const message = messagesCopy[messageIndex];
-            const currentContent =
-              typeof message.content === "string"
-                ? message.content
-                : message.content || "";
-            message.content = currentContent + allTokens;
-          }
-
-          return messagesCopy;
-        });
-
-        scrollToBottom();
-        processingTokensRef.current = false;
-      };
-
-      processChunk();
-    },
-    [scrollToBottom, safeSetMessages],
-  );
 
   const handleScroll = useCallback(
     (event: {
@@ -243,101 +304,200 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       const isCloseToBottom =
         layoutMeasurement.height + contentOffset.y >=
         contentSize.height - paddingToBottom;
-      setShowScrollButton(!isCloseToBottom && messages && messages.length > 2);
+      isNearBottomRef.current = isCloseToBottom;
+      const len = messagesRef.current?.length ?? 0;
+      const nextShow = !isCloseToBottom && len > 2;
+      if (nextShow !== showScrollButtonRef.current) {
+        showScrollButtonRef.current = nextShow;
+        setShowScrollButton(nextShow);
+      }
     },
-    [messages],
+    [],
   );
 
-  const handleSendMessage = async (messageText?: string) => {
+  const handleSendMessage = useCallback(async (messageText?: string) => {
     const textToSend = messageText || inputText.trim();
     if (textToSend === "" || isGenerating || isNavigating) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const currentCredits = Number(user?.credits) || 0;
+    const currentCredits = Number(userCredits) || 0;
 
     if (currentCredits <= 0.5) {
-      console.log(
-        "User has insufficient credits, redirecting to freeTrialIntro",
-      );
       router.push("/freeTrialIntro");
       return;
     }
 
     updateUserCredits(currentCredits - 0.5);
 
+    const attachmentsDraft = selectedAttachments;
     setInputText("");
+    setSelectedAttachments([]);
+
+    const inferMimeTypeFromUri = (uri: string, kind: "image" | "document") => {
+      const ext = uri.split("?")[0]?.split("#")[0]?.split(".").pop()?.toLowerCase();
+      if (kind === "image") {
+        if (ext === "png") return "image/png";
+        if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+        if (ext === "webp") return "image/webp";
+        if (ext === "heic") return "image/heic";
+        return "image/jpeg";
+      }
+      if (ext === "pdf") return "application/pdf";
+      if (ext === "txt") return "text/plain";
+      if (ext === "md") return "text/markdown";
+      if (ext === "json") return "application/json";
+      if (ext === "docx")
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      return "application/octet-stream";
+    };
+
+    let attachmentsPayload: {
+      data: string;
+      mimeType: string;
+      name?: string;
+      kind?: "image" | "document";
+      localUri?: string;
+    }[] = [];
+
+    if (attachmentsDraft.length > 0) {
+      try {
+        attachmentsPayload = await Promise.all(
+          attachmentsDraft.map(async (att) => {
+            const data = await FileSystem.readAsStringAsync(att.uri, {
+              // Some Expo runtimes/types don't expose EncodingType; string literal is supported.
+              encoding: ("base64" as any),
+            });
+            return {
+              data,
+              mimeType:
+                att.mimeType ||
+                inferMimeTypeFromUri(att.uri, att.kind),
+              name: att.name,
+              kind: att.kind,
+              localUri: att.uri,
+            };
+          }),
+        );
+      } catch (e) {
+        console.error("Failed to read attachment:", e);
+        Alert.alert(
+          "Attachment error",
+          "Couldn't attach that file. Try again with a smaller file.",
+        );
+      }
+    }
 
     const newMessage: Message = {
       id: generateUUID(),
       role: "user",
-      content: textToSend,
+      content:
+        attachmentsPayload.length > 0
+          ? { text: textToSend, attachments: attachmentsPayload }
+          : textToSend,
       createdAt: new Date(),
       chatId: chatId,
     };
 
-    const updatedMessages = [...(messages || []), newMessage];
+    const updatedMessages = [...(messagesRef.current || []), newMessage];
+
+    const messagesForApi = updatedMessages.map((m) => {
+      if (
+        m &&
+        typeof m.content === "object" &&
+        m.content &&
+        "attachments" in (m.content as any) &&
+        Array.isArray((m.content as any).attachments)
+      ) {
+        const c: any = m.content;
+        return {
+          ...m,
+          content: {
+            ...c,
+            attachments: c.attachments.map((a: any) => {
+              const { localUri, ...rest } = a || {};
+              return rest;
+            }),
+          },
+        };
+      }
+      return m;
+    });
     safeSetMessages(updatedMessages);
     addMessage(chatId, newMessage);
     setIsGenerating(true);
     setWaitingForStream(true);
+    streamCleanupRef.current?.();
+    streamCleanupRef.current = null;
 
     const assistantMessageId = generateUUID();
     let messageCreated = false;
 
     try {
-      const cleanup = await aiService.generateMessagesStream(
+      const cleanup = await chatAiService.generateMessagesStream(
         {
-          messages: updatedMessages,
+          messages: messagesForApi,
           chatId: chatId,
-          userId: user?.id as unknown as string,
+          userId: userId as unknown as string,
         },
-        (token: string, type?: string) => {
+        (token: string, _type?: string) => {
           if (!messageCreated) {
             setWaitingForStream(false);
             setStreamingMessageId(assistantMessageId);
+            streamingAssistantIdRef.current = assistantMessageId;
+            messageContentRef.current.set(assistantMessageId, "");
+            const assistantMessage: Message = {
+              id: assistantMessageId,
+              role: "assistant",
+              content: "",
+              createdAt: new Date(),
+              chatId: chatId,
+            };
+            addMessage(chatId, assistantMessage);
             safeSetMessages((currentMessages) => {
               const messagesCopy = [...currentMessages];
-              const assistantMessage: Message = {
-                id: assistantMessageId,
-                role: "assistant",
-                content: "",
-                createdAt: new Date(),
-                chatId: chatId,
-              };
               messagesCopy.push(assistantMessage);
-              addMessage(chatId, assistantMessage);
               return messagesCopy;
             });
             messageCreated = true;
           }
 
-          tokenQueueRef.current.push(token);
-          processTokenQueue(assistantMessageId);
+          const currentContent =
+            messageContentRef.current.get(assistantMessageId) || "";
+          const newContent = currentContent + token;
+          messageContentRef.current.set(assistantMessageId, newContent);
+          safeSetMessages((currentMessages) => {
+            const messagesCopy = [...currentMessages];
+            const messageIndex = messagesCopy.findIndex(
+              (msg) => msg && msg.id === assistantMessageId,
+            );
+            if (messageIndex === -1) return currentMessages;
+            const message = messagesCopy[messageIndex];
+            messagesCopy[messageIndex] = {
+              ...message,
+              content: newContent,
+            };
+            return messagesCopy;
+          });
         },
-        (fullMessage: Message) => {
-          const checkQueueComplete = () => {
-            if (
-              tokenQueueRef.current.length === 0 &&
-              !processingTokensRef.current
-            ) {
-              setIsGenerating(false);
-              setStreamingMessageId(null);
-              syncMessagesToStore(chatId, messagesRef.current);
-              refreshChatList();
-              scrollToBottom();
-            } else {
-              setTimeout(checkQueueComplete, 50);
-            }
-          };
-          checkQueueComplete();
+        (_fullMessage: Message) => {
+          messageContentRef.current.delete(assistantMessageId);
+          streamingAssistantIdRef.current = null;
+          streamCleanupRef.current = null;
+          setIsGenerating(false);
+          setStreamingMessageId(null);
+          queueMicrotask(() => {
+            syncMessagesToStore(chatId, messagesRef.current);
+            refreshChatList();
+          });
         },
         (error: Error) => {
           console.error("Error generating message:", error);
           setInputText(textToSend);
 
-          tokenQueueRef.current = [];
-          processingTokensRef.current = false;
+          messageContentRef.current.delete(assistantMessageId);
+          streamingAssistantIdRef.current = null;
+          streamCleanupRef.current = null;
 
           if (messageCreated) {
             safeSetMessages((currentMessages) =>
@@ -354,6 +514,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
           );
         },
       );
+      streamCleanupRef.current = cleanup ?? null;
     } catch (error: any) {
       console.error("Error generating message:", error);
       setInputText(textToSend);
@@ -361,8 +522,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       setWaitingForStream(false);
       setStreamingMessageId(null);
 
-      tokenQueueRef.current = [];
-      processingTokensRef.current = false;
+      messageContentRef.current.delete(assistantMessageId);
+      streamingAssistantIdRef.current = null;
+      streamCleanupRef.current = null;
 
       if (messageCreated) {
         safeSetMessages((currentMessages) =>
@@ -375,18 +537,82 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         error.message || "Failed to start streaming. Please try again.",
       );
     }
-  };
+  }, [
+    addMessage,
+    chatId,
+    inputText,
+    isGenerating,
+    isNavigating,
+    refreshChatList,
+    router,
+    safeSetMessages,
+    selectedAttachments,
+    syncMessagesToStore,
+    updateUserCredits,
+    userCredits,
+    userId,
+  ]);
+
+  const dismissKeyboardJs = useCallback(() => {
+    Keyboard.dismiss();
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    rowTranslateX.value = withTiming(-sidebarWidth, {
+      duration: DRAWER_TIMING_MS,
+      easing: EASE_OUT_RN_EASE,
+    });
+  }, [rowTranslateX, sidebarWidth]);
+
+  const openDrawer = useCallback(() => {
+    Keyboard.dismiss();
+    rowTranslateX.value = withTiming(0, {
+      duration: DRAWER_TIMING_MS,
+      easing: EASE_OUT_RN_EASE,
+    });
+  }, [rowTranslateX]);
+
+  const focusMainPane = closeDrawer;
+
+  const rowPanGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-18, 18])
+        .failOffsetY([-14, 14])
+        .onStart(() => {
+          dragStartOffset.value = rowTranslateX.value;
+        })
+        .onUpdate((e) => {
+          const w = sidebarWidthSV.value;
+          const next = dragStartOffset.value + e.translationX;
+          rowTranslateX.value = Math.max(-w, Math.min(0, next));
+        })
+        .onEnd((e) => {
+          const w = sidebarWidthSV.value;
+          const x = rowTranslateX.value;
+          const v = e.velocityX;
+          let target = x > -w / 2 ? 0 : -w;
+          if (v > 520) target = 0;
+          if (v < -520) target = -w;
+          rowTranslateX.value = withTiming(target, {
+            duration: DRAWER_TIMING_MS,
+            easing: EASE_OUT_RN_EASE,
+          });
+          if (target === 0) {
+            runOnJS(dismissKeyboardJs)();
+          }
+        }),
+    [dismissKeyboardJs, dragStartOffset, rowTranslateX, sidebarWidthSV],
+  );
+
+  const rowAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: rowTranslateX.value }],
+  }));
 
   const handleCreateNewChat = useCallback(() => {
-    setDrawerOpen(false);
+    focusMainPane();
     createNewChat();
-  }, [createNewChat]);
-
-  const handleGoHome = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Keyboard.dismiss();
-    router.navigate("/(tabs)");
-  }, [router]);
+  }, [createNewChat, focusMainPane]);
 
   const handleSuggestionPress = useCallback(
     (suggestion: string) => {
@@ -472,11 +698,20 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       micButtonRotation.value = withTiming(0, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
+
       });
     }
-  }, [recorderState.isRecording]);
+  }, [
+    inputContainerOpacity,
+    micButtonRotation,
+    micButtonScale,
+    recorderState.isRecording,
+    recordingContainerScale,
+    recordingOpacity,
+    waveAnimations,
+  ]);
 
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -501,16 +736,16 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       micButtonScale.value = withTiming(1, { duration: 150 });
       micButtonRotation.value = withTiming(0, { duration: 150 });
     }
-  };
+  }, [audioRecorder, micButtonRotation, micButtonScale]);
 
-  const stopRecording = async () => {
+  const stopRecording = useCallback(async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       await audioRecorder.stop();
       if (audioRecorder.uri) {
         try {
           setIsTranscribing(true);
-          const response = await aiService.transcribeAudio({
+          const response = await chatAiService.transcribeAudio({
             audioUri: audioRecorder.uri,
           });
 
@@ -529,7 +764,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       console.error("Error stopping recording:", error);
       Alert.alert("Error", "Failed to stop recording");
     }
-  };
+  }, [audioRecorder]);
 
   const filteredMessages = useMemo(() => {
     if (!messages || !Array.isArray(messages)) return [];
@@ -550,24 +785,39 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     });
   }, [messages, streamingMessageId]);
 
-  const renderScrollComponent = useCallback(
-    (props: object) => (
-      <KeyboardChatScrollView
-        {...props}
-        applyWorkaroundForContentInsetHitTestBug
-        extraContentPadding={composerHeight}
-        keyboardDismissMode="interactive"
-        keyboardLiftBehavior="whenAtEnd"
-        offset={footerHeight}
+  const renderMessage = useCallback(
+    ({ item }: { item: Message }) => (
+      <MessageItem
+        message={item}
+        isStreaming={item.id === streamingMessageId}
+        theme={theme}
       />
     ),
-    [composerHeight, footerHeight],
+    [streamingMessageId, theme],
+  );
+
+  const listFooter = useMemo(
+    () => (waitingForStream ? <ChatTypingIndicator /> : null),
+    [waitingForStream],
+  );
+
+  const listExtraData = useMemo(
+    () => ({ streamingMessageId, theme }),
+    [streamingMessageId, theme],
+  );
+
+  const anchoredEndSpace = useMemo(
+    () =>
+      filteredMessages.length > 0
+        ? { anchorIndex: filteredMessages.length - 1, anchorOffset: 16 }
+        : undefined,
+    [filteredMessages.length],
   );
 
   const handleHeaderQuiz = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const quizLimit = user?.quizLimit ?? 0;
-    const currentCredits = Number(user?.credits) || 0;
+    const quizLimit = userQuizLimit ?? 0;
+    const currentCredits = Number(userCredits) || 0;
     if (quizLimit <= 0) {
       setShowQuizRefreshModal(true);
       return;
@@ -580,7 +830,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       pathname: "/quiz",
       params: { chatId },
     });
-  }, [user?.quizLimit, user?.credits, chatId, router]);
+  }, [userQuizLimit, userCredits, chatId, router]);
 
   const handleConfirmDeleteChat = useCallback(async () => {
     try {
@@ -588,12 +838,13 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       await deleteChat(chatId);
       refreshChatList();
       Alert.alert("Success", "Chat deleted successfully");
+      focusMainPane();
       createNewChat();
     } catch {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Error", "Failed to delete chat. Please try again.");
     }
-  }, [chatId, deleteChat, refreshChatList, createNewChat]);
+  }, [chatId, deleteChat, refreshChatList, createNewChat, focusMainPane]);
 
   return (
     <SafeAreaView
@@ -607,222 +858,228 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       <View
         style={[
           styles.container,
+          {
+            paddingTop: topPadding,
+          },
           theme === "dark" && { backgroundColor: "#131313" },
         ]}
       >
-        <View style={{ flex: 1 }}>
-          <ChatHeaderBar
-            title={title || "AI Tutor Chat"}
-            theme={theme}
-            isEmpty={!messages || messages.length === 0}
-            onOpenDrawer={() => setDrawerOpen(true)}
-            onNewChat={handleCreateNewChat}
-            onQuiz={handleHeaderQuiz}
-            onRequestDelete={handleConfirmDeleteChat}
-          />
-
-          {drawerOpen && (
-            <>
-              <View
-                style={styles.backdrop}
-                onTouchStart={() => setDrawerOpen(false)}
-              />
-              <ChatDrawer onClose={() => setDrawerOpen(false)} />
-            </>
-          )}
-
-          <QuizRefreshModal
-            visible={showQuizRefreshModal}
-            onClose={() => setShowQuizRefreshModal(false)}
-            onSuccess={() => {
-              setShowQuizRefreshModal(false);
-              useUserStore.getState().setUserAsync();
-            }}
-          />
-
-          <View style={styles.chatContent}>
-            {!messages || messages.length === 0 ? (
-              <View style={styles.emptyStateContainer}>
-                <View style={styles.emptyImageContainer}>
-                  <Image
-                    source={require("@/assets/images/eddie/Mischievous.png")}
-                    style={styles.emptyImage}
-                  />
-                  <Image
-                    source={
-                      theme === "dark"
-                        ? require("@/assets/images/logo.png")
-                        : require("@/assets/images/LOGO-2.png")
-                    }
-                    style={styles.logo}
-                  />
-                </View>
-              </View>
-            ) : (
-              <View style={styles.messagesContainer}>
-                <FlashList
-                  ref={flashListRef}
-                  data={filteredMessages}
-                  keyboardShouldPersistTaps="handled"
-                  nestedScrollEnabled={Platform.OS === "android"}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
-                    <MessageItem
-                      message={item}
-                      isStreaming={item.id === streamingMessageId}
-                    />
-                  )}
-                  renderScrollComponent={renderScrollComponent}
-                  ListFooterComponent={
-                    waitingForStream ? <ChatTypingIndicator /> : null
-                  }
-                  onScroll={handleScroll}
-                  onScrollBeginDrag={Keyboard.dismiss}
-                  scrollEventThrottle={16}
-                  showsVerticalScrollIndicator={false}
-                  style={styles.messagesScroll}
-                  contentContainerStyle={styles.messagesScrollContent}
-                />
-
-                {showScrollButton && (
-                  <TouchableOpacity
-                    style={styles.scrollToBottomButton}
-                    onPress={scrollToBottom}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={require("@/assets/images/icons/CaretDown.png")}
-                      style={styles.scrollToBottomIcon}
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
-
-          <KeyboardStickyView offset={{ closed: 0, opened: 10 }}>
-            <View
-              onLayout={(e: LayoutChangeEvent) => {
-                setFooterHeight(e.nativeEvent.layout.height);
-              }}
+        <View style={styles.stackRoot}>
+          <GestureDetector gesture={rowPanGesture}>
+            <Animated.View
+              style={[
+                styles.sideBySideRow,
+                { width: sidebarWidth + windowWidth },
+                rowAnimatedStyle,
+              ]}
             >
-              <View style={styles.chatEscapeRow}>
-                <TouchableOpacity
-                  accessibilityLabel="Go to Home"
-                  accessibilityRole="button"
-                  activeOpacity={0.85}
-                  onPress={handleGoHome}
-                  style={[
-                    styles.escapePill,
-                    theme === "dark" && styles.escapePillDark,
-                  ]}
-                >
-                  <Image
-                    source={
-                      theme === "dark"
-                        ? require("@/assets/images/icons/dark/home.png")
-                        : require("@/assets/images/icons/home.png")
-                    }
-                    style={styles.escapePillIcon}
-                  />
-                  <Text
-                    style={[
-                      styles.escapePillLabel,
-                      theme === "dark" && styles.escapePillLabelDark,
-                    ]}
-                  >
-                    Home
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {(!messages || messages.length === 0) &&
-                !loadingSuggestions &&
-                suggestions &&
-                suggestions.length > 0 && (
-                  <View
-                    style={[
-                      styles.suggestionsContainer,
-                      theme === "dark" && {
-                        backgroundColor: "#131313",
-                        borderTopColor: "#2E3033",
-                      },
-                    ]}
-                  >
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.suggestionsScrollContent}
-                      style={styles.suggestionsScroll}
-                    >
-                      {suggestions.map((suggestion, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            styles.suggestion,
-                            theme === "dark" && {
-                              backgroundColor: "#0D0D0D",
-                              borderColor: "#2E3033",
-                            },
-                          ]}
-                          onPress={() => handleSuggestionPress(suggestion)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
-                            style={[
-                              styles.suggestionText,
-                              theme === "dark" && { color: "#E0E0E0" },
-                            ]}
-                            numberOfLines={2}
-                          >
-                            {suggestion}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-
               <View
                 style={[
-                  styles.inputContainer,
-                  theme === "dark" && {
-                    borderTopColor: "#2E3033",
-                    backgroundColor: "#131313",
-                  },
+                  styles.sidebarColumn,
+                  { width: sidebarWidth },
+                  theme === "dark" && { backgroundColor: "#131313" },
                 ]}
               >
-                {recorderState.isRecording ? (
-                  <ChatRecordingRow
-                    composerHeight={composerHeight}
-                    waveAnimations={waveAnimations}
-                    theme={theme}
-                    recordingOpacity={recordingOpacity}
-                    recordingContainerScale={recordingContainerScale}
-                    onStop={stopRecording}
-                  />
-                ) : (
-                  <ChatTextInputRow
-                    composerHeight={composerHeight}
-                    theme={theme}
-                    inputText={inputText}
-                    setInputText={setInputText}
-                    isTranscribing={isTranscribing}
-                    isGenerating={isGenerating}
-                    isNavigating={isNavigating}
-                    handleSendMessage={() => {
-                      void handleSendMessage();
-                    }}
-                    scrollToBottom={scrollToBottom}
-                    startRecording={startRecording}
-                    inputContainerOpacity={inputContainerOpacity}
-                    micButtonScale={micButtonScale}
-                    micButtonRotation={micButtonRotation}
-                  />
-                )}
+                <ChatSidebarPanel onAfterNavigate={focusMainPane} />
               </View>
-            </View>
-          </KeyboardStickyView>
+              <View
+                style={[
+                  styles.mainColumn,
+                  { width: windowWidth },
+                  theme === "dark" && { backgroundColor: "#131313" },
+                ]}
+              >
+                <View style={{ flex: 1 }}>
+                  <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                    <View>
+                      <ChatHeaderBar
+                        title={
+                          title && title !== DEFAULT_HEADER_TITLE
+                            ? title
+                            : userHasAgent
+                              ? agentName || DEFAULT_HEADER_TITLE
+                              : DEFAULT_HEADER_TITLE
+                        }
+                        theme={theme}
+                        isEmpty={!messages || messages.length === 0}
+                        onOpenDrawer={openDrawer}
+                        onNewChat={handleCreateNewChat}
+                        onQuiz={handleHeaderQuiz}
+                        onRequestDelete={handleConfirmDeleteChat}
+                      />
+                    </View>
+                  </TouchableWithoutFeedback>
+
+                  <QuizRefreshModal
+                    visible={showQuizRefreshModal}
+                    onClose={() => setShowQuizRefreshModal(false)}
+                    onSuccess={() => {
+                      setShowQuizRefreshModal(false);
+                      useUserStore.getState().setUserAsync();
+                    }}
+                  />
+
+                  <KeyboardGestureArea
+                    interpolator="ios"
+                    offset={60}
+                    style={styles.chatContent}
+                  >
+                    {!messages || messages.length === 0 ? (
+                      <TouchableWithoutFeedback onPress={dismissKeyboard}>
+                        <View style={styles.emptyStateContainer}>
+                        <View style={styles.emptyImageContainer}>
+                          <Image
+                            source={require("@/assets/images/eddie/Mischievous.png")}
+                            style={styles.emptyImage}
+                          />
+                          <Image
+                            source={
+                              theme === "dark"
+                                ? require("@/assets/images/logo.png")
+                                : require("@/assets/images/LOGO-2.png")
+                            }
+                            style={styles.logo}
+                          />
+                        </View>
+                        </View>
+                      </TouchableWithoutFeedback>
+                    ) : (
+                      <View style={styles.messagesContainer}>
+                        <KeyboardChatLegendList
+                          ref={legendListRef}
+                          data={filteredMessages}
+                          alignItemsAtEnd
+                          anchoredEndSpace={anchoredEndSpace}
+                          estimatedItemSize={140}
+                          extraData={listExtraData}
+                          initialScrollAtEnd
+                          keyboardShouldPersistTaps="handled"
+                          maintainScrollAtEnd={KEYBOARD_MAINTAIN_SCROLL_AT_END}
+                          maintainScrollAtEndThreshold={0.16}
+                          maintainVisibleContentPosition
+                          keyExtractor={keyExtractor}
+                          renderItem={renderMessage}
+                          ListFooterComponent={listFooter}
+                          onScroll={handleScroll}
+                          onScrollBeginDrag={dismissKeyboard}
+                          scrollEventThrottle={16}
+                          showsVerticalScrollIndicator={false}
+                          style={styles.messagesScroll}
+                          contentContainerStyle={styles.messagesScrollContent}
+                          keyboardDismissMode="interactive"
+                          keyboardLiftBehavior="whenAtEnd"
+                          applyWorkaroundForContentInsetHitTestBug
+                        />
+
+                        {showScrollButton && (
+                          <TouchableOpacity
+                            style={styles.scrollToBottomButton}
+                            onPress={flushScrollToBottom}
+                            activeOpacity={0.7}
+                          >
+                            <Image
+                              source={require("@/assets/images/icons/CaretDown.png")}
+                              style={styles.scrollToBottomIcon}
+                            />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </KeyboardGestureArea>
+
+                  <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+                    <View>
+
+
+                      {(!messages || messages.length === 0) &&
+                        !loadingSuggestions &&
+                        suggestions &&
+                        suggestions.length > 0 && (
+                          <View
+                            style={[
+                              styles.suggestionsContainer,
+                              theme === "dark" && {
+                                backgroundColor: "#131313",
+                                borderTopColor: "#2E3033",
+                              },
+                            ]}
+                          >
+                            <ScrollView
+                              horizontal
+                              showsHorizontalScrollIndicator={false}
+                              contentContainerStyle={styles.suggestionsScrollContent}
+                              style={styles.suggestionsScroll}
+                            >
+                              {suggestions.map((suggestion, index) => (
+                                <TouchableOpacity
+                                  key={index}
+                                  style={[
+                                    styles.suggestion,
+                                    theme === "dark" && {
+                                      backgroundColor: "#0D0D0D",
+                                      borderColor: "#2E3033",
+                                    },
+                                  ]}
+                                  onPress={() => handleSuggestionPress(suggestion)}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.suggestionText,
+                                      theme === "dark" && { color: "#E0E0E0" },
+                                    ]}
+                                    numberOfLines={2}
+                                  >
+                                    {suggestion}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                          </View>
+                        )}
+
+                      <View
+                        style={[
+                          styles.inputContainer,
+                          { paddingBottom: Math.max(insets.bottom, 8) },
+                          theme === "dark" && {
+                            borderTopColor: "#2E3033",
+                            backgroundColor: "#131313",
+                          },
+                        ]}
+                      >
+                        {recorderState.isRecording ? (
+                          <ChatRecordingRow
+                            waveAnimations={waveAnimations}
+                            theme={theme}
+                            recordingOpacity={recordingOpacity}
+                            recordingContainerScale={recordingContainerScale}
+                            onStop={stopRecording}
+                          />
+                        ) : (
+                          <ChatTextInputRow
+                            theme={theme}
+                            inputText={inputText}
+                            setInputText={setInputText}
+                            isTranscribing={isTranscribing}
+                            isGenerating={isGenerating}
+                            isNavigating={isNavigating}
+                            handleSendMessage={handleSendMessage}
+                            selectedAttachments={selectedAttachments}
+                            setSelectedAttachments={setSelectedAttachments}
+                            startRecording={startRecording}
+                            inputContainerOpacity={inputContainerOpacity}
+                            micButtonScale={micButtonScale}
+                            micButtonRotation={micButtonRotation}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </KeyboardStickyView>
+                </View>
+              </View>
+            </Animated.View>
+          </GestureDetector>
         </View>
       </View>
     </SafeAreaView>
@@ -839,8 +1096,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F9FBFC",
-    display: "flex",
-    flexDirection: "column",
+  },
+  stackRoot: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  sideBySideRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
+  sidebarColumn: {
+    backgroundColor: "#FFFFFF",
+  },
+  mainColumn: {
+    backgroundColor: "#F9FBFC",
   },
   chatContent: {
     flex: 1,
@@ -912,8 +1182,8 @@ const styles = StyleSheet.create({
   },
   suggestion: {
     paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 20,
+    paddingVertical: Design.spacing.md,
+    borderRadius: 12,
     minWidth: 120,
     maxWidth: 280,
     justifyContent: "center",
@@ -930,7 +1200,7 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontFamily: "Satoshi-Regular",
     color: "#2D3C52",
-    fontSize: 14,
+    fontSize: Design.typography.fontSize.xs,
     textAlign: "center",
     fontWeight: "500",
     lineHeight: 20,
@@ -940,6 +1210,10 @@ const styles = StyleSheet.create({
     minHeight: 0,
     width: "100%",
     position: "relative",
+  },
+  scrollDismissHitTarget: {
+    flex: 1,
+    minHeight: 0,
   },
   messagesScroll: {
     flex: 1,
@@ -951,20 +1225,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   inputContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingBottom: Platform.OS === "ios" ? 8 : 6,
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 3,
     borderTopWidth: 1,
     borderTopColor: "#EDF3FC",
     backgroundColor: "#FFFFFF",
-  },
-  backdrop: {
-    position: "absolute",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
   },
   scrollToBottomButton: {
     position: "absolute",

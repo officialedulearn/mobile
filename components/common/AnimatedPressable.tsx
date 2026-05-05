@@ -28,7 +28,7 @@ interface AnimatedPressableProps extends PressableProps {
  * - Configurable animation type (spring/timing)
  * - Smooth opacity feedback
  */
-export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
+export const AnimatedPressable: React.FC<AnimatedPressableProps> = React.memo(({
   children,
   scale = 0.95,
   hapticFeedback = true,
@@ -49,7 +49,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     };
   });
 
-  const handlePressIn = (event: any) => {
+  const handlePressIn = React.useCallback((event: any) => {
     if (hapticFeedback) {
       const feedbackStyle = {
         light: Haptics.ImpactFeedbackStyle.Light,
@@ -72,9 +72,18 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     opacity.value = withTiming(0.7, { duration: 100 });
 
     onPressIn?.(event);
-  };
+  }, [
+    animationType,
+    duration,
+    hapticFeedback,
+    hapticStyle,
+    onPressIn,
+    opacity,
+    scale,
+    scaleValue,
+  ]);
 
-  const handlePressOut = (event: any) => {
+  const handlePressOut = React.useCallback((event: any) => {
     if (animationType === 'spring') {
       scaleValue.value = withSpring(1, {
         damping: 15,
@@ -87,7 +96,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     opacity.value = withTiming(1, { duration: 150 });
 
     onPressOut?.(event);
-  };
+  }, [animationType, duration, onPressOut, opacity, scaleValue]);
 
   return (
     <AnimatedPressableComponent
@@ -99,7 +108,8 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
       {children}
     </AnimatedPressableComponent>
   );
-};
+});
+AnimatedPressable.displayName = "AnimatedPressable";
 
 export default AnimatedPressable;
 

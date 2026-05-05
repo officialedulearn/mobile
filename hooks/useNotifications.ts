@@ -1,141 +1,203 @@
-import { useEffect, useRef, useState } from 'react';
-import * as Notifications from 'expo-notifications';
-import { NotificationService } from '@/services/notification.service';
-import { NotificationPreferencesService } from '@/services/notificationPreferences.service';
-import { router } from 'expo-router';
-import { UserService } from '@/services/auth.service';
-import useUserStore from '@/core/userState';
+import useUserStore from "@/core/userState";
+import { UserService } from "@/services/auth.service";
+import { NotificationService } from "@/services/notification.service";
+import { NotificationPreferencesService } from "@/services/notificationPreferences.service";
+import { extractPublicQuizIdFromUrl } from "@/utils/quizLinks";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 
 export interface NotificationData {
   screen?: string;
   id?: string;
+  quizId?: string;
+  url?: string;
   [key: string]: any;
 }
 
+const userService = new UserService();
+const PUSH_TOKEN_SYNC_KEY_PREFIX = "expoPushTokenSynced";
+
+const getPushTokenSyncKey = (userId: string) =>
+  `${PUSH_TOKEN_SYNC_KEY_PREFIX}:${userId}`;
+
+const initializeDailyReminderSafely = async () => {
+  try {
+    await NotificationPreferencesService.initializeDailyReminder();
+  } catch (error) {
+    console.error("Failed to initialize daily notification reminder:", error);
+  }
+};
+
 export function useNotifications() {
-  const userService = new UserService();
+  const userId = useUserStore((s) => s.user?.id);
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+  const [notification, setNotification] =
+    useState<Notifications.Notification | null>(null);
 
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
+    notificationListener.current =
+      Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
 
-    const initNotifications = async () => {
-      try {
-        const token = await NotificationService.registerForPushNotificationsAsync();
-        
-        if (!token) {
-          console.warn('Failed to get push notification token');
-          return;
-        }
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content
+          .data as NotificationData;
+        handleNotificationNavigation(data);
+      });
 
-        setExpoPushToken(token);
-        console.log('Expo Push Token obtained:', token);
-
-        const { user } = useUserStore.getState();
-        
-        if (!user || !user.id) {
-          console.warn('User not found in store, will update token later');
-          return;
-        }
-
-        await updateTokenWithRetry(token, user.id);
-
-        await NotificationPreferencesService.initializeDailyReminder();
-      } catch (error) {
-        console.error('Error initializing notifications:', error);
-      }
-    };
-
-    const updateTokenWithRetry = async (token: string, userId: string, retries = 3) => {
-      for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-          console.log(`Updating expo push token (attempt ${attempt}/${retries})`);
-          await userService.updateUserExpoPushToken(token, userId);
-          console.log('✅ Expo Push Token updated successfully on backend');
-          return;
-        } catch (error) {
-          console.error(`❌ Failed to update token (attempt ${attempt}/${retries}):`, error);
-          
-          if (attempt === retries) {
-            console.error('Failed to update push token after all retries');
-            return;
-          }
-            
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-    };
-
-    initNotifications();
-
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
-      setNotification(notification);
-    });
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification response:', response);
-      
-      const data = response.notification.request.content.data as NotificationData;
-      handleNotificationNavigation(data);
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      const data = response?.notification.request.content
+        .data as NotificationData | undefined;
+      if (data) handleNotificationNavigation(data);
     });
 
     return () => {
-      if (notificationListener.current) {
-        notificationListener.current.remove();
-      }
-      if (responseListener.current) {
-        responseListener.current.remove();
-      }
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
     };
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+
+    let cancelled = false;
+
+    const updateTokenWithRetry = async (
+      token: string,
+      retries = 3,
+    ): Promise<boolean> => {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          await userService.updateUserExpoPushToken(token, userId);
+          return true;
+        } catch (error) {
+          console.error(
+            `Failed to update Expo push token (attempt ${attempt}/${retries}):`,
+            error,
+          );
+
+          if (attempt < retries) {
+            await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      }
+
+      console.error("Failed to update Expo push token after all retries");
+      return false;
+    };
+
+    const syncExpoPushToken = async () => {
+      const syncKey = getPushTokenSyncKey(userId);
+
+      try {
+        const syncedToken = await AsyncStorage.getItem(syncKey);
+        if (syncedToken) {
+          if (!cancelled) setExpoPushToken(syncedToken);
+          await initializeDailyReminderSafely();
+          return;
+        }
+
+        const token =
+          await NotificationService.registerForPushNotificationsAsync();
+
+        if (!token) {
+          console.warn("Failed to get Expo push notification token");
+          return;
+        }
+
+        if (!cancelled) setExpoPushToken(token);
+
+        const updated = await updateTokenWithRetry(token);
+        if (!updated) {
+          await AsyncStorage.removeItem(syncKey);
+          return;
+        }
+
+        await AsyncStorage.setItem(syncKey, token);
+        await initializeDailyReminderSafely();
+      } catch (error) {
+        console.error("Error syncing Expo push token:", error);
+      }
+    };
+
+    void syncExpoPushToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const handleNotificationNavigation = (data: NotificationData) => {
+    const quizIdFromUrl = data.url ? extractPublicQuizIdFromUrl(data.url) : null;
+    if (quizIdFromUrl) {
+      router.push({
+        pathname: "/(tabs)/quizzes/[id]",
+        params: { id: quizIdFromUrl },
+      } as any);
+      return;
+    }
+
     if (data.screen) {
       switch (data.screen) {
-        case 'quiz':
-          if (data.id) {
-            router.push(`/quiz?id=${data.id}`);
-          } else {
-            router.push('/quiz');
+        case "publicQuiz":
+        case "quizPublic":
+          if (data.quizId || data.id) {
+            router.push({
+              pathname: "/(tabs)/quizzes/[id]",
+              params: { id: data.quizId ?? data.id },
+            } as any);
           }
           break;
-        case 'leaderboard':
-          router.push('/leaderboard');
+        case "quiz":
+          if (data.quizId || data.id) {
+            router.push({
+              pathname: "/(tabs)/quizzes/[id]",
+              params: { id: data.quizId ?? data.id },
+            } as any);
+          } else {
+            router.push("/quiz");
+          }
           break;
-        case 'profile':
-          router.push('/(tabs)/profile');
+        case "leaderboard":
+          router.push("/leaderboard");
           break;
-        case 'nft':
+        case "profile":
+          router.push("/(tabs)/profile");
+          break;
+        case "nft":
           if (data.id) {
             router.push(`/nft/${data.id}`);
           }
-          break;    
-        case 'roadmap':
+          break;
+        case "roadmap":
           if (data.id) {
             router.push(`/roadmaps/${data.id}`);
           }
           break;
         default:
-          console.log('Unknown screen:', data.screen);
       }
     }
   };
 
   const updateExpoPushToken = async (userId: string) => {
     if (!expoPushToken) {
-      console.warn('No expo push token available to update');
+      console.warn("No Expo push token available to update");
       return;
     }
 
     try {
       await userService.updateUserExpoPushToken(expoPushToken, userId);
-      console.log('✅ Expo push token manually updated for user:', userId);
+      await AsyncStorage.setItem(getPushTokenSyncKey(userId), expoPushToken);
     } catch (error) {
-      console.error('❌ Failed to manually update expo push token:', error);
+      await AsyncStorage.removeItem(getPushTokenSyncKey(userId));
+      console.error("Failed to manually update Expo push token:", error);
       throw error;
     }
   };
@@ -145,9 +207,9 @@ export function useNotifications() {
     notification,
     updateExpoPushToken,
     scheduleNotification: NotificationService.scheduleNotification,
-    cancelAllScheduledNotifications: NotificationService.cancelAllScheduledNotifications,
+    cancelAllScheduledNotifications:
+      NotificationService.cancelAllScheduledNotifications,
     setBadgeCount: NotificationService.setBadgeCount,
     clearBadgeCount: NotificationService.clearBadgeCount,
   };
 }
-

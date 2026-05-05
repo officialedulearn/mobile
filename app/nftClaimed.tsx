@@ -1,13 +1,14 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform, Share } from "react-native";
-import React, { useEffect } from "react";
-import { router, useLocalSearchParams } from "expo-router";
 import useRewardsStore from "@/core/rewardsState";
-import { CardSharingService } from "@/services/cardSharing.service";
 import useUserStore from "@/core/userState";
+import { CardSharingService } from "@/services/cardSharing.service";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type Props = {};
+type Props = Record<string, never>;
 
-const nftClaimed = (props: Props) => {
+const NftClaimed = (_props: Props) => {
   const [reward, setReward] = React.useState<any>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -43,7 +44,6 @@ const nftClaimed = (props: Props) => {
           setReward(rewardData);
         }
       } catch (error) {
-        console.error("Failed to fetch reward:", error);
         setError("Failed to load reward details");
       } finally {
         setIsLoading(false);
@@ -51,22 +51,21 @@ const nftClaimed = (props: Props) => {
     };
 
     loadReward();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rewardId]);
 
   const handleViewNFTs = () => {
-    router.push("/nfts");
+    router.push("/nft");
   };
 
   const handleShareNFT = async () => {
     if (!reward || !reward.imageUrl) {
-      console.error('No NFT image to share');
       return;
     }
   
     try {
       await cardSharingService.shareNFTMintCard(user?.id as string, reward.title || "your badge", reward.imageUrl);
     } catch (error) {
-      console.error('Error sharing NFT:', error);
       alert('Failed to share NFT');
     }
   };
@@ -109,7 +108,7 @@ const nftClaimed = (props: Props) => {
             />
           )}
           <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
-            You've successfully claimed {reward.title || "your badge"}, a collectible badge for
+            You&apos;ve successfully claimed {reward.title || "your badge"}, a collectible badge for
             your achievement. You can now view this in your Claimed Collection.
           </Text>
         </View>
@@ -131,7 +130,7 @@ const nftClaimed = (props: Props) => {
   );
 };
 
-export default nftClaimed;
+export default NftClaimed;
 
 const styles = StyleSheet.create({
   container: {

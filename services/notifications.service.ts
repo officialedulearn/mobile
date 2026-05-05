@@ -1,38 +1,35 @@
-import httpClient from "@/utils/httpClient";
+import { BaseService } from "./base.service";
 
 export interface Notification {
-    id: string;
-    title: string;
-    content: string;
-    userId: string;
-    createdAt: Date;
+  id: string;
+  title: string;
+  content: string;
+  userId: string;
+  createdAt: Date;
 }
 
-export class NotificationsService {
-    async getNotifications(order: 'asc' | 'desc' = 'desc'): Promise<Notification[]> {
-        try {
-            const response = await httpClient.get(`/notifications?order=${order}`);
-            return response.data.notifications;
-        } catch (error) {
-            console.error("Error fetching notifications:", error);
-            throw error;
-        }
-    }
+export class NotificationsService extends BaseService {
+  async getNotifications(order: "asc" | "desc" = "desc"): Promise<Notification[]> {
+    const response = await this.executeRequest<{ notifications: Notification[] }>(
+      this.getClient().get(`/notifications?order=${order}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.notifications ?? [];
+  }
 
-    async deleteNotification(notificationId: string): Promise<{ message: string }> {
-        try {
-            const response = await httpClient.delete(`/notifications/${notificationId}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error deleting notification:", error);
-            throw error;
-        }
-    }
+  async deleteNotification(notificationId: string): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/notifications/${notificationId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
+
+  async clearAllNotifications(): Promise<{ message: string }> {
+    const response = await this.executeRequest(
+      this.getClient().delete(`/notifications`)
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
 }
-
-
-
-
-
-
-

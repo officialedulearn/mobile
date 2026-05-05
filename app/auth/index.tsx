@@ -1,9 +1,15 @@
+import OAuthButtons from "@/components/auth/OAuthButtons";
+import ScreenLoader from "@/components/common/ScreenLoader";
+import useUserStore from "@/core/userState";
+import { UserService } from "@/services/auth.service";
+import { getScreenTopPadding } from "@/utils/design";
 import { supabase } from "@/utils/supabase";
+import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useRef } from "react";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -14,18 +20,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import useUserStore from "@/core/userState";
-import { StatusBar } from "expo-status-bar";
-import { Route } from "expo-router/build/Route";
-import OAuthButtons from "@/components/OAuthButtons";
-import { UserService } from "@/services/auth.service";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Auth = () => {
   const { signUp } = useLocalSearchParams<{ signUp: string }>();
   const theme = useUserStore((state) => state.theme);
   const scrollViewRef = useRef<ScrollView>(null);
-
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
   const [isSignUp, setIsSignUp] = useState(signUp === "1");
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -35,7 +39,6 @@ const Auth = () => {
   });
 
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState(false);
 
   useEffect(() => {
     setIsSignUp(signUp === "1");
@@ -137,7 +140,6 @@ const Auth = () => {
             return;
           }
         } catch (availabilityError) {
-          console.error("Availability check failed:", availabilityError);
           Alert.alert(
             "Login Failed",
             "Unable to verify account. Please try again."
@@ -173,7 +175,6 @@ const Auth = () => {
             return;
           }
         } catch (availabilityError) {
-          console.error("Availability check failed:", availabilityError);
           Alert.alert(
             "Connection Error",
             "Failed to verify availability. Please try again."
@@ -214,14 +215,6 @@ const Auth = () => {
           const { generateUUID } = await import('@/utils/constants');
           const userService = new UserService();
           const userId = generateUUID();
-          
-          console.log("📤 Creating database user first:", {
-            id: userId,
-            name: formData.name,
-            email: formData.email,
-            username: formData.username,
-            referralCode: formData.referralCode
-          });
 
           const newUser = await userService.createUser({
             id: userId,
@@ -237,11 +230,9 @@ const Auth = () => {
             return;
           }
 
-          console.log("✅ Database user created successfully:", newUser);
         } catch (dbError: any) {
-          console.error("❌ Database user creation error:", dbError);
           const errorMessage = dbError?.response?.data?.message || dbError?.message || "Unknown error";
-          
+
           if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
             Alert.alert(
               "Account Already Exists",
@@ -267,11 +258,10 @@ const Auth = () => {
         } else {
           Alert.alert("Authentication Error", error.message);
         }
-        
+
         if (isSignUp) {
-          console.error("⚠️ Supabase Auth user creation failed after database user was created");
           Alert.alert(
-            "Partial Account Created", 
+            "Partial Account Created",
             "Database user created but email verification failed. Please contact support."
           );
         }
@@ -280,14 +270,13 @@ const Auth = () => {
 
       router.push({
         pathname: '/auth/verifyOtp',
-        params: { 
+        params: {
           email: formData.email,
           isLogin: isSignUp ? "0" : "1"
         },
       });
 
     } catch (err) {
-      console.error("Authentication error:", err);
       Alert.alert(
         "Connection Error",
         "Unable to connect to our servers. Please check your internet connection and try again."
@@ -299,7 +288,7 @@ const Auth = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, theme === "dark" && styles.containerDark]}
+      style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
@@ -323,13 +312,13 @@ const Auth = () => {
             ]}
             onPress={() => router.back()}
           >
-            <Image 
+            <Image
               source={
                 theme === "dark"
                   ? require("@/assets/images/icons/dark/CaretLeft.png")
                   : require("@/assets/images/icons/CaretLeft.png")
-              } 
-              style={styles.backButtonIcon} 
+              }
+              style={styles.backButtonIcon}
             />
           </TouchableOpacity>
         </View>
@@ -416,7 +405,7 @@ const Auth = () => {
                   autoCorrect={false}
                   returnKeyType="done"
                   textContentType="username"
-                  
+
                 />
               </View>
             </>
@@ -432,18 +421,18 @@ const Auth = () => {
             disabled={loading || oauthLoading}
           >
             <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
-              {loading ? "Processing..." : isSignUp ? "Sign Up" : "Sign In"}
+              {isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
 
-          
-          {/* <View style={styles.dividerContainer}>
+
+          <View style={styles.dividerContainer}>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
             <Text style={[styles.dividerText, theme === "dark" && styles.dividerTextDark]}>OR</Text>
             <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
           </View>
 
-          <OAuthButtons onLoadingChange={setOauthLoading} /> */}
+          <OAuthButtons onLoadingChange={setOauthLoading} />
           {isSignUp && (
             <View style={styles.privacyContainer}>
               <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>
@@ -473,6 +462,10 @@ const Auth = () => {
           </Text>
         </View>
       </ScrollView>
+      <ScreenLoader
+        visible={loading || oauthLoading}
+        message="Hang tight — this may take a moment."
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -490,7 +483,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 40,
     paddingBottom: 40,
     flexGrow: 1,
   },
@@ -573,6 +565,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     fontSize: 16,
+    fontFamily: "Satoshi-Medium",
   },
   buttonTextDark: {
     color: "#000",

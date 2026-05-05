@@ -1,12 +1,11 @@
 import useUserStore from "@/core/userState";
-import { UserService } from "@/services/auth.service";
 import { supabase } from "@/utils/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { Image, View, useColorScheme } from "react-native";
-import { useNotifications } from "@/hooks/useNotifications";
+import LottieView from "lottie-react-native";
+import { useEffect } from "react";
+import { View, useColorScheme } from "react-native";
 
 export default function Index() {
   const { setTheme, setUserAsync} = useUserStore();
@@ -19,9 +18,9 @@ export default function Index() {
         const theme = await AsyncStorage.getItem("theme");
         theme ? await setTheme(theme as "light" | "dark") : await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
         
-        const supabaseUser = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (supabaseUser.data.user) {
+        if (session?.access_token) {
           await setUserAsync();
           setTimeout(() => {
             router.replace("/(tabs)");
@@ -30,7 +29,6 @@ export default function Index() {
           router.replace("/onboarding");
         }
       } catch (error) {
-        console.error("Authentication error:", error);
         router.replace("/onboarding");
       }
     };
@@ -47,6 +45,7 @@ export default function Index() {
       // clearTimeout(minSplashTimer);
       clearTimeout(initTimer);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -59,7 +58,13 @@ export default function Index() {
       }}
     >
       <StatusBar style="light" />
-      <Image source={require("../assets/images/logo.png")} style={{ width: 280, height: 57 }} />
+      <LottieView
+        autoPlay
+        loop={false}
+        source={require("../assets/animations/edulearn.json")}
+        style={{ width: 280, height: 280 }}
+        speed={2}
+      />
       
       {/* {(showMinSplash || isLoading) && (
         <View style={{ marginTop: 40, alignItems: "center" }}>

@@ -1,25 +1,23 @@
 import useUserStore from "@/core/userState";
+import { getThemedColors, tabIconGift, tabIconHome, tabIconUser } from "@/utils/design";
 import { Tabs, usePathname, useSegments } from "expo-router";
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
-import React, { useEffect, useState, useRef, createContext, useContext } from "react";
-import { Image, StyleSheet, Keyboard, Platform, TouchableOpacity, View, Dimensions } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import * as Haptics from 'expo-haptics';
-import { BlurView } from "expo-blur";
-import Animated, { 
-  useAnimatedStyle, 
-  useSharedValue, 
+import { Image } from "expo-image";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Dimensions, Keyboard, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
-  SlideInRight,
-  SlideInLeft,
-  Easing,
 } from 'react-native-reanimated';
-import * as Device from 'expo-device';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const supportsNativeTabs = Platform.OS === 'ios' && parseInt(Platform.Version as string, 10) >= 26;
 
 const TAB_ORDER = ['index', 'hub', 'chat', 'rewards', 'profile'];
 
@@ -27,7 +25,42 @@ export const SlideTransitionContext = createContext<{
   direction: 'left' | 'right';
 }>({ direction: 'right' });
 
-type Props = {};
+type Props = Record<string, never>;
+
+const BouncyTabBarButton = React.forwardRef<any, any>(({ onPress, ...rest }, ref) => {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const runBounce = () => {
+    scale.value = withSequence(
+      withTiming(0.88, { duration: 100, easing: Easing.out(Easing.quad) }),
+      withTiming(1.06, { duration: 150, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 250, easing: Easing.out(Easing.back(1.2)) }),
+    );
+  };
+
+  return (
+    <Animated.View style={[{ flex: 1 }, animatedStyle]}>
+      <TouchableOpacity
+        ref={ref}
+        {...rest}
+        activeOpacity={1}
+        onPressIn={(e) => {
+          runBounce();
+          rest.onPressIn?.(e);
+        }}
+        onPress={(e) => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress?.(e);
+        }}
+      />
+    </Animated.View>
+  );
+});
+BouncyTabBarButton.displayName = 'BouncyTabBarButton';
 
 const AnimatedTabIcon: React.FC<{
   source: any;
@@ -44,7 +77,7 @@ const AnimatedTabIcon: React.FC<{
       stiffness: 300,
     });
     opacity.value = withTiming(focused ? 1 : 0.8, { duration: 200 });
-  }, [focused]);
+  }, [focused, opacity, scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -58,15 +91,42 @@ const AnimatedTabIcon: React.FC<{
   );
 };
 
+const ChatIconComponent: React.FC<{ focused: boolean }> = ({ focused }) => {
+  const scale = useSharedValue(1);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1.1 : 1, {
+      damping: 15,
+      stiffness: 300,
+    });
+  }, [focused, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <Image
+        source={require("@/assets/images/icons/Button.png")}
+        style={styles.chatIcon}
+      />
+    </Animated.View>
+  );
+};
+
 const TabLayout = (props: Props) => {
   const theme = useUserStore(s => s.theme);
+  const colors = getThemedColors(theme);
   const streakModalVisible = useUserStore(s => s.streakModalVisible);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const segments = useSegments();
   const previousPathRef = useRef(pathname);
-  const isChatTab = segments.includes("chat");
+  const isChatTab = (segments as string[]).includes("chat");
+  const isQuizDetailScreen = /^\/quizzes\/[^/]+$/.test(pathname);
+  const isFlashcardDetailScreen = /^\/flashcards\/[^/]+$/.test(pathname);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
@@ -100,13 +160,13 @@ const TabLayout = (props: Props) => {
   }, []);
   return (
     <SlideTransitionContext.Provider value={{ direction }}>
-      <View style={{ flex: 1, backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' }}>
+      <View style={{ flex: 1, backgroundColor: colors.canvas }}>
       <Tabs
         screenOptions={{
-        tabBarActiveTintColor: theme === "dark" ? '#fff' : '#00FF80',
-        tabBarInactiveTintColor: theme === "dark" ? '#777777' : '#000',
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         animation: 'shift',
-        sceneStyle: { backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' },
+        sceneStyle: { backgroundColor: colors.canvas },
         tabBarStyle: [
           {
             borderTopWidth: 0,
@@ -114,11 +174,11 @@ const TabLayout = (props: Props) => {
             height: 70 + insets.bottom,
             paddingBottom: Math.max(insets.bottom, 15),
             paddingTop: 15,
-            backgroundColor: theme === 'dark' ? '#0d0d0d' : "#F9FBFC",
-            borderColor: theme === 'dark' ? '#0d0d0d' : "#F9FBFC",
+            backgroundColor: colors.tabBarBg,
+            borderColor: colors.tabBarBg,
             borderWidth: 1,
           },
-          (isKeyboardVisible || streakModalVisible || isChatTab) && {
+          (isKeyboardVisible || streakModalVisible || isChatTab || isQuizDetailScreen || isFlashcardDetailScreen) && {
             display: "none",
           },
         ],
@@ -132,15 +192,7 @@ const TabLayout = (props: Props) => {
         tabBarItemStyle: {
           backgroundColor: "transparent",
         },
-        tabBarButton: ({ onPress, ...props }: any) => (
-          <TouchableOpacity
-            {...props}
-            onPress={(e: any) => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onPress?.(e);
-            }}
-          />
-        ),
+        tabBarButton: (props: any) => <BouncyTabBarButton {...props} />,
       }}
     >
       <Tabs.Screen
@@ -150,7 +202,7 @@ const TabLayout = (props: Props) => {
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/home.png") : require("@/assets/images/icons/home.png")}
+              source={tabIconHome(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -178,29 +230,7 @@ const TabLayout = (props: Props) => {
         name="chat"
         options={{
           title: "", 
-          tabBarIcon: ({ focused }) => {
-            const scale = useSharedValue(1);
-            
-            React.useEffect(() => {
-              scale.value = withSpring(focused ? 1.1 : 1, {
-                damping: 15,
-                stiffness: 300,
-              });
-            }, [focused]);
-
-            const animatedStyle = useAnimatedStyle(() => ({
-              transform: [{ scale: scale.value }],
-            }));
-
-            return (
-              <Animated.View style={animatedStyle}>
-                <Image
-                  source={require("@/assets/images/icons/Button.png")}
-                  style={styles.chatIcon}
-                />
-              </Animated.View>
-            );
-          },
+          tabBarIcon: ({ focused }) => <ChatIconComponent focused={focused} />,
         }}
       />
 
@@ -210,7 +240,7 @@ const TabLayout = (props: Props) => {
           title: "Rewards",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/gift.png") : require("@/assets/images/icons/gift.png")}
+              source={tabIconGift(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -225,7 +255,7 @@ const TabLayout = (props: Props) => {
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <AnimatedTabIcon
-              source={theme === 'dark' ? require("@/assets/images/icons/dark/user.png") : require("@/assets/images/icons/user.png")}
+              source={tabIconUser(theme)}
               color={color}
               focused={focused}
               style={styles.tabIcon}
@@ -236,6 +266,12 @@ const TabLayout = (props: Props) => {
 
       <Tabs.Screen
         name="quizzes"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="flashcards"
         options={{
           href: null,
         }}
@@ -251,6 +287,7 @@ export const useSlideTransition = () => useContext(SlideTransitionContext);
 export const SlideTransitionWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { direction } = useSlideTransition();
   const theme = useUserStore(s => s.theme);
+  const colors = getThemedColors(theme);
   
   const slideInRight = () => {
     'worklet';
@@ -290,7 +327,7 @@ export const SlideTransitionWrapper: React.FC<{ children: React.ReactNode }> = (
   
   return (
     <Animated.View 
-      style={{ flex: 1, backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC' }}
+      style={{ flex: 1, backgroundColor: colors.canvas }}
       entering={direction === 'right' ? slideInRight : slideInLeft}
     >
       {children}

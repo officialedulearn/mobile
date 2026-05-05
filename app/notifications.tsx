@@ -1,14 +1,16 @@
-import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
-import React, { useEffect, useState, useCallback, memo } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import BackButton from '@/components/backButton';
-import useUserStore from '@/core/userState';
+import BackButton from '@/components/common/backButton';
 import useNotificationsStore from '@/core/notificationsState';
+import useUserStore from '@/core/userState';
 import type { Notification } from '@/services/notifications.service';
-import * as Haptics from 'expo-haptics';
+import { getScreenTopPadding } from '@/utils/design';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { FlashList, type ListRenderItem } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
+import { StatusBar } from 'expo-status-bar';
+import React, { memo, useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function formatNotificationDate(date: Date | string): string {
   const notificationDate = typeof date === 'string' ? new Date(date) : date;
@@ -42,14 +44,12 @@ const NotificationItem = memo(function NotificationItem({
   theme,
 }: NotificationItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await onDelete(notification.id);
     } catch (error) {
-      console.error('Failed to delete notification:', error);
     } finally {
       setIsDeleting(false);
     }
@@ -124,11 +124,17 @@ const Notifications = () => {
     error,
     fetchNotifications,
     deleteNotification,
+    clearAllNotifications,
     startPolling,
     stopPolling,
     refreshNotifications,
   } = useNotificationsStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
+
 
   useEffect(() => {
     if (user?.id) {
@@ -139,6 +145,7 @@ const Notifications = () => {
     return () => {
       stopPolling();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const handleRefresh = async () => {
@@ -154,6 +161,18 @@ const Notifications = () => {
     },
     [deleteNotification],
   );
+
+  const handleClearAll = useCallback(async () => {
+    if (isClearingAll) return;
+    try {
+      setIsClearingAll(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await clearAllNotifications();
+    } catch (e) {
+    } finally {
+      setIsClearingAll(false);
+    }
+  }, [clearAllNotifications, isClearingAll]);
 
   const renderItem: ListRenderItem<Notification> = useCallback(
     ({ item }) => (
@@ -184,7 +203,7 @@ const Notifications = () => {
           theme === 'dark' && { color: '#B3B3B3' },
         ]}
       >
-        You'll see your notifications here when they arrive
+        You&apos;ll see your notifications here when they arrive
       </Text>
     </View>
     ),
@@ -192,7 +211,7 @@ const Notifications = () => {
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, paddingTop: topPadding, backgroundColor: theme === 'dark' ? '#0D0D0D' : '#F9FBFC' }}>
       <View
         style={[
           styles.container,
@@ -215,7 +234,26 @@ const Notifications = () => {
           >
             Notifications
           </Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 40, alignItems: 'flex-end' }}>
+            {notifications.length > 0 ? (
+              <TouchableOpacity
+                onPress={handleClearAll}
+                disabled={isClearingAll}
+                activeOpacity={0.7}
+                style={{ padding: 8 }}
+              >
+                {isClearingAll ? (
+                  <ActivityIndicator size="small" color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'} />
+                ) : (
+                  <FontAwesome5
+                    name="trash"
+                    size={18}
+                    color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'}
+                  />
+                )}
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
 
         {isLoading && notifications.length === 0 ? (
@@ -302,9 +340,8 @@ const styles = StyleSheet.create({
   topNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
     backgroundColor: '#F9FBFC',
-    marginTop: 50,
     gap: 16,
   },
   topNavText: {

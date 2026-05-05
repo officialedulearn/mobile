@@ -83,6 +83,22 @@ export default {
           iosDisplayInForeground: true,
         },
       ],
+      "expo-quick-actions",
+      [
+        "expo-widgets",
+        {
+          bundleIdentifier: "com.edulearnv2.app.ExpoWidgetsTarget",
+          groupIdentifier: "group.com.edulearnv2.app",
+          widgets: [
+            {
+              name: "EddyXpWidget",
+              displayName: "EduLearn XP",
+              description: "Your XP, streak, and level progress at a glance.",
+              supportedFamilies: ["systemSmall", "systemMedium"],
+            },
+          ],
+        },
+      ],
       [
         "expo-audio",
         {

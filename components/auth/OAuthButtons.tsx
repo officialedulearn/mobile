@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Platform,
-  Alert,
-  ActivityIndicator,
+  View,
 } from 'react-native';
 // import * as AppleAuthentication from 'expo-apple-authentication';
-import * as WebBrowser from 'expo-web-browser';
-import { supabase } from '@/utils/supabase';
-import { router } from 'expo-router';
 import useUserStore from '@/core/userState';
+import { supabase } from '@/utils/supabase';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -33,12 +33,6 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
     const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
     
     try {
-      console.log('Calling OAuth callback with:', { 
-        supabaseUserId: supabaseUser.id, 
-        email: supabaseUser.email,
-        provider 
-      });
-
       const response = await fetch(`${API_URL}/auth/oauth/callback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,23 +47,18 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('OAuth callback failed:', errorText);
         throw new Error('Failed to process OAuth callback');
       }
 
-      const { user: backendUser, isNewUser, needsUsername } = await response.json();
-      console.log('OAuth callback response:', { isNewUser, needsUsername });
+      const { isNewUser, needsUsername } = await response.json();
 
       if (needsUsername) {
-        console.log('User needs username, redirecting to setup...');
         router.push('/auth/setupUsername' as any);
       } else {
-        console.log('User profile complete, setting user state...');
         await useUserStore.getState().setUserAsync();
         router.push('/(tabs)');
       }
     } catch (error) {
-      console.error('OAuth callback error:', error);
       Alert.alert('Error', 'Failed to complete authentication. Please try again.');
     }
   };
@@ -119,7 +108,6 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
         }
       }
     } catch (error: any) {
-      console.error('Google login error:', error);
       Alert.alert('Authentication Error', error.message || 'Failed to sign in with Google');
     } finally {
       setLoading(null);

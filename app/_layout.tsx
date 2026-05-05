@@ -1,26 +1,35 @@
-import { useFonts } from "expo-font";
-import { SplashScreen, Stack, router } from "expo-router";
-import { useEffect } from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StyleSheet, Platform, Linking } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { StatusBar } from "expo-status-bar";
-import useUserStore from "@/core/userState";
-import Purchases, { LOG_LEVEL } from "react-native-purchases";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { ToastProvider } from "@/contexts/ToastContext";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import useUserStore from "@/core/userState";
 import { supabase } from "@/utils/supabase";
+import { extractPublicQuizIdFromUrl } from "@/utils/quizLinks";
+import { syncEddyXpWidgetFromUser } from "@/utils/syncEddyXpWidget";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts } from "expo-font";
+import { SplashScreen, Stack, router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { AppState, Linking, Platform, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import Purchases from "react-native-purchases";
+import { useNotifications } from "@/hooks/useNotifications";
+
+if (Platform.OS === "ios") {
+  require("@/widgets/EddyXpWidget");
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "Satoshi-Regular": require("@/assets/fonts/Satoshi-Regular.otf"),
     "Satoshi-Medium": require("@/assets/fonts/Satoshi-Medium.otf"),
+    "Satoshi-Bold": require("@/assets/fonts/Satoshi-Bold.otf"),
     Urbanist: require("@/assets/fonts/Urbanist-Regular.ttf"),
   });
 
   const { theme, loadTheme, user } = useUserStore();
+  useNotifications();
 
   const getTheme = async () => {
     try {
@@ -33,11 +42,11 @@ export default function RootLayout() {
   };
   useEffect(() => {
     if (Platform.OS !== "ios") return;
-    Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     Purchases.configure({
       apiKey: process.env
         .EXPO_PUBLIC_REVENUECAT_PROJECT_APPLE_API_KEY as string,
     });
+    Purchases.setLogLevel(Purchases.LOG_LEVEL.ERROR);
   }, []);
 
   useEffect(() => {
@@ -60,9 +69,9 @@ export default function RootLayout() {
     async function fetchTheme() {
       await loadTheme();
       const theme = await getTheme();
-      console.log("Current theme:", theme);
     }
     fetchTheme();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -70,6 +79,16 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        syncEddyXpWidgetFromUser(useUserStore.getState().user);
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const handleDeepLink = async (url: string) => {
@@ -82,7 +101,6 @@ export default function RootLayout() {
         } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("OAuth session error:", error);
           return;
         }
 
@@ -114,8 +132,28 @@ export default function RootLayout() {
               router.push("/(tabs)");
             }
           } catch (err) {
-            console.error("OAuth callback error:", err);
+           
           }
+        }
+      } else {
+        const publicQuizId = extractPublicQuizIdFromUrl(url);
+        if (publicQuizId) {
+          router.push({
+            pathname: "/(tabs)/quizzes/[id]",
+            params: { id: publicQuizId },
+          } as any);
+          return;
+        }
+      }
+
+      if (url.includes("quiz/")) {
+        const quizIdMatch = url.match(/quiz\/([^/?]+)/);
+        if (quizIdMatch && quizIdMatch[1]) {
+          const quizId = quizIdMatch[1];
+          router.push({
+            pathname: "/quiz",
+            params: { chatId: quizId },
+          } as any);
         }
       }
     };
@@ -202,6 +240,16 @@ export default function RootLayout() {
 
                 <Stack.Screen
                   name="settings"
+                  options={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                    gestureEnabled: true,
+                    gestureDirection: "horizontal",
+                  }}
+                />
+
+                <Stack.Screen
+                  name="agents"
                   options={{
                     headerShown: false,
                     animation: "slide_from_right",
@@ -315,15 +363,6 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen
-                  name="nfts"
-                  options={{
-                    headerShown: false,
-                    animation: "slide_from_right",
-                    gestureEnabled: true,
-                    gestureDirection: "horizontal",
-                  }}
-                />
-                <Stack.Screen
                   name="connectX"
                   options={{
                     headerShown: false,
@@ -378,7 +417,6 @@ export default function RootLayout() {
                     gestureDirection: "horizontal",
                   }}
                 />
-
                 <Stack.Screen
                   name="notifications"
                   options={{

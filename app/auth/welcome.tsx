@@ -1,12 +1,17 @@
 import useUserStore from "@/core/userState";
+import Design from "@/utils/design";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, useColorScheme} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-type Props = {};
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Presets } from "react-native-pulsar";
+type Props = Record<string, never>;
 
-const Welcome = (props: Props) => {
+const Welcome = (_props: Props) => {
   const { user, theme } = useUserStore();
+
+  Presets.applause()
 
   const handleStartChatting = async () => {
     if(user?.isPremium) {
@@ -138,7 +143,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#00FF80",
-    fontWeight: "700",
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
     textAlign: "center",
     fontSize: 16,
   },

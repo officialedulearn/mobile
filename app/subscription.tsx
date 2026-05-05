@@ -1,23 +1,23 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-  Alert,
-  ActivityIndicator,
-  Platform,
-  Linking,
-} from "react-native";
-import React, { useState, useRef } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import BackButton from "@/components/backButton";
+import BackButton from "@/components/common/backButton";
 import useUserStore from "@/core/userState";
-import { StatusBar } from "expo-status-bar";
+import { WalletService } from "@/services/wallet.service";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { WalletService } from "@/services/wallet.service";
+import { StatusBar } from "expo-status-bar";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const planData = [
@@ -87,7 +87,7 @@ const PlanCard = ({
       </Text>
 
       <Text style={[styles.planDescription, theme === "dark" && styles.planDescriptionDark]}>
-        Upgrade your edulearn Plan to get access to more features that aren't
+        Upgrade your edulearn Plan to get access to more features that aren&apos;t
         available on the free plan
       </Text>
 
@@ -126,7 +126,6 @@ const Subscription = () => {
     const url = 'https://support.edulearn.fun/privacy-policy';
     Linking.openURL(url).catch(err => {
       Alert.alert('Error', 'Unable to open Privacy Policy');
-      console.error('Failed to open URL:', err);
     });
   };
 
@@ -134,7 +133,6 @@ const Subscription = () => {
     const url = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
     Linking.openURL(url).catch(err => {
       Alert.alert('Error', 'Unable to open Terms of Use');
-      console.error('Failed to open URL:', err);
     });
   };
 
@@ -186,7 +184,7 @@ const Subscription = () => {
         ? `https://solscan.io/tx/${signature}` 
         : null;
 
-      const buttons: Array<{ text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }> = [];
+      const buttons: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }[] = [];
       
       if (transactionLink) {
         buttons.push({
@@ -194,7 +192,6 @@ const Subscription = () => {
           style: 'default',
           onPress: () => {
             Linking.openURL(transactionLink).catch(err => {
-              console.error('Failed to open transaction link:', err);
             });
           },
         });
@@ -207,7 +204,6 @@ const Subscription = () => {
           try {
             router.reload();
           } catch (error) {
-            console.error('Error reloading app:', error);
           }
         },
       });
@@ -221,7 +217,6 @@ const Subscription = () => {
         buttons
       );
     } catch (error: any) {
-      console.error('Premium upgrade error:', error);
       
       let errorMessage = 'Failed to process premium upgrade. Please try again.';
       

@@ -1,7 +1,7 @@
-import httpClient from "@/utils/httpClient";
 import axios from "axios";
+import { BaseService } from "./base.service";
 
-const LAMPORTS_PER_SOL = 1000000000
+const LAMPORTS_PER_SOL = 1000000000;
 
 interface BalanceResponse {
   sol: number;
@@ -15,14 +15,14 @@ interface BurnResponse {
 }
 
 interface SwapResponse {
-  response: string; 
+  response: string;
 }
 
 interface ClaimEarningsResponse {
   success: boolean;
   message: string;
   transactions?: Array<{
-    type: 'sol' | 'edln';
+    type: "sol" | "edln";
     amount: number;
     tx: string;
   }>;
@@ -96,138 +96,113 @@ interface PriceResponse {
   EDLN: number;
 }
 
-export class WalletService {
+export class WalletService extends BaseService {
   async getBalance(publicKey: string): Promise<BalanceResponse> {
-    try {
-      const response = await httpClient.get(`/wallet/balance/${publicKey}`);
-      return response.data.balance;
-    } catch (error: any) {
-      console.error('Error fetching balance:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch balance';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().get(`/wallet/balance/${publicKey}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.balance ?? { sol: 0, tokenAccount: 0 };
   }
 
   async getPrices(): Promise<PriceResponse> {
     const SOL_ADDRESS = "So11111111111111111111111111111111111111112";
     const EDLN_ADDRESS = "CFw2KxMpWuxivoowkF8vRCrnMuDeg5VMHRR7zjE7pBLV";
-    
+
     const response = await axios.get(
       `https://lite-api.jup.ag/price/v3?ids=${SOL_ADDRESS},${EDLN_ADDRESS}`
     );
 
     return {
       SOL: response.data[SOL_ADDRESS]?.usdPrice || 0,
-      EDLN: response.data[EDLN_ADDRESS]?.usdPrice || 0
-    }
+      EDLN: response.data[EDLN_ADDRESS]?.usdPrice || 0,
+    };
   }
 
   async upgradeToPremium(userId: string, planAmount: number): Promise<any> {
-    try {
-      const response = await httpClient.post(`/wallet/upgrade/${userId}`, {
-        amount: planAmount
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error upgrading to premium:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to upgrade to premium';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/wallet/upgrade/${userId}`, { amount: planAmount })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async purchaseStreakShield(userId: string): Promise<{ success: boolean; expiresAt: Date }> {
-    try {
-      const response = await httpClient.post(`/subscription/purchase/streak-shield/${userId}`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error purchasing streak shield:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to purchase Streak Shield';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/subscription/purchase/streak-shield/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async purchaseQuizRefresh(userId: string): Promise<{ success: boolean; newLimit: number }> {
-    try {
-      const response = await httpClient.post(`/subscription/purchase/quiz-refresh/${userId}`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error purchasing quiz refresh:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to purchase quiz refresh';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/subscription/purchase/quiz-refresh/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async getUserEarnings(userId: string): Promise<UserEarningsResponse> {
-    try {
-      const response = await httpClient.get(`/wallet/earnings/${userId}`);
-      return response.data.earnings;
-    } catch (error: any) {
-      console.error('Error fetching user earnings:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to fetch earnings';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().get(`/wallet/earnings/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data?.earnings ?? { sol: 0, edln: 0, hasEarnings: false };
   }
 
   async swapSolToEDLN(userId: string, amount: number): Promise<SwapResponse> {
-    try {
-      const response = await httpClient.post('/wallet/swap', { userId, amount });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error swapping SOL to EDLN:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to complete swap transaction';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post("/wallet/swap", { userId, amount })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async burnEDLN(userId: string, amount: number): Promise<BurnResponse> {
-    try {
-      const response = await httpClient.post('/wallet/burn', { userId, amount });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error burning EDLN tokens:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to burn EDLN tokens';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post("/wallet/burn", { userId, amount })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
-  async claimEarnings(userId: string, type: 'sol' | 'edln' | 'all'): Promise<ClaimEarningsResponse> {
-    try {
-      const response = await httpClient.post('/wallet/earnings/claim', { userId, type });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error claiming earnings:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to claim earnings';
-      throw new Error(errorMessage);
-    }
+  async claimEarnings(userId: string, type: "sol" | "edln" | "all"): Promise<ClaimEarningsResponse> {
+    const response = await this.executeRequest(
+      this.getClient().post("/wallet/earnings/claim", { userId, type })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
+
   async decryptPrivateKey(userId: string): Promise<DecryptPrivateKeyResponse> {
-    try {
-      const response = await httpClient.post('/wallet/decrypt-private-key', { userId });
-      return {
-        success: response.data.success,
-        publicKey: response.data.publicKey,
-        privateKey: response.data.privateKey
-      };
-    } catch (error) {
-      console.error('Error decrypting private key:', error);
+    const response = await this.executeRequest(
+      this.getClient().post("/wallet/decrypt-private-key", { userId })
+    );
+    if (response.error) {
       return {
         success: false,
-        error: 'Failed to decrypt private key'
+        error: "Failed to decrypt private key",
       };
     }
+    return {
+      success: response.data?.success ?? false,
+      publicKey: response.data?.publicKey,
+      privateKey: response.data?.privateKey,
+    };
   }
 
   formatSolAmount(lamports: number): string {
     return (lamports / LAMPORTS_PER_SOL).toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 9
+      maximumFractionDigits: 9,
     });
   }
 
   formatTokenAmount(amount: number): string {
     return amount.toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 4
+      maximumFractionDigits: 4,
     });
   }
 
@@ -237,74 +212,48 @@ export class WalletService {
   }
 
   async initiateOnramp(userId: string): Promise<InitiateOnrampResponse> {
-    try {
-      const response = await httpClient.post(`/wallet/onramp/initiate/${userId}`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error initiating onramp:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to initiate onramp';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/wallet/onramp/initiate/${userId}`)
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async verifyOnramp(email: string, otp: string, deviceInfo: DeviceInfo): Promise<VerifyOnrampResponse> {
-    try {
-      const response = await httpClient.post('/wallet/onramp/verify', {
-        email,
-        otp,
-        deviceInfo
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error verifying onramp:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to verify onramp';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post("/wallet/onramp/verify", { email, otp, deviceInfo })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async onrampFiatToEdln(userId: string, amount: number, verifiedResponse: any): Promise<OnrampOrderResponse> {
-    try {
-      const response = await httpClient.post(`/wallet/onramp/create-order/${userId}`, {
-        amount,
-        verifiedResponse
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating onramp order:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create onramp order';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/wallet/onramp/create-order/${userId}`, { amount, verifiedResponse })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async onrampFiatToSol(userId: string, amount: number, verifiedResponse: any): Promise<OnrampOrderResponse> {
-    try {
-      const response = await httpClient.post(`/wallet/onramp/create-order-sol/${userId}`, {
-        amount,
-        verifiedResponse
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error creating SOL onramp order:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to create SOL onramp order';
-      throw new Error(errorMessage);
-    }
+    const response = await this.executeRequest(
+      this.getClient().post(`/wallet/onramp/create-order-sol/${userId}`, { amount, verifiedResponse })
+    );
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async getPendingWebhookEvents(address: string): Promise<PendingWebhookEventsResponse> {
-    try {
-      const response = await httpClient.get(`/wallet/onramp-webhook/pending/${address}`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error fetching pending webhook events:', error);
-      return { events: [], hasUpdates: false };
-    }
+    const response = await this.executeRequest(
+      this.getClient().get(`/wallet/onramp-webhook/pending/${address}`)
+    );
+    if (response.error) return { events: [], hasUpdates: false };
+    return response.data ?? { events: [], hasUpdates: false };
   }
 
   async clearWebhookEvent(address: string, eventId: string): Promise<void> {
-    try {
-      await httpClient.post(`/wallet/onramp-webhook/clear/${address}`, { eventId });
-    } catch (error: any) {
-      console.error('Error clearing webhook event:', error);
-    }
+    await this.executeRequest(
+      this.getClient().post(`/wallet/onramp-webhook/clear/${address}`, { eventId })
+    );
   }
 }

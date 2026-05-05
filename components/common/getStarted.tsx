@@ -1,9 +1,9 @@
-import { View, Text } from 'react-native'
+import { Text, View } from 'react-native'
 import React from 'react'
 
-type Props = {}
+type Props = Record<string, never>
 
-const GetStarted = (props: Props) => {
+const GetStarted = (_props: Props) => {
   return (
     <View>
       <Text>getStarted</Text>

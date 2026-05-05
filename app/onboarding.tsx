@@ -1,18 +1,23 @@
+import useUserStore from "@/core/userState";
+import { getScreenTopPadding } from '@/utils/design';
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import {
-  Image,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
-  Platform,
-  Animated,
 } from "react-native";
-import useUserStore from "@/core/userState";
-import * as Haptics from "expo-haptics"
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type OnBoardingSteps = {
   title: string;
@@ -21,72 +26,89 @@ type OnBoardingSteps = {
   buttonTexts: string[];
 };
 
+const ONBOARDING_STEPS: OnBoardingSteps[] = [
+  {
+    title: "Welcome to EduLearn",
+    subtitle:
+      "Your personal tutor always ready to explain, quiz, and guide you on web3.",
+    illustration: require("@/assets/images/eddie/Mischievous.png"),
+    buttonTexts: ["Get Started"],
+  },
+  {
+    title: "Earn Rewards While You Learn",
+    subtitle:
+      "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
+    illustration: require("@/assets/images/xp.png"),
+    buttonTexts: ["Continue"],
+  },
+  {
+    title: "Track Progress, Compete With Friends",
+    subtitle:
+      "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
+    illustration: require("@/assets/images/compete.png"),
+    buttonTexts: ["Sign In", "Sign Up"],
+  },
+];
+
 const OnBoarding = () => {
   const [stepIndex, setStepIndex] = React.useState(0);
   const theme = useUserStore((state) => state.theme);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const isAnimating = useRef(false);
+  const insets = useSafeAreaInsets();
+  const topPadding = getScreenTopPadding(insets);
+  const { width: windowWidth } = useWindowDimensions();
+  const listRef = useRef<FlatList<OnBoardingSteps>>(null);
 
-  const onBoardingSteps: OnBoardingSteps[] = [
-    {
-      title: "Welcome to EduLearn",
-      subtitle:
-        "Your personal tutor always ready to explain, quiz, and guide you on web3.",
-      illustration: require("@/assets/images/eddie/Mischievous.png"),
-      buttonTexts: ["Get Started"],
+  const goToStep = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= ONBOARDING_STEPS.length || index === stepIndex) return;
+      listRef.current?.scrollToIndex({ index, animated: true });
     },
-    {
-      title: "Earn Rewards While You Learn",
-      subtitle:
-        "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
-      illustration: require("@/assets/images/xp.png"),
-      buttonTexts: ["Continue"],
-    },
-    {
-      title: "Track Progress, Compete With Friends",
-      subtitle:
-        "Collect XP, climb leaderboards, and unlock unique badges as you grow.",
-      illustration: require("@/assets/images/compete.png"),
-      buttonTexts: ["Sign In", "Sign Up"],
-    },
-  ]; 
+    [stepIndex]
+  );
 
-  const animateToStep = (newIndex: number) => {
-    if (isAnimating.current || newIndex === stepIndex) return;
-    
-    isAnimating.current = true;
-    
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      isAnimating.current = false;
-    });
-    
-    setTimeout(() => {
-      setStepIndex(newIndex);
-    }, 150);
-  };
+  const onMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const idx = Math.round(x / windowWidth);
+      const clamped = Math.min(ONBOARDING_STEPS.length - 1, Math.max(0, idx));
+      setStepIndex(clamped);
+    },
+    [windowWidth]
+  );
 
   const goToNextStep = () => {
-    if (stepIndex < onBoardingSteps.length - 1) {
+    if (stepIndex < ONBOARDING_STEPS.length - 1) {
       Haptics.selectionAsync();
-      animateToStep(stepIndex + 1);
+      goToStep(stepIndex + 1);
     }
   };
 
-  const currentStep = onBoardingSteps[stepIndex];
+  const currentStep = ONBOARDING_STEPS[stepIndex];
+
+  const renderStep = useCallback(
+    ({ item }: { item: OnBoardingSteps }) => (
+      <View style={[styles.page, { width: windowWidth }]}>
+        <View style={styles.content}>
+          <Image source={item.illustration} style={styles.illustration} resizeMode="contain" />
+          <Text style={[styles.title, theme === "dark" && styles.titleDark]}>{item.title}</Text>
+          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>{item.subtitle}</Text>
+        </View>
+      </View>
+    ),
+    [theme, windowWidth]
+  );
+
+  const getItemLayout = useCallback(
+    (_: unknown, index: number) => ({
+      length: windowWidth,
+      offset: windowWidth * index,
+      index,
+    }),
+    [windowWidth]
+  );
 
   return (
-    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark]}>
+    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
       <View style={styles.topNavigation}>
@@ -95,7 +117,7 @@ const OnBoarding = () => {
           style={styles.logo}
           resizeMode="contain"
         />
-        {stepIndex < onBoardingSteps.length - 1 && (
+        {stepIndex < ONBOARDING_STEPS.length - 1 && (
           <TouchableOpacity 
             style={[styles.skipButton, theme === "dark" && styles.skipButtonDark]} 
             onPress={() => {
@@ -115,34 +137,31 @@ const OnBoarding = () => {
         )}
       </View>
 
-      <Animated.View 
-        style={[
-          styles.contentContainer, 
-          { 
-            opacity: fadeAnim,
-          }
-        ]}
-      >
-        <View style={styles.content}>
-          <Image
-            source={currentStep.illustration}
-            style={styles.illustration}
-            resizeMode="contain"
-          />
-          <Text style={[styles.title, theme === "dark" && styles.titleDark]}>{currentStep.title}</Text>
-          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>{currentStep.subtitle}</Text>
-        </View>
-      </Animated.View>
+      <FlatList
+        ref={listRef}
+        data={ONBOARDING_STEPS}
+        keyExtractor={(_, index) => String(index)}
+        renderItem={renderStep}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        style={styles.stepsList}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        getItemLayout={getItemLayout}
+        onScrollToIndexFailed={({ index }) => {
+          listRef.current?.scrollToOffset({ offset: index * windowWidth, animated: true });
+        }}
+      />
 
       <View style={[styles.stepsDisplay, theme === "dark" && styles.stepsDisplayDark]}>
-        {onBoardingSteps.map((_, index) => (
-          <TouchableOpacity 
-            key={index} 
+        {ONBOARDING_STEPS.map((_, index) => (
+          <TouchableOpacity
+            key={index}
             onPress={() => {
               Haptics.selectionAsync();
-              animateToStep(index);
+              goToStep(index);
             }}
-            disabled={isAnimating.current}
           >
             <View
               style={[
@@ -157,7 +176,7 @@ const OnBoarding = () => {
       </View>
 
       <View style={styles.footer}>
-        {stepIndex === onBoardingSteps.length - 1 ? (
+        {stepIndex === ONBOARDING_STEPS.length - 1 ? (
           <View style={styles.authButtonsContainer}>
             <TouchableOpacity
               style={[styles.signInButton, theme === "dark" && styles.signInButtonDark]}
@@ -256,9 +275,11 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
   },
-  contentContainer: {
+  stepsList: {
     flex: 1,
-    justifyContent: "space-between",
+  },
+  page: {
+    flex: 1,
     paddingBottom: 20,
   },
   content: {
