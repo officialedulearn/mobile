@@ -1,11 +1,11 @@
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, Text, View, ViewStyle } from "react-native";
 
 interface AvatarProps {
   source?: { uri: string };
   initials?: string;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   backgroundColor?: string;
   style?: ViewStyle;
 }
@@ -13,8 +13,8 @@ interface AvatarProps {
 const Avatar: React.FC<AvatarProps> = ({
   source,
   initials,
-  size = 'medium',
-  backgroundColor = '#00FF80',
+  size = "medium",
+  backgroundColor = "#00FF80",
   style,
 }) => {
   const sizeMap = {
@@ -33,7 +33,7 @@ const Avatar: React.FC<AvatarProps> = ({
           width: dimensions.width,
           height: dimensions.height,
           borderRadius: dimensions.width / 2,
-          backgroundColor: source ? 'transparent' : backgroundColor,
+          backgroundColor: source ? "transparent" : backgroundColor,
         },
         style,
       ]}
@@ -56,7 +56,7 @@ const Avatar: React.FC<AvatarProps> = ({
             },
           ]}
         >
-          {initials?.charAt(0).toUpperCase() || ''}
+          {initials?.charAt(0).toUpperCase() || ""}
         </Text>
       )}
     </View>
@@ -65,13 +65,13 @@ const Avatar: React.FC<AvatarProps> = ({
 
 const styles = StyleSheet.create({
   avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   initials: {
-    fontFamily: 'Satoshi-Bold',
-    fontWeight: '700',
-    color: '#000',
+    fontFamily: "Satoshi-Bold",
+    fontWeight: "700",
+    color: "#000",
   },
 });
 

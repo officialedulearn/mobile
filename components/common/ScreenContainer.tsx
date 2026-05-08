@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, ScrollView, ViewStyle, ScrollViewProps } from 'react-native';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
+import React from "react";
+import { View, ScrollView, ViewStyle, ScrollViewProps } from "react-native";
+import { useScreenStyles } from "@/hooks/useScreenStyles";
 
 interface ScreenContainerProps extends ScrollViewProps {
   children: React.ReactNode;
@@ -18,14 +18,13 @@ export function ScreenContainer({
   const screenStyles = useScreenStyles();
 
   const containerStyle = [screenStyles.container, style];
-  const scrollContentStyle = [screenStyles.scrollContent, contentContainerStyle];
+  const scrollContentStyle = [
+    screenStyles.scrollContent,
+    contentContainerStyle,
+  ];
 
   if (!scrollable) {
-    return (
-      <View style={containerStyle}>
-        {children}
-      </View>
-    );
+    return <View style={containerStyle}>{children}</View>;
   }
 
   return (

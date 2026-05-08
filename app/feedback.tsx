@@ -1,31 +1,60 @@
-import BackButton from '@/components/common/backButton'
-import useUserStore from '@/core/userState'
-import { FeedbackService } from '@/services/feedback.service'
-import { Image } from 'expo-image'
-import { router } from 'expo-router'
-import { StatusBar } from 'expo-status-bar'
-import React, { useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import BackButton from "@/components/common/backButton";
+import useUserStore from "@/core/userState";
+import { FeedbackService } from "@/services/feedback.service";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-type Props = Record<string, never>
+type Props = Record<string, never>;
 
 const Feedback = (_props: Props) => {
-  const user = useUserStore((state) => state.user)
-  const theme = useUserStore((state) => state.theme)
-  const feedbackService = new FeedbackService()
-  
+  const user = useUserStore((state) => state.user);
+  const theme = useUserStore((state) => state.theme);
+  const feedbackService = new FeedbackService();
+
   const [feedbackContent, setFeedbackContent] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<'bug' | 'feature' | 'improvement' | 'other'>('other');
+  const [selectedCategory, setSelectedCategory] = useState<
+    "bug" | "feature" | "improvement" | "other"
+  >("other");
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
   const categories = [
-    { value: 'bug', label: 'Bug Report', icon: require('@/assets/images/icons/warning.png') },
-    { value: 'feature', label: 'Feature Request', icon: require('@/assets/images/icons/notebook.png') },
-    { value: 'improvement', label: 'Improvement', icon: require('@/assets/images/icons/checkmark.png') },
-    { value: 'other', label: 'Other', icon: require('@/assets/images/icons/message.png') },
+    {
+      value: "bug",
+      label: "Bug Report",
+      icon: require("@/assets/images/icons/warning.png"),
+    },
+    {
+      value: "feature",
+      label: "Feature Request",
+      icon: require("@/assets/images/icons/notebook.png"),
+    },
+    {
+      value: "improvement",
+      label: "Improvement",
+      icon: require("@/assets/images/icons/checkmark.png"),
+    },
+    {
+      value: "other",
+      label: "Other",
+      icon: require("@/assets/images/icons/message.png"),
+    },
   ];
 
   const handleSubmitFeedback = async () => {
@@ -49,7 +78,7 @@ const Feedback = (_props: Props) => {
       await feedbackService.submitFeedback(
         user?.id as string,
         feedbackContent.trim(),
-        selectedCategory
+        selectedCategory,
       );
 
       setIsError(false);
@@ -60,10 +89,13 @@ const Feedback = (_props: Props) => {
         setShowModal(false);
         router.back();
       }, 2000);
-
     } catch (error) {
       setIsError(true);
-      setModalMessage(error instanceof Error ? error.message : "Failed to submit feedback. Please try again.");
+      setModalMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit feedback. Please try again.",
+      );
       setShowModal(true);
     } finally {
       setIsLoading(false);
@@ -80,29 +112,53 @@ const Feedback = (_props: Props) => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <BackButton />
-          <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Give Feedback</Text>
+          <Text
+            style={[
+              styles.headerText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Give Feedback
+          </Text>
         </View>
 
         <View style={styles.contentContainer}>
           <View style={styles.content}>
             <View>
-              <Text style={[styles.sectionLabel, theme === "dark" && { color: "#B3B3B3" }]}>Category</Text>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Category
+              </Text>
               <View style={styles.categoryContainer}>
                 {categories.map((category) => (
                   <TouchableOpacity
                     key={category.value}
                     style={[
                       styles.categoryOption,
-                      selectedCategory === category.value && styles.categoryOptionSelected,
-                      theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
-                      theme === "dark" && selectedCategory === category.value && { borderColor: "#00FF80" },
+                      selectedCategory === category.value &&
+                        styles.categoryOptionSelected,
+                      theme === "dark" && {
+                        backgroundColor: "#131313",
+                        borderColor: "#2E3033",
+                      },
+                      theme === "dark" &&
+                        selectedCategory === category.value && {
+                          borderColor: "#00FF80",
+                        },
                     ]}
                     onPress={() => setSelectedCategory(category.value as any)}
                   >
@@ -110,15 +166,23 @@ const Feedback = (_props: Props) => {
                       source={category.icon}
                       style={[
                         styles.categoryIcon,
-                        selectedCategory === category.value && { tintColor: theme === "dark" ? "#00FF80" : "#000" }
+                        selectedCategory === category.value && {
+                          tintColor: theme === "dark" ? "#00FF80" : "#000",
+                        },
                       ]}
                     />
-                    <Text style={[
-                      styles.categoryText,
-                      selectedCategory === category.value && styles.categoryTextSelected,
-                      theme === "dark" && { color: "#E0E0E0" },
-                      theme === "dark" && selectedCategory === category.value && { color: "#00FF80" }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        selectedCategory === category.value &&
+                          styles.categoryTextSelected,
+                        theme === "dark" && { color: "#E0E0E0" },
+                        theme === "dark" &&
+                          selectedCategory === category.value && {
+                            color: "#00FF80",
+                          },
+                      ]}
+                    >
                       {category.label}
                     </Text>
                   </TouchableOpacity>
@@ -127,12 +191,32 @@ const Feedback = (_props: Props) => {
             </View>
 
             <View>
-              <Text style={[styles.sectionLabel, theme === "dark" && { color: "#B3B3B3" }]}>Your Feedback</Text>
-              <View style={[styles.textAreaContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Your Feedback
+              </Text>
+              <View
+                style={[
+                  styles.textAreaContainer,
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+              >
                 <TextInput
-                  style={[styles.textArea, theme === "dark" && { color: "#E0E0E0" }]}
+                  style={[
+                    styles.textArea,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
                   placeholder="Tell us what you think... (minimum 10 characters)"
-                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+                  placeholderTextColor={
+                    theme === "dark" ? "#B3B3B3" : "#61728C"
+                  }
                   value={feedbackContent}
                   onChangeText={setFeedbackContent}
                   multiline
@@ -142,29 +226,54 @@ const Feedback = (_props: Props) => {
                 />
               </View>
               <View style={styles.charCountContainer}>
-                <Text style={[
-                  styles.charCount,
-                  theme === "dark" && { color: "#B3B3B3" },
-                  charCount < minChars && { color: "#FF6B6B" },
-                  charCount >= minChars && charCount <= maxChars && theme === "dark" && { color: "#00FF80" },
-                  charCount >= minChars && charCount <= maxChars && theme !== "dark" && { color: "#00AA55" },
-                ]}>
-                  {charCount}/{maxChars} characters {charCount < minChars && `(${minChars - charCount} more needed)`}
+                <Text
+                  style={[
+                    styles.charCount,
+                    theme === "dark" && { color: "#B3B3B3" },
+                    charCount < minChars && { color: "#FF6B6B" },
+                    charCount >= minChars &&
+                      charCount <= maxChars &&
+                      theme === "dark" && { color: "#00FF80" },
+                    charCount >= minChars &&
+                      charCount <= maxChars &&
+                      theme !== "dark" && { color: "#00AA55" },
+                  ]}
+                >
+                  {charCount}/{maxChars} characters{" "}
+                  {charCount < minChars &&
+                    `(${minChars - charCount} more needed)`}
                 </Text>
               </View>
             </View>
           </View>
-          
+
           <View style={styles.buttonsContainer}>
             <View style={styles.buttons}>
               <TouchableOpacity
-                style={[styles.cancelButton, theme === "dark" && {borderColor: "#00FF80", backgroundColor: "#0D0D0D" }]}
+                style={[
+                  styles.cancelButton,
+                  theme === "dark" && {
+                    borderColor: "#00FF80",
+                    backgroundColor: "#0D0D0D",
+                  },
+                ]}
                 onPress={handleCancel}
               >
                 <View style={styles.buttonContent}>
-                  <Text style={[styles.cancelButtonText, theme === "dark" && { color: "#00FF80" }]}>Cancel</Text>
+                  <Text
+                    style={[
+                      styles.cancelButtonText,
+                      theme === "dark" && { color: "#00FF80" },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
                   <Image
-                    source={theme === "dark" ? require('@/assets/images/icons/dark/cancel.png') : require('@/assets/images/icons/cancel.png')}
+                    source={
+                      theme === "dark"
+                        ? require("@/assets/images/icons/dark/cancel.png")
+                        : require("@/assets/images/icons/cancel.png")
+                    }
                     style={{ width: 20, height: 20 }}
                   />
                 </View>
@@ -174,18 +283,32 @@ const Feedback = (_props: Props) => {
                 style={[
                   styles.submitButton,
                   theme === "dark" && { backgroundColor: "#00FF80" },
-                  (isLoading || charCount < minChars) && styles.disabledButton
+                  (isLoading || charCount < minChars) && styles.disabledButton,
                 ]}
                 onPress={handleSubmitFeedback}
                 disabled={isLoading || charCount < minChars}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color={theme === "dark" ? "#000" : "#00FF80"} />
+                  <ActivityIndicator
+                    size="small"
+                    color={theme === "dark" ? "#000" : "#00FF80"}
+                  />
                 ) : (
                   <View style={styles.buttonContent}>
-                    <Text style={[styles.submitButtonText, theme === "dark" && { color: "#000" }]}>Submit</Text>
+                    <Text
+                      style={[
+                        styles.submitButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Submit
+                    </Text>
                     <Image
-                      source={theme === "dark" ? require('@/assets/images/icons/dark/checkmark.png') : require('@/assets/images/icons/checkmark.png')}
+                      source={
+                        theme === "dark"
+                          ? require("@/assets/images/icons/dark/checkmark.png")
+                          : require("@/assets/images/icons/checkmark.png")
+                      }
                       style={{ width: 20, height: 20 }}
                     />
                   </View>
@@ -203,35 +326,58 @@ const Feedback = (_props: Props) => {
         onRequestClose={() => setShowModal(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={[
-            styles.modalContent, 
-            isError ? 
-              (theme === "dark" ? { backgroundColor: "#2E1A1A", borderColor: "#FF6B6B" } : styles.errorModal) : 
-              (theme === "dark" ? { backgroundColor: "#1A2E1A", borderColor: "#00FF80" } : styles.successModal)
-          ]}>
-            <Text style={[styles.modalText, theme === "dark" && { color: "#E0E0E0" }]}>{modalMessage}</Text>
+          <View
+            style={[
+              styles.modalContent,
+              isError
+                ? theme === "dark"
+                  ? { backgroundColor: "#2E1A1A", borderColor: "#FF6B6B" }
+                  : styles.errorModal
+                : theme === "dark"
+                  ? { backgroundColor: "#1A2E1A", borderColor: "#00FF80" }
+                  : styles.successModal,
+            ]}
+          >
+            <Text
+              style={[
+                styles.modalText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              {modalMessage}
+            </Text>
             {!isError && (
               <Image
-                source={require('@/assets/images/icons/checkmark.png')}
+                source={require("@/assets/images/icons/checkmark.png")}
                 style={{ width: 20, height: 20, marginTop: 10 }}
               />
             )}
             {isError && (
-              <TouchableOpacity 
-                style={[styles.closeButton, theme === "dark" && { backgroundColor: "#FF6B6B" }]}
+              <TouchableOpacity
+                style={[
+                  styles.closeButton,
+                  theme === "dark" && { backgroundColor: "#FF6B6B" },
+                ]}
                 onPress={() => setShowModal(false)}
               >
-                <Text style={[styles.closeButtonText, theme === "dark" && { color: "#000" }]}>Close</Text>
+                <Text
+                  style={[
+                    styles.closeButtonText,
+                    theme === "dark" && { color: "#000" },
+                  ]}
+                >
+                  Close
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
       </Modal>
     </KeyboardAvoidingView>
-  )
-}
+  );
+};
 
-export default Feedback
+export default Feedback;
 
 const styles = StyleSheet.create({
   container: {
@@ -243,41 +389,41 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 20,
     lineHeight: 24,
-    fontWeight: '500',
+    fontWeight: "500",
     fontFamily: "Satoshi-Regular",
-    color: "#2D3C52"
+    color: "#2D3C52",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
     marginBottom: 24,
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingBottom: 20,
   },
   content: {
     gap: 24,
   },
   sectionLabel: {
-    color: "#61728C", 
+    color: "#61728C",
     fontFamily: "Satoshi-Regular",
-    fontSize: 14, 
+    fontSize: 14,
     fontStyle: "normal",
     fontWeight: "500",
-    lineHeight: 24, 
+    lineHeight: 24,
     marginBottom: 12,
   },
   categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   categoryOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 14,
     backgroundColor: "#FFFFFF",
@@ -321,7 +467,7 @@ const styles = StyleSheet.create({
   },
   charCountContainer: {
     marginTop: 8,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   charCount: {
     fontSize: 12,
@@ -329,14 +475,14 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi-Regular",
   },
   buttonsContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 24,
   },
   buttons: {
-    flexDirection: 'row',
-    gap: 16, 
-    width: '100%',
+    flexDirection: "row",
+    gap: 16,
+    width: "100%",
   },
   cancelButton: {
     backgroundColor: "#fff",
@@ -346,8 +492,8 @@ const styles = StyleSheet.create({
     height: 48,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
   },
   cancelButtonText: {
@@ -355,7 +501,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontSize: 14,
     fontFamily: "Satoshi-Regular",
-    lineHeight: 24
+    lineHeight: 24,
   },
   submitButton: {
     borderRadius: 16,
@@ -363,8 +509,8 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 16,
     backgroundColor: "#000",
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
   },
   submitButtonText: {
@@ -378,35 +524,35 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
     borderRadius: 16,
     padding: 20,
-    alignItems: 'center',
-    width: '80%',
+    alignItems: "center",
+    width: "80%",
   },
   successModal: {
-    backgroundColor: '#F0FFF4',
-    borderColor: '#00FF80',
+    backgroundColor: "#F0FFF4",
+    borderColor: "#00FF80",
     borderWidth: 1,
   },
   errorModal: {
-    backgroundColor: '#FFF0F0',
-    borderColor: '#FF0000',
+    backgroundColor: "#FFF0F0",
+    borderColor: "#FF0000",
     borderWidth: 1,
   },
   modalText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 10,
     fontFamily: "Satoshi-Regular",
   },
@@ -414,12 +560,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#FF0000',
+    backgroundColor: "#FF0000",
     borderRadius: 8,
   },
   closeButtonText: {
-    color: 'white',
+    color: "white",
     fontFamily: "Satoshi-Regular",
-    fontWeight: '500',
+    fontWeight: "500",
   },
-})
+});

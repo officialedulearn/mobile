@@ -65,7 +65,6 @@ const useRewardsStore = create<RewardsState>((set, get) => ({
         return { allRewards, rewardById, isLoading: false };
       });
     } catch (error) {
-      console.error("Failed to fetch all rewards:", error);
       set({
         isLoading: false,
         error:
@@ -79,15 +78,19 @@ const useRewardsStore = create<RewardsState>((set, get) => ({
       set({ isLoading: true, error: null });
       const userRewards = await rewardsService.getUserRewards(userId);
       set((state) => ({
-        userRewardsByUserId: { ...state.userRewardsByUserId, [userId]: userRewards },
+        userRewardsByUserId: {
+          ...state.userRewardsByUserId,
+          [userId]: userRewards,
+        },
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Failed to fetch user rewards:", error);
       set({
         isLoading: false,
         error:
-          error instanceof Error ? error.message : "Failed to fetch user rewards",
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch user rewards",
       });
     }
   },
@@ -100,7 +103,6 @@ const useRewardsStore = create<RewardsState>((set, get) => ({
       }));
       return reward;
     } catch (error) {
-      console.error("Failed to fetch reward by ID:", error);
       return undefined;
     }
   },
@@ -114,7 +116,6 @@ const useRewardsStore = create<RewardsState>((set, get) => ({
       }));
       return status;
     } catch (error) {
-      console.error("Failed to fetch claim status:", error);
       throw error;
     }
   },

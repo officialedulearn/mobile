@@ -1,8 +1,8 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Design } from "@/utils/design";
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface RewardCardProps {
   title: string;
@@ -32,26 +32,20 @@ export function RewardCard({
           borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
-        }
+        },
       ]}
       activeOpacity={0.8}
       onPress={onPress}
     >
-      <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+      <View style={[styles.iconContainer, { backgroundColor: color + "20" }]}>
         <Image source={icon} style={{ width: 32, height: 32 }} />
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={[
-          styles.title,
-          { color: colors.textPrimary }
-        ]}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>
           {title}
         </Text>
-        <Text style={[
-          styles.description,
-          { color: colors.textSecondary }
-        ]}>
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
           {description}
         </Text>
       </View>
@@ -67,11 +61,11 @@ export function RewardCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Design.spacing.md,
     marginBottom: Design.spacing.md,
   },
@@ -79,8 +73,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontFamily: Design.typography.fontFamily.satoshi.medium,
@@ -97,11 +91,11 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   levelText: {
-    color: 'white',
+    color: "white",
     fontFamily: Design.typography.fontFamily.satoshi.medium,
     fontSize: Design.typography.fontSize.sm,
     fontWeight: Design.typography.fontWeight.semibold,

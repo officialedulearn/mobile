@@ -41,7 +41,9 @@ const groupChatsByRecency = (chats: Chat[]) => {
       new Date(chat.createdAt) < sevenDaysAgo &&
       new Date(chat.createdAt) >= thirtyDaysAgo,
   );
-  const older = chats.filter((chat) => new Date(chat.createdAt) < thirtyDaysAgo);
+  const older = chats.filter(
+    (chat) => new Date(chat.createdAt) < thirtyDaysAgo,
+  );
 
   return { recent, lastWeek, lastMonth, older };
 };
@@ -178,29 +180,30 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
     onAfterNavigate();
   }, [isNavigating, createNewChat, onAfterNavigate]);
 
-  const renderChatSection = React.useCallback((title: string, sectionChats: Chat[]) => {
-    if (sectionChats.length === 0) return null;
+  const renderChatSection = React.useCallback(
+    (title: string, sectionChats: Chat[]) => {
+      if (sectionChats.length === 0) return null;
 
-    return (
-      <View style={styles.chatSection} key={title}>
-        <Text
-          style={[styles.sectionHeader, isDark && styles.textDark]}
-        >
-          {title}
-        </Text>
-        {sectionChats.map((chat) => (
-          <ChatListItem
-            key={chat.id}
-            id={chat.id}
-            title={chat.title}
-            isDark={isDark}
-            isNavigating={isNavigating}
-            onPress={goToChat}
-          />
-        ))}
-      </View>
-    );
-  }, [goToChat, isDark, isNavigating]);
+      return (
+        <View style={styles.chatSection} key={title}>
+          <Text style={[styles.sectionHeader, isDark && styles.textDark]}>
+            {title}
+          </Text>
+          {sectionChats.map((chat) => (
+            <ChatListItem
+              key={chat.id}
+              id={chat.id}
+              title={chat.title}
+              isDark={isDark}
+              isNavigating={isNavigating}
+              onPress={goToChat}
+            />
+          ))}
+        </View>
+      );
+    },
+    [goToChat, isDark, isNavigating],
+  );
 
   const renderContent = () => {
     if (isLoading) {
@@ -210,9 +213,7 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
             size="large"
             color={isDark ? "#00FF80" : "#2D3C52"}
           />
-          <Text
-            style={[styles.loadingText, isDark && styles.textDark]}
-          >
+          <Text style={[styles.loadingText, isDark && styles.textDark]}>
             Loading chats...
           </Text>
         </View>
@@ -222,16 +223,11 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
     if (chats.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <Text
-            style={[styles.emptyStateText, isDark && styles.textDark]}
-          >
+          <Text style={[styles.emptyStateText, isDark && styles.textDark]}>
             No chat history yet
           </Text>
           <Text
-            style={[
-              styles.emptyStateSubtext,
-              isDark && styles.subtextDark,
-            ]}
+            style={[styles.emptyStateSubtext, isDark && styles.subtextDark]}
           >
             Tap the pen above to start a chat.
           </Text>
@@ -242,16 +238,11 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
     if (filteredChats.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <Text
-            style={[styles.emptyStateText, isDark && styles.textDark]}
-          >
+          <Text style={[styles.emptyStateText, isDark && styles.textDark]}>
             No chats found
           </Text>
           <Text
-            style={[
-              styles.emptyStateSubtext,
-              isDark && styles.subtextDark,
-            ]}
+            style={[styles.emptyStateSubtext, isDark && styles.subtextDark]}
           >
             Try adjusting your search terms
           </Text>
@@ -274,17 +265,12 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
   };
 
   return (
-    <View
-      style={[styles.root, isDark && styles.rootDark]}
-    >
+    <View style={[styles.root, isDark && styles.rootDark]}>
       <View style={[styles.header, isDark && styles.headerDark]}>
         <TextInput
           placeholder="Search chats..."
           placeholderTextColor={isDark ? "#B3B3B3" : "#61728C"}
-          style={[
-            styles.searchInput,
-            isDark && styles.searchInputDark,
-          ]}
+          style={[styles.searchInput, isDark && styles.searchInputDark]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           editable={!isNavigating}
@@ -317,30 +303,16 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.body}>
-        {renderContent()}
-      </View>
+      <View style={styles.body}>{renderContent()}</View>
 
-      <View
-        style={[
-          styles.profileFooter,
-          isDark && styles.profileFooterDark,
-        ]}
-      >
+      <View style={[styles.profileFooter, isDark && styles.profileFooterDark]}>
         <Avatar
           size="small"
           initials={avatarInitials}
-          source={
-            profilePictureURL
-              ? { uri: profilePictureURL }
-              : undefined
-          }
+          source={profilePictureURL ? { uri: profilePictureURL } : undefined}
         />
         <Text
-          style={[
-            styles.profileName,
-            isDark && styles.textDark,
-          ]}
+          style={[styles.profileName, isDark && styles.textDark]}
           numberOfLines={1}
         >
           {displayName}
@@ -349,10 +321,7 @@ const ChatSidebarPanel = React.memo(({ onAfterNavigate }: Props) => {
           accessibilityLabel="Go to Home"
           accessibilityRole="button"
           onPress={handleGoHome}
-          style={[
-            styles.homeButton,
-            isDark && styles.homeButtonDark,
-          ]}
+          style={[styles.homeButton, isDark && styles.homeButtonDark]}
           activeOpacity={0.85}
         >
           <Image

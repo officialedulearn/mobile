@@ -36,39 +36,54 @@ const trialFeatures = [
 const FreeTrialIntro = () => {
   const { theme } = useUserStore();
   const [hasTrialEligibility, setHasTrialEligibility] = useState(false);
-  const [trialText, setTrialText] = useState('');
+  const [trialText, setTrialText] = useState("");
 
   useEffect(() => {
     const checkTrialEligibility = async () => {
       try {
-        const productIds = Platform.OS === 'android' 
-          ? ['premium_monthly', 'premium_annual']
-          : ['rc_499_edulearn', 'rc_4999_edulearn'];
-        
+        const productIds =
+          Platform.OS === "android"
+            ? ["premium_monthly", "premium_annual"]
+            : ["rc_499_edulearn", "rc_4999_edulearn"];
+
         const products = await Purchases.getProducts(productIds);
-        
+
         if (products.length > 0) {
-          const monthlyProduct = products.find(p => 
-            p.identifier === 'rc_499_edulearn' || p.identifier === 'premium_monthly'
+          const monthlyProduct = products.find(
+            (p) =>
+              p.identifier === "rc_499_edulearn" ||
+              p.identifier === "premium_monthly",
           );
-          
+
           if (monthlyProduct) {
             const intro = monthlyProduct.introPrice;
-            
-            if (intro && intro.periodNumberOfUnits === 3 && intro.periodUnit === 'DAY') {
+
+            if (
+              intro &&
+              intro.periodNumberOfUnits === 3 &&
+              intro.periodUnit === "DAY"
+            ) {
               setHasTrialEligibility(true);
-              setTrialText(`3-day free trial, then ${monthlyProduct.priceString}/month`);
+              setTrialText(
+                `3-day free trial, then ${monthlyProduct.priceString}/month`,
+              );
             } else if (intro) {
-              const periodText = intro.periodUnit === 'DAY' ? 'day' : 
-                                 intro.periodUnit === 'WEEK' ? 'week' : 
-                                 intro.periodUnit === 'MONTH' ? 'month' : 'period';
+              const periodText =
+                intro.periodUnit === "DAY"
+                  ? "day"
+                  : intro.periodUnit === "WEEK"
+                    ? "week"
+                    : intro.periodUnit === "MONTH"
+                      ? "month"
+                      : "period";
               setHasTrialEligibility(true);
-              setTrialText(`${intro.periodNumberOfUnits}-${periodText} free trial, then ${monthlyProduct.priceString}/month`);
+              setTrialText(
+                `${intro.periodNumberOfUnits}-${periodText} free trial, then ${monthlyProduct.priceString}/month`,
+              );
             }
           }
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     };
     checkTrialEligibility();
   }, []);
@@ -80,7 +95,7 @@ const FreeTrialIntro = () => {
   const handleSkip = async () => {
     const previousScreen = await AsyncStorage.getItem("previousScreen");
     await AsyncStorage.removeItem("previousScreen");
-    
+
     if (previousScreen === "welcome") {
       router.push("/(tabs)");
     } else {
@@ -91,73 +106,107 @@ const FreeTrialIntro = () => {
   return (
     <View style={[styles.container, theme === "dark" && styles.containerDark]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      
+
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={styles.skipButton}
-        >
-          <Image 
-            source={theme === "dark" 
-              ? require("@/assets/images/icons/dark/cancel.png")
-              : require("@/assets/images/icons/cancel.png")
-            } 
-            style={styles.skipIcon} 
+        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+          <Image
+            source={
+              theme === "dark"
+                ? require("@/assets/images/icons/dark/cancel.png")
+                : require("@/assets/images/icons/cancel.png")
+            }
+            style={styles.skipIcon}
           />
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroSection}>
-          <Text style={[styles.heroTitle, theme === "dark" && styles.heroTitleDark]}>
+          <Text
+            style={[styles.heroTitle, theme === "dark" && styles.heroTitleDark]}
+          >
             Unlock the Full Eddy Experience
           </Text>
         </View>
 
         <View style={styles.featuresContainer}>
           {trialFeatures.map((feature, index) => (
-            <View 
-              key={index} 
-              style={[styles.featureCard, theme === "dark" && styles.featureCardDark]}
+            <View
+              key={index}
+              style={[
+                styles.featureCard,
+                theme === "dark" && styles.featureCardDark,
+              ]}
             >
-              <View style={[styles.featureIconContainer, theme === "dark" && styles.featureIconContainerDark]}>
+              <View
+                style={[
+                  styles.featureIconContainer,
+                  theme === "dark" && styles.featureIconContainerDark,
+                ]}
+              >
                 <Text style={styles.featureIcon}>{feature.icon}</Text>
               </View>
               <View style={styles.featureContent}>
-                <Text style={[styles.featureTitle, theme === "dark" && styles.featureTitleDark]}>
+                <Text
+                  style={[
+                    styles.featureTitle,
+                    theme === "dark" && styles.featureTitleDark,
+                  ]}
+                >
                   {feature.title}
                 </Text>
-                
               </View>
             </View>
           ))}
         </View>
-
       </ScrollView>
 
       <View style={styles.bottomContainer}>
         {hasTrialEligibility && (
           <View style={styles.trialBannerContainer}>
-            <View style={[styles.trialBanner, theme === "dark" && styles.trialBannerDark]}>
-              <Text style={[styles.trialBannerText, theme === "dark" && styles.trialBannerTextDark]}>
+            <View
+              style={[
+                styles.trialBanner,
+                theme === "dark" && styles.trialBannerDark,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.trialBannerText,
+                  theme === "dark" && styles.trialBannerTextDark,
+                ]}
+              >
                 🎉 {trialText}
               </Text>
-              <Text style={[styles.trialBannerSubtext, theme === "dark" && styles.trialBannerSubtextDark]}>
+              <Text
+                style={[
+                  styles.trialBannerSubtext,
+                  theme === "dark" && styles.trialBannerSubtextDark,
+                ]}
+              >
                 Cancel anytime before trial ends
               </Text>
             </View>
           </View>
         )}
 
-        <TouchableOpacity 
-          style={[styles.startButton, theme === "dark" && styles.startButtonDark]}
+        <TouchableOpacity
+          style={[
+            styles.startButton,
+            theme === "dark" && styles.startButtonDark,
+          ]}
           onPress={handleLearnMore}
         >
-          <Text style={[styles.startButtonText, theme === "dark" && styles.startButtonTextDark]}>
+          <Text
+            style={[
+              styles.startButtonText,
+              theme === "dark" && styles.startButtonTextDark,
+            ]}
+          >
             Learn More
           </Text>
         </TouchableOpacity>
@@ -224,9 +273,7 @@ const styles = StyleSheet.create({
   heroSubtitleDark: {
     color: "#B3B3B3",
   },
-  featuresContainer: {
-    
-  },
+  featuresContainer: {},
   featureCard: {
     paddingVertical: 10,
     paddingHorizontal: 16,
@@ -385,4 +432,3 @@ const styles = StyleSheet.create({
     color: "#B3B3B3",
   },
 });
-

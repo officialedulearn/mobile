@@ -1,18 +1,27 @@
-import useCommunityStore from '@/core/communityState';
-import useUserStore from '@/core/userState';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
-import { useTheme } from '@/hooks/useTheme';
-import type { UserCommunity } from '@/interface/Community';
-import { Design } from '@/utils/design';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { FlashList } from '@shopify/flash-list';
+import useCommunityStore from "@/core/communityState";
+import useUserStore from "@/core/userState";
+import { useScreenStyles } from "@/hooks/useScreenStyles";
+import { useTheme } from "@/hooks/useTheme";
+import type { UserCommunity } from "@/interface/Community";
+import { Design } from "@/utils/design";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { FlashList } from "@shopify/flash-list";
 import { Image } from "expo-image";
-import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const Hub = () => {
-  const [activeTab, setActiveTab] = useState<'communities' | 'trending'>('communities');
+  const [activeTab, setActiveTab] = useState<"communities" | "trending">(
+    "communities",
+  );
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
   const screenStyles = useScreenStyles();
@@ -48,43 +57,50 @@ const Hub = () => {
   const renderCommunityItem = useCallback(
     ({ item: community }: { item: UserCommunity }) => (
       <TouchableOpacity
-        onPress={() => router.push({ pathname: '/room/[id]', params: { id: community.id } })}
+        onPress={() =>
+          router.push({ pathname: "/room/[id]", params: { id: community.id } })
+        }
         style={styles.communityCardWrapper}
       >
-        <View style={[
-          styles.communityCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.borderMuted,
-          }
-        ]}>
+        <View
+          style={[
+            styles.communityCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.borderMuted,
+            },
+          ]}
+        >
           <Image
             source={{
-              uri: community.imageUrl || 'https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png',
+              uri:
+                community.imageUrl ||
+                "https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png",
             }}
             style={styles.communityCardImage}
           />
 
           <View style={styles.communityCardContent}>
-            <Text style={[
-              styles.communityCardTitle,
-              { color: colors.textPrimary }
-            ]}>
+            <Text
+              style={[styles.communityCardTitle, { color: colors.textPrimary }]}
+            >
               {community.title}
             </Text>
-            <Text style={[
+            {/* <Text style={[
               styles.communityLastMessage,
               { color: colors.textSecondary }
             ]}>
               {communityDetails[community.id]?.description || 'Join this community'}
-            </Text>
-            <Text style={[
-              styles.communityLastMessage,
-              { color: colors.textSecondary }
-            ]}>
+            </Text> */}
+            <Text
+              style={[
+                styles.communityLastMessage,
+                { color: colors.textSecondary },
+              ]}
+            >
               {communityDetails[community.id]?.memberCount !== undefined
-                ? `${communityDetails[community.id].memberCount} members`
-                : 'Loading members...'}
+                ? `🟢 ${communityDetails[community.id].memberCount} online`
+                : "🟢 0 online"}
             </Text>
           </View>
         </View>
@@ -94,15 +110,12 @@ const Hub = () => {
   );
 
   const listEmpty = useCallback(() => {
-    if (activeTab !== 'communities') return null;
+    if (activeTab !== "communities") return null;
     if (isLoading) {
       return (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.refreshTint} />
-          <Text style={[
-            styles.loadingText,
-            { color: colors.textPrimary }
-          ]}>
+          <Text style={[styles.loadingText, { color: colors.textPrimary }]}>
             Loading communities...
           </Text>
         </View>
@@ -111,13 +124,13 @@ const Hub = () => {
     if (error) {
       return (
         <View style={styles.centerContainer}>
-          <Text style={[
-            styles.errorText,
-            { color: colors.textPrimary }
-          ]}>
+          <Text style={[styles.errorText, { color: colors.textPrimary }]}>
             {error}
           </Text>
-          <TouchableOpacity onPress={fetchCommunities} style={styles.retryButton}>
+          <TouchableOpacity
+            onPress={fetchCommunities}
+            style={styles.retryButton}
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -127,71 +140,71 @@ const Hub = () => {
       return (
         <View style={styles.centerContainer}>
           <FontAwesome5 name="users" size={48} color={colors.textSecondary} />
-          <Text style={[
-            styles.emptyText,
-            { color: colors.textPrimary }
-          ]}>
+          <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
             No communities yet
           </Text>
-          <Text style={[
-            styles.emptySubtext,
-            { color: colors.textSecondary }
-          ]}>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             Join a community to get started
           </Text>
         </View>
       );
     }
     return null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isLoading, error, communities.length, colors]);
 
   return (
-    <View style={[screenStyles.container, { paddingHorizontal: Design.spacing.mdLg }]}>
+    <View
+      style={[
+        screenStyles.container,
+        { paddingHorizontal: Design.spacing.mdLg },
+      ]}
+    >
       <View style={styles.headerNav}>
-        <Text style={[
-          styles.headerTitle,
-          { color: colors.slate }
-        ]}>
+        <Text style={[styles.headerTitle, { color: colors.slate }]}>
           Communities
         </Text>
       </View>
 
       <View style={styles.tabsContainer}>
         <View style={styles.tabs}>
-          <TouchableOpacity onPress={() => setActiveTab('communities')}>
+          <TouchableOpacity onPress={() => setActiveTab("communities")}>
             <Text
               style={[
                 styles.tabText,
-                activeTab === 'communities' && styles.activeTab,
+                activeTab === "communities" && styles.activeTab,
                 {
-                  color: activeTab === 'communities'
-                    ? colors.hubTabActive
-                    : colors.hubTabInactive,
-                  borderBottomColor: activeTab === 'communities'
-                    ? colors.hubTabBorder
-                    : 'transparent',
-                }
+                  color:
+                    activeTab === "communities"
+                      ? colors.hubTabActive
+                      : colors.hubTabInactive,
+                  borderBottomColor:
+                    activeTab === "communities"
+                      ? colors.hubTabBorder
+                      : "transparent",
+                },
               ]}
             >
               Communities
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setActiveTab('trending')}>
+          <TouchableOpacity onPress={() => setActiveTab("trending")}>
             <View style={styles.tabLabel}>
               <Text
                 style={[
                   styles.tabText,
-                  activeTab === 'trending' && styles.activeTab,
+                  activeTab === "trending" && styles.activeTab,
                   {
-                    color: activeTab === 'trending'
-                      ? colors.hubTabActive
-                      : colors.hubTabInactive,
-                    borderBottomColor: activeTab === 'trending'
-                      ? colors.hubTabBorder
-                      : 'transparent',
-                  }
+                    color:
+                      activeTab === "trending"
+                        ? colors.hubTabActive
+                        : colors.hubTabInactive,
+                    borderBottomColor:
+                      activeTab === "trending"
+                        ? colors.hubTabBorder
+                        : "transparent",
+                  },
                 ]}
               >
                 Trending
@@ -202,7 +215,7 @@ const Hub = () => {
         </View>
       </View>
 
-      {activeTab === 'communities' ? (
+      {activeTab === "communities" ? (
         <FlashList
           style={{ flex: 1 }}
           data={communities}
@@ -222,16 +235,10 @@ const Hub = () => {
       ) : (
         <View style={styles.trendingPlaceholder}>
           <FontAwesome5 name="fire" size={48} color={colors.destructive} />
-          <Text style={[
-            styles.emptyText,
-            { color: colors.textPrimary }
-          ]}>
+          <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
             Trending Communities
           </Text>
-          <Text style={[
-            styles.emptySubtext,
-            { color: colors.textSecondary }
-          ]}>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             Coming soon! Check back later for trending communities.
           </Text>
         </View>
@@ -242,15 +249,12 @@ const Hub = () => {
           styles.joinButton,
           {
             backgroundColor: colors.hubFabBg,
-          }
+          },
         ]}
         activeOpacity={0.8}
-        onPress={() => router.push('/joinCommunity')}
+        onPress={() => router.push("/joinCommunity")}
       >
-        <Text style={[
-          styles.joinButtonText,
-          { color: colors.hubFabFg }
-        ]}>
+        <Text style={[styles.joinButtonText, { color: colors.hubFabFg }]}>
           Join Community
         </Text>
         <FontAwesome5 name="plus" size={20} color={colors.hubFabFg} />
@@ -264,8 +268,8 @@ export default Hub;
 const styles = StyleSheet.create({
   headerNav: {
     marginTop: Design.spacing.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Design.spacing.md,
     marginBottom: Design.spacing.lg,
   },
@@ -280,14 +284,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Design.spacing.sm,
   },
   tabs: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
     paddingVertical: Design.spacing.lg,
   },
   tabLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Design.spacing.xs,
   },
   activeTab: {
@@ -296,7 +300,7 @@ const styles = StyleSheet.create({
     fontFamily: Design.typography.fontFamily.satoshi.medium,
   },
   tabText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontFamily: Design.typography.fontFamily.satoshi.medium,
     fontSize: Design.typography.fontSize.base,
     fontWeight: Design.typography.fontWeight.medium,
@@ -308,31 +312,31 @@ const styles = StyleSheet.create({
   },
   trendingPlaceholder: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: Design.spacing.xl,
     gap: Design.spacing.md,
   },
   communityCardWrapper: {
-    width: '100%',
-    marginBottom: Design.spacing.sm,
+    width: "100%",
+    marginBottom: Design.spacing.xs,
   },
   communityCard: {
-    borderRadius: 10,
+    borderRadius: 12,
     paddingVertical: Design.spacing.sm,
-    paddingHorizontal: Design.spacing.md,
-    gap: Design.spacing.xl,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: Design.spacing.sm,
+    gap: Design.spacing.sm,
+    borderWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
   },
   communityCardImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   communityCardContent: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: Design.spacing.xs,
     flex: 1,
   },
@@ -350,8 +354,8 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: Design.spacing.xl,
     gap: Design.spacing.md,
     minHeight: 320,
@@ -365,7 +369,7 @@ const styles = StyleSheet.create({
     fontFamily: Design.typography.fontFamily.satoshi.medium,
     fontSize: Design.typography.fontSize.base,
     fontWeight: Design.typography.fontWeight.medium,
-    textAlign: 'center',
+    textAlign: "center",
   },
   retryButton: {
     paddingVertical: Design.spacing.sm,
@@ -389,15 +393,15 @@ const styles = StyleSheet.create({
     fontFamily: Design.typography.fontFamily.satoshi.regular,
     fontSize: Design.typography.fontSize.sm,
     fontWeight: Design.typography.fontWeight.regular,
-    textAlign: 'center',
+    textAlign: "center",
   },
   joinButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 30,
     right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Design.spacing.sm,
     paddingHorizontal: Design.spacing.md,
     borderRadius: 16,

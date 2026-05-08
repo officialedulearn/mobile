@@ -5,6 +5,7 @@ import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef, useState } from "react";
+import Purchases from "react-native-purchases";
 import {
   ActivityIndicator,
   Alert,
@@ -34,13 +35,13 @@ const planData = [
   },
   {
     name: "Premium",
-    price: Platform.OS === 'android' ? 5 : 4.99,
+    price: Platform.OS === "android" ? 5 : 4.99,
     features: [
       "Advanced AI models (Gemini 2.5 Pro)",
       "15 quiz attempts and 20 credits per day",
       "Credit rollovers & priority support",
       "Exclusive premium badges",
-      "Unlimited Chat Messages"
+      "Unlimited Chat Messages",
     ],
   },
 ];
@@ -62,45 +63,90 @@ const PlanCard = ({
   if (isFree) {
     displayPrice = 0;
   } else if (isAnnual) {
-    displayPrice = Platform.OS === 'android' ? 50 : 49.99;
+    displayPrice = Platform.OS === "android" ? 50 : 49.99;
   } else {
-    displayPrice = Platform.OS === 'android' ? 5 : 4.99;
+    displayPrice = Platform.OS === "android" ? 5 : 4.99;
   }
   return (
     <View style={[styles.planCard, theme === "dark" && styles.planCardDark]}>
-      <Text style={[styles.billingLabel, theme === "dark" && styles.billingLabelDark]}>
+      <Text
+        style={[
+          styles.billingLabel,
+          theme === "dark" && styles.billingLabelDark,
+        ]}
+      >
         {isAnnual ? "🔥 Annually" : "🔥 Monthly"}
       </Text>
 
       <View style={styles.priceContainer}>
-        <Text style={[styles.numberPriceText, theme === "dark" && styles.numberPriceTextDark]}>
+        <Text
+          style={[
+            styles.numberPriceText,
+            theme === "dark" && styles.numberPriceTextDark,
+          ]}
+        >
           ${displayPrice}
         </Text>
-        <Text style={[styles.littlePriceText, theme === "dark" && styles.littlePriceTextDark]}>/{isAnnual ? "year" : "month"}</Text>
+        <Text
+          style={[
+            styles.littlePriceText,
+            theme === "dark" && styles.littlePriceTextDark,
+          ]}
+        >
+          /{isAnnual ? "year" : "month"}
+        </Text>
       </View>
-    
 
-      <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>{isFree ? "Free" : isAnnual ? "EduLearn Premium Annually" : "EduLearn Premium Monthly"}</Text>
+      <Text style={[styles.planName, theme === "dark" && styles.planNameDark]}>
+        {isFree
+          ? "Free"
+          : isAnnual
+            ? "EduLearn Premium Annually"
+            : "EduLearn Premium Monthly"}
+      </Text>
 
-      <Text style={[styles.renewalText, theme === "dark" && styles.renewalTextDark]}>
+      <Text
+        style={[styles.renewalText, theme === "dark" && styles.renewalTextDark]}
+      >
         {!isFree ? "Auto-renews until cancelled" : " "}
       </Text>
 
-      <Text style={[styles.planDescription, theme === "dark" && styles.planDescriptionDark]}>
-        Upgrade your edulearn Plan to get access to more features that aren&apos;t
-        available on the free plan
+      <Text
+        style={[
+          styles.planDescription,
+          theme === "dark" && styles.planDescriptionDark,
+        ]}
+      >
+        Upgrade your edulearn Plan to get access to more features that
+        aren&apos;t available on the free plan
       </Text>
 
-      <Text style={[styles.featuresTitle, theme === "dark" && styles.featuresTitleDark]}>Features:</Text>
+      <Text
+        style={[
+          styles.featuresTitle,
+          theme === "dark" && styles.featuresTitleDark,
+        ]}
+      >
+        Features:
+      </Text>
 
-      <View style={[styles.featureList, theme === "dark" && styles.featureListDark]}>
+      <View
+        style={[styles.featureList, theme === "dark" && styles.featureListDark]}
+      >
         {features.map((feature, index) => (
           <View key={index} style={styles.featureItem}>
-            <Image 
-              source={require("@/assets/images/icons/checkmark.png")} 
-              style={styles.checkmarkIcon} 
+            <Image
+              source={require("@/assets/images/icons/checkmark.png")}
+              style={styles.checkmarkIcon}
             />
-            <Text style={[styles.featureText, theme === "dark" && styles.featureTextDark]}>{feature}</Text>
+            <Text
+              style={[
+                styles.featureText,
+                theme === "dark" && styles.featureTextDark,
+              ]}
+            >
+              {feature}
+            </Text>
           </View>
         ))}
       </View>
@@ -123,151 +169,181 @@ const Subscription = () => {
   };
 
   const openPrivacyPolicy = () => {
-    const url = 'https://support.edulearn.fun/privacy-policy';
-    Linking.openURL(url).catch(err => {
-      Alert.alert('Error', 'Unable to open Privacy Policy');
+    const url = "https://support.edulearn.fun/privacy-policy";
+    Linking.openURL(url).catch((err) => {
+      Alert.alert("Error", "Unable to open Privacy Policy");
     });
   };
 
   const openTermsOfUse = () => {
-    const url = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-    Linking.openURL(url).catch(err => {
-      Alert.alert('Error', 'Unable to open Terms of Use');
+    const url =
+      "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+    Linking.openURL(url).catch((err) => {
+      Alert.alert("Error", "Unable to open Terms of Use");
     });
   };
 
   const handleUpgrade = async () => {
     if (!user?.id) {
-      Alert.alert('Error', 'User not found. Please log in again.');
+      Alert.alert("Error", "User not found. Please log in again.");
       return;
     }
 
     const currentPlan = planData[currentPlanIndex];
     if (currentPlan.price === 0) {
-      Alert.alert('Info', 'You are already on the free plan.');
+      Alert.alert("Info", "You are already on the free plan.");
       return;
     }
 
-    const planAmount = isAnnual ? 50 : 5;
-    const planType = isAnnual ? 'Annual' : 'Monthly';
-
-    const confirmed = await new Promise<boolean>((resolve) => {
-      Alert.alert(
-        'Confirm Upgrade',
-        `Are you sure you want to upgrade to Premium ${planType} plan for $${planAmount} USDC?`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => resolve(false),
-          },
-          {
-            text: 'Confirm',
-            style: 'default',
-            onPress: () => resolve(true),
-          },
-        ]
-      );
-    });
-
-    if (!confirmed) return;
-
-    setIsLoading(true);
-    const walletService = new WalletService();
+    const planType = isAnnual ? "Annual" : "Monthly";
 
     try {
-      const result = await walletService.upgradeToPremium(user.id, planAmount);
-      
-      const signature = result?.result?.signature || result?.signature || 'N/A';
-      const subscriptionType = result?.subscriptionType || (isAnnual ? 'annual' : 'monthly');
-      const transactionLink = signature !== 'N/A' 
-        ? `https://solscan.io/tx/${signature}` 
-        : null;
+      if (Platform.OS === "ios") {
+        setIsLoading(true);
+        await Purchases.logIn(user.id);
 
-      const buttons: { text: string; style?: 'default' | 'cancel' | 'destructive'; onPress?: () => void }[] = [];
-      
+        const productIdentifier = isAnnual
+          ? "rc_4999_edulearn"
+          : "rc_499_edulearn";
+        const products = await Purchases.getProducts([productIdentifier]);
+        if (products.length === 0) {
+          throw new Error("Subscription product not found");
+        }
+
+        await Purchases.purchaseStoreProduct(products[0]);
+        Alert.alert(
+          "Success!",
+          `Premium ${planType} subscription activated successfully.`,
+          [{ text: "OK", onPress: () => router.reload() }],
+        );
+        return;
+      }
+
+      const planAmount = isAnnual ? 50 : 5;
+      const confirmed = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          "Confirm Upgrade",
+          `Are you sure you want to upgrade to Premium ${planType} plan for $${planAmount} USDC?`,
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+              onPress: () => resolve(false),
+            },
+            {
+              text: "Confirm",
+              style: "default",
+              onPress: () => resolve(true),
+            },
+          ],
+        );
+      });
+
+      if (!confirmed) return;
+
+      setIsLoading(true);
+      const walletService = new WalletService();
+      const result = await walletService.upgradeToPremium(user.id, planAmount);
+
+      const signature = result?.result?.signature || result?.signature || "N/A";
+      const subscriptionType =
+        result?.subscriptionType || (isAnnual ? "annual" : "monthly");
+      const transactionLink =
+        signature !== "N/A" ? `https://solscan.io/tx/${signature}` : null;
+
+      const buttons: {
+        text: string;
+        style?: "default" | "cancel" | "destructive";
+        onPress?: () => void;
+      }[] = [];
+
       if (transactionLink) {
         buttons.push({
-          text: 'View Transaction',
-          style: 'default',
+          text: "View Transaction",
+          style: "default",
           onPress: () => {
-            Linking.openURL(transactionLink).catch(err => {
-            });
+            Linking.openURL(transactionLink).catch((err) => {});
           },
         });
       }
-      
+
       buttons.push({
-        text: 'OK',
-        style: 'default',
+        text: "OK",
+        style: "default",
         onPress: async () => {
           try {
             router.reload();
-          } catch (error) {
-          }
+          } catch (error) {}
         },
       });
 
       Alert.alert(
-        'Success!',
+        "Success!",
         `✅ Premium upgrade successful!\n\n` +
-        `Subscription: ${subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1)}\n` +
-        `Amount: $${planAmount} USDC\n` +
-        (signature !== 'N/A' ? `Transaction: ${signature.substring(0, 20)}...` : ''),
-        buttons
+          `Subscription: ${subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1)}\n` +
+          `Amount: $${planAmount} USDC\n` +
+          (signature !== "N/A"
+            ? `Transaction: ${signature.substring(0, 20)}...`
+            : ""),
+        buttons,
       );
     } catch (error: any) {
-      
-      let errorMessage = 'Failed to process premium upgrade. Please try again.';
-      
+      if (error?.userCancelled) return;
+
+      let errorMessage = "Failed to process premium upgrade. Please try again.";
+
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
-      Alert.alert(
-        'Upgrade Failed',
-        `❌ ${errorMessage}`,
-        [
-          {
-            text: 'OK',
-            style: 'default',
-          },
-        ]
-      );
+
+      Alert.alert("Upgrade Failed", `❌ ${errorMessage}`, [
+        {
+          text: "OK",
+          style: "default",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
-    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark]} edges={['top']}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />  
-      
+    <SafeAreaView
+      style={[styles.container, theme === "dark" && styles.containerDark]}
+      edges={["top"]}
+    >
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+
       <View style={styles.topNav}>
         <BackButton />
-        <Text style={[styles.headerText, theme === "dark" && styles.headerTextDark]}>
+        <Text
+          style={[styles.headerText, theme === "dark" && styles.headerTextDark]}
+        >
           Upgrade your Plan
         </Text>
       </View>
 
-      <View style={[styles.switchPills, theme === "dark" && styles.switchPillsDark]}>
+      <View
+        style={[styles.switchPills, theme === "dark" && styles.switchPillsDark]}
+      >
         <TouchableOpacity
           style={[
-            styles.switchPill, 
+            styles.switchPill,
             !isAnnual && styles.switchPillActive,
-            theme === "dark" && !isAnnual && styles.switchPillActiveDark
+            theme === "dark" && !isAnnual && styles.switchPillActiveDark,
           ]}
           onPress={() => setIsAnnual(false)}
         >
-          <Text style={[
-            styles.pillText, 
-            theme === "dark" && styles.pillTextDark,
-            !isAnnual && theme === "dark" && styles.pillTextActiveDark,
-            !isAnnual && theme === "light" && styles.pillTextActive,
-          ]}>
+          <Text
+            style={[
+              styles.pillText,
+              theme === "dark" && styles.pillTextDark,
+              !isAnnual && theme === "dark" && styles.pillTextActiveDark,
+              !isAnnual && theme === "light" && styles.pillTextActive,
+            ]}
+          >
             Monthly
           </Text>
         </TouchableOpacity>
@@ -275,20 +351,27 @@ const Subscription = () => {
           style={[
             styles.switchPill,
             isAnnual && styles.switchPillActive,
-            theme === "dark" && isAnnual && styles.switchPillActiveDark
+            theme === "dark" && isAnnual && styles.switchPillActiveDark,
           ]}
           onPress={() => setIsAnnual(true)}
         >
           <View style={styles.annuallyContent}>
-            <Text style={[
-              styles.pillText, 
-              theme === "dark" && styles.pillTextDark,
-              isAnnual && theme === "dark" && styles.pillTextActiveDark,
-              isAnnual && theme === "light" && styles.pillTextActive,
-            ]}>
+            <Text
+              style={[
+                styles.pillText,
+                theme === "dark" && styles.pillTextDark,
+                isAnnual && theme === "dark" && styles.pillTextActiveDark,
+                isAnnual && theme === "light" && styles.pillTextActive,
+              ]}
+            >
               Annually
             </Text>
-            <View style={[styles.discountBox, theme === "dark" && styles.discountBoxDark]}>
+            <View
+              style={[
+                styles.discountBox,
+                theme === "dark" && styles.discountBoxDark,
+              ]}
+            >
               <Text style={styles.discountBoxText}>-20%</Text>
             </View>
           </View>
@@ -326,20 +409,25 @@ const Subscription = () => {
                 styles.dot,
                 currentPlanIndex === index && styles.activeDot,
                 theme === "dark" && styles.dotDark,
-                theme === "dark" && currentPlanIndex === index && styles.activeDotDark,
+                theme === "dark" &&
+                  currentPlanIndex === index &&
+                  styles.activeDotDark,
               ]}
             />
           ))}
         </View>
       </View>
 
-      <SafeAreaView style={styles.bottomSection} edges={['bottom']}>
-        <TouchableOpacity 
+      <SafeAreaView style={styles.bottomSection} edges={["bottom"]}>
+        <TouchableOpacity
           style={[
-            styles.upgradeButton, 
-            (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabled,
+            styles.upgradeButton,
+            (isLoading || planData[currentPlanIndex].price === 0) &&
+              styles.upgradeButtonDisabled,
             theme === "dark" && styles.upgradeButtonDark,
-            theme === "dark" && (isLoading || planData[currentPlanIndex].price === 0) && styles.upgradeButtonDisabledDark
+            theme === "dark" &&
+              (isLoading || planData[currentPlanIndex].price === 0) &&
+              styles.upgradeButtonDisabledDark,
           ]}
           onPress={handleUpgrade}
           disabled={isLoading || planData[currentPlanIndex].price === 0}
@@ -347,32 +435,60 @@ const Subscription = () => {
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator color="#00FF80" size="small" />
-              <Text style={[
-                styles.upgradeButtonText,
-                theme === "dark" && styles.upgradeButtonTextDark
-              ]}>Processing...</Text>
+              <Text
+                style={[
+                  styles.upgradeButtonText,
+                  theme === "dark" && styles.upgradeButtonTextDark,
+                ]}
+              >
+                Processing...
+              </Text>
             </View>
           ) : (
-            <Text style={[
-              styles.upgradeButtonText,
-              planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabled,
-              theme === "dark" && styles.upgradeButtonTextDark,
-              theme === "dark" && planData[currentPlanIndex].price === 0 && styles.upgradeButtonTextDisabledDark
-            ]}>
-              {planData[currentPlanIndex].price === 0 ? 'Current Plan' : 'Upgrade'}
+            <Text
+              style={[
+                styles.upgradeButtonText,
+                planData[currentPlanIndex].price === 0 &&
+                  styles.upgradeButtonTextDisabled,
+                theme === "dark" && styles.upgradeButtonTextDark,
+                theme === "dark" &&
+                  planData[currentPlanIndex].price === 0 &&
+                  styles.upgradeButtonTextDisabledDark,
+              ]}
+            >
+              {planData[currentPlanIndex].price === 0
+                ? "Current Plan"
+                : "Upgrade"}
             </Text>
           )}
         </TouchableOpacity>
 
         <View style={styles.legalLinksContainer}>
           <TouchableOpacity onPress={openPrivacyPolicy}>
-            <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+            <Text
+              style={[
+                styles.legalLinkText,
+                theme === "dark" && styles.legalLinkTextDark,
+              ]}
+            >
               Privacy Policy
             </Text>
           </TouchableOpacity>
-          <Text style={[styles.legalSeparator, theme === "dark" && styles.legalSeparatorDark]}>•</Text>
+          <Text
+            style={[
+              styles.legalSeparator,
+              theme === "dark" && styles.legalSeparatorDark,
+            ]}
+          >
+            •
+          </Text>
           <TouchableOpacity onPress={openTermsOfUse}>
-            <Text style={[styles.legalLinkText, theme === "dark" && styles.legalLinkTextDark]}>
+            <Text
+              style={[
+                styles.legalLinkText,
+                theme === "dark" && styles.legalLinkTextDark,
+              ]}
+            >
               Terms of Use (EULA)
             </Text>
           </TouchableOpacity>
@@ -492,14 +608,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardContainer: {
     width: width - 32,
     paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   planCard: {
     backgroundColor: "#fff",

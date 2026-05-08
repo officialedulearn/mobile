@@ -1,6 +1,6 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
-export type RewardType = 'certificate' | 'points';
+export type RewardType = "certificate" | "points";
 
 export type Reward = {
   id: string;

@@ -1,5 +1,5 @@
-import type { IsoDateString } from './common.types';
-import type { Message, RoadmapPromptMessageContent } from './chat.types';
+import type { IsoDateString } from "./common.types";
+import type { Message, RoadmapPromptMessageContent } from "./chat.types";
 
 export type Roadmap = {
   id: string;

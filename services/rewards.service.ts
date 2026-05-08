@@ -22,7 +22,7 @@ interface UserRewardWithDetails {
 export class RewardsService extends BaseService {
   async claimReward(userId: string, rewardId: string): Promise<any> {
     const response = await this.executeRequest(
-      this.getClient().post("/rewards/claim", { userId, rewardId })
+      this.getClient().post("/rewards/claim", { userId, rewardId }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -30,7 +30,7 @@ export class RewardsService extends BaseService {
 
   async claimRewardAdmin(userId: string, rewardId: string): Promise<any> {
     const response = await this.executeRequest(
-      this.getClient().post("/rewards/claim/admin", { userId, rewardId })
+      this.getClient().post("/rewards/claim/admin", { userId, rewardId }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -38,7 +38,7 @@ export class RewardsService extends BaseService {
 
   async getAllRewards(): Promise<Reward[]> {
     const response = await this.executeRequest<Reward[]>(
-      this.getClient().get("/rewards")
+      this.getClient().get("/rewards"),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -46,7 +46,7 @@ export class RewardsService extends BaseService {
 
   async getRewardById(id: string): Promise<Reward> {
     const response = await this.executeRequest<Reward>(
-      this.getClient().get(`/rewards/${id}`)
+      this.getClient().get(`/rewards/${id}`),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -59,7 +59,7 @@ export class RewardsService extends BaseService {
     imageUrl?: string;
   }): Promise<Reward> {
     const response = await this.executeRequest<Reward>(
-      this.getClient().post("/rewards", data)
+      this.getClient().post("/rewards", data),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -72,10 +72,10 @@ export class RewardsService extends BaseService {
       title?: string;
       description?: string;
       imageUrl?: string;
-    }
+    },
   ): Promise<Reward> {
     const response = await this.executeRequest<Reward>(
-      this.getClient().put(`/rewards/${id}`, data)
+      this.getClient().put(`/rewards/${id}`, data),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -83,7 +83,7 @@ export class RewardsService extends BaseService {
 
   async deleteReward(id: string): Promise<boolean> {
     const response = await this.executeRequest(
-      this.getClient().delete(`/rewards/${id}`)
+      this.getClient().delete(`/rewards/${id}`),
     );
     if (response.error) throw response.error;
     return response.data?.success ?? false;
@@ -91,23 +91,31 @@ export class RewardsService extends BaseService {
 
   async getUserRewards(userId: string): Promise<UserRewardWithDetails[]> {
     const response = await this.executeRequest<UserRewardWithDetails[]>(
-      this.getClient().get(`/rewards/user/${userId}`)
+      this.getClient().get(`/rewards/user/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data!;
   }
 
-  async awardRewardToUser(userId: string, rewardId: string): Promise<UserRewardWithDetails> {
+  async awardRewardToUser(
+    userId: string,
+    rewardId: string,
+  ): Promise<UserRewardWithDetails> {
     const response = await this.executeRequest<UserRewardWithDetails>(
-      this.getClient().post("/rewards/award", { userId, rewardId })
+      this.getClient().post("/rewards/award", { userId, rewardId }),
     );
     if (response.error) throw response.error;
     return response.data!;
   }
 
-  async removeRewardFromUser(userId: string, rewardId: string): Promise<boolean> {
+  async removeRewardFromUser(
+    userId: string,
+    rewardId: string,
+  ): Promise<boolean> {
     const response = await this.executeRequest(
-      this.getClient().delete(`/rewards/user?userId=${userId}&rewardId=${rewardId}`)
+      this.getClient().delete(
+        `/rewards/user?userId=${userId}&rewardId=${rewardId}`,
+      ),
     );
     if (response.error) throw response.error;
     return response.data?.success ?? false;
@@ -115,7 +123,7 @@ export class RewardsService extends BaseService {
 
   async getUserCertificateCount(userId: string): Promise<number> {
     const response = await this.executeRequest(
-      this.getClient().get(`/rewards/user/${userId}/certificate-count`)
+      this.getClient().get(`/rewards/user/${userId}/certificate-count`),
     );
     if (response.error) throw response.error;
     return response.data?.count ?? 0;
@@ -123,7 +131,7 @@ export class RewardsService extends BaseService {
 
   async getUsersWithReward(rewardId: string): Promise<any[]> {
     const response = await this.executeRequest<any[]>(
-      this.getClient().get(`/rewards/recipients/${rewardId}`)
+      this.getClient().get(`/rewards/recipients/${rewardId}`),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -131,14 +139,14 @@ export class RewardsService extends BaseService {
 
   async getClaimStatus(
     userId: string,
-    rewardId: string
+    rewardId: string,
   ): Promise<{
     claimed: boolean;
     signature?: string;
     awarded: boolean;
   }> {
     const response = await this.executeRequest(
-      this.getClient().get(`/rewards/claim-status/${userId}/${rewardId}`)
+      this.getClient().get(`/rewards/claim-status/${userId}/${rewardId}`),
     );
     if (response.error) throw response.error;
     return response.data!;

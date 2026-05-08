@@ -1,6 +1,6 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
-export type ChatVisibility = 'public' | 'private';
+export type ChatVisibility = "public" | "private";
 
 export type Chat = {
   id: string;
@@ -13,8 +13,8 @@ export type Chat = {
 };
 
 export type ChatMessageContentPart =
-  | { type: 'text'; text?: string }
-  | { type: 'image'; image?: string };
+  | { type: "text"; text?: string }
+  | { type: "image"; image?: string };
 
 export type RoadmapPromptMessageContent = { text: string };
 

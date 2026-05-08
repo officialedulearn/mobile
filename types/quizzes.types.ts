@@ -129,3 +129,16 @@ export type ListQuizzesQuery = {
   offset?: number;
   sort?: PublicQuizListSort;
 };
+
+export type LeaderBoardEntry = {
+  userId: string;
+  score: number | null;
+  joinedAt: IsoDateString | Date | null;
+  user: {
+    profilePictureURL: string | null;
+    username: string | null;
+    name: string;
+  };
+};
+
+export type LeaderBoardResponse = LeaderBoardEntry[];

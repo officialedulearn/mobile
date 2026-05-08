@@ -1,4 +1,4 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
 export type ContentAnalytics = {
   id: string;

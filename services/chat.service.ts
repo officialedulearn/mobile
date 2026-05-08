@@ -1,10 +1,16 @@
-import { Chat } from "@/interface/Chat";
+import { Chat, Message } from "@/interface/Chat";
 import { BaseService } from "./base.service";
+
+type MessagePagination = {
+  offset?: number;
+  limit?: number;
+  beforeMessageId?: string;
+};
 
 export class ChatService extends BaseService {
   async getHistory(id: string): Promise<Chat[]> {
     const response = await this.executeRequest<Chat[]>(
-      this.getClient().get(`/chat/user/${id}`)
+      this.getClient().get(`/chat/user/${id}`),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -12,7 +18,7 @@ export class ChatService extends BaseService {
 
   async createChat(title: string, userId: string) {
     const response = await this.executeRequest(
-      this.getClient().post("/chat", { title, userId })
+      this.getClient().post("/chat", { title, userId }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -20,7 +26,7 @@ export class ChatService extends BaseService {
 
   async getChatById(chatId: string) {
     const response = await this.executeRequest(
-      this.getClient().get(`/chat/${chatId}`)
+      this.getClient().get(`/chat/${chatId}`),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -28,7 +34,7 @@ export class ChatService extends BaseService {
 
   async deleteChat(chatId: string) {
     const response = await this.executeRequest(
-      this.getClient().delete(`/chat/${chatId}`)
+      this.getClient().delete(`/chat/${chatId}`),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -36,23 +42,33 @@ export class ChatService extends BaseService {
 
   async saveMessages(messages: any[]) {
     const response = await this.executeRequest(
-      this.getClient().post("/chat/messages", { messages })
+      this.getClient().post("/chat/messages", { messages }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async getMessagesInChat(chatId: string) {
+  async getMessagesInChat(
+    chatId: string,
+    pagination: MessagePagination = {},
+  ): Promise<Message[]> {
+    const { offset = 0, limit = 5, beforeMessageId } = pagination;
     const response = await this.executeRequest(
-      this.getClient().get(`/chat/${chatId}/messages`)
+      this.getClient().get(`/chat/${chatId}/messages`, {
+        params: {
+          offset,
+          limit,
+          ...(beforeMessageId ? { before_message_id: beforeMessageId } : {}),
+        },
+      }),
     );
     if (response.error) throw response.error;
-    return response.data;
+    return response.data || [];
   }
 
   async deleteMessagesInChat(chatId: string) {
     const response = await this.executeRequest(
-      this.getClient().delete(`/chat/${chatId}/messages`)
+      this.getClient().delete(`/chat/${chatId}/messages`),
     );
     if (response.error) throw response.error;
     return response.data;

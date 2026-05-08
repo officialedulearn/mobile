@@ -1,4 +1,7 @@
-import { NotificationsService, Notification } from "@/services/notifications.service";
+import {
+  Notification,
+  NotificationsService,
+} from "@/services/notifications.service";
 import { create } from "zustand";
 
 interface NotificationsState {
@@ -7,8 +10,8 @@ interface NotificationsState {
   error: string | null;
   lastFetchedAt: Date | null;
   pollingInterval: NodeJS.Timeout | null;
-  
-  fetchNotifications: (order?: 'asc' | 'desc') => Promise<void>;
+
+  fetchNotifications: (order?: "asc" | "desc") => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
   clearAllNotifications: () => Promise<void>;
   startPolling: (intervalMs?: number) => void;
@@ -25,33 +28,38 @@ const useNotificationsStore = create<NotificationsState>((set, get) => ({
   error: null,
   lastFetchedAt: null,
   pollingInterval: null,
-  
-  fetchNotifications: async (order: 'asc' | 'desc' = 'desc') => {
+
+  fetchNotifications: async (order: "asc" | "desc" = "desc") => {
     try {
       set({ isLoading: true, error: null });
       const notifications = await notificationsService.getNotifications(order);
-      set({ 
-        notifications, 
+      set({
+        notifications,
         isLoading: false,
-        lastFetchedAt: new Date()
+        lastFetchedAt: new Date(),
       });
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-      set({ 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch notifications' 
+      //console.error('Failed to fetch notifications:', error);
+      set({
+        isLoading: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch notifications",
       });
     }
   },
-  
+
   deleteNotification: async (notificationId: string) => {
     try {
       await notificationsService.deleteNotification(notificationId);
-      set(state => ({
-        notifications: state.notifications.filter(n => n.id !== notificationId)
+      set((state) => ({
+        notifications: state.notifications.filter(
+          (n) => n.id !== notificationId,
+        ),
       }));
     } catch (error) {
-      console.error('Failed to delete notification:', error);
+      //console.error('Failed to delete notification:', error);
       throw error;
     }
   },
@@ -65,23 +73,23 @@ const useNotificationsStore = create<NotificationsState>((set, get) => ({
         error: null,
       });
     } catch (error) {
-      console.error('Failed to clear notifications:', error);
+      //console.error('Failed to clear notifications:', error);
       throw error;
     }
   },
-  
+
   startPolling: (intervalMs: number = 30000) => {
     const { stopPolling, fetchNotifications } = get();
-    
+
     stopPolling();
-    
+
     const interval = setInterval(() => {
-      fetchNotifications('desc');
+      fetchNotifications("desc");
     }, intervalMs);
-    
+
     set({ pollingInterval: interval });
   },
-  
+
   stopPolling: () => {
     const { pollingInterval } = get();
     if (pollingInterval) {
@@ -89,11 +97,11 @@ const useNotificationsStore = create<NotificationsState>((set, get) => ({
       set({ pollingInterval: null });
     }
   },
-  
+
   refreshNotifications: async () => {
-    await get().fetchNotifications('desc');
+    await get().fetchNotifications("desc");
   },
-  
+
   resetState: () => {
     const { stopPolling } = get();
     stopPolling();
@@ -102,16 +110,9 @@ const useNotificationsStore = create<NotificationsState>((set, get) => ({
       isLoading: false,
       error: null,
       lastFetchedAt: null,
-      pollingInterval: null
+      pollingInterval: null,
     });
-  }
+  },
 }));
 
 export default useNotificationsStore;
-
-
-
-
-
-
-

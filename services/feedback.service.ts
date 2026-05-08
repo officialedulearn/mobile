@@ -15,10 +15,10 @@ export class FeedbackService extends BaseService {
   async submitFeedback(
     userId: string,
     content: string,
-    category?: "bug" | "feature" | "improvement" | "other"
+    category?: "bug" | "feature" | "improvement" | "other",
   ): Promise<Feedback> {
     const response = await this.executeRequest<Feedback>(
-      this.getClient().post("/feedback", { userId, content, category })
+      this.getClient().post("/feedback", { userId, content, category }),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -26,7 +26,7 @@ export class FeedbackService extends BaseService {
 
   async getUserFeedback(userId: string): Promise<Feedback[]> {
     const response = await this.executeRequest<Feedback[]>(
-      this.getClient().get(`/feedback/user/${userId}`)
+      this.getClient().get(`/feedback/user/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data!;

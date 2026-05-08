@@ -1,7 +1,13 @@
 import { Question } from "@/core/quizState";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AnswerOption } from "./AnswerOption";
 import { QuestionCard } from "./QuestionCard";
@@ -59,20 +65,20 @@ export const QuizQuestionsScreen = ({
       <QuestionCard question={question} theme={theme} />
 
       <ScrollView
-  style={styles.options}
-  contentContainerStyle={styles.optionsContent}
-  showsVerticalScrollIndicator={false}
->
-  {question.options.map((option, index) => (
-    <AnswerOption
-      key={index}
-      option={option}
-      isSelected={selectedOption === option}
-      theme={theme}
-      onPress={() => handleSelectOption(option)}
-    />
-  ))}
-</ScrollView>
+        style={styles.options}
+        contentContainerStyle={styles.optionsContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {question.options.map((option, index) => (
+          <AnswerOption
+            key={index}
+            option={option}
+            isSelected={selectedOption === option}
+            theme={theme}
+            onPress={() => handleSelectOption(option)}
+          />
+        ))}
+      </ScrollView>
 
       <View
         style={[
@@ -80,7 +86,9 @@ export const QuizQuestionsScreen = ({
           theme === "dark" && { backgroundColor: "#0D0D0D" },
         ]}
       >
-        <View style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}>
+        <View
+          style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}
+        >
           <TouchableOpacity
             style={[
               styles.navButton,
@@ -121,7 +129,11 @@ export const QuizQuestionsScreen = ({
                 theme === "dark" && { color: "#000" },
               ]}
             >
-              {isSubmitting ? "Submitting..." : isLastQuestion ? "Finish Quiz" : "Next"}
+              {isSubmitting
+                ? "Submitting..."
+                : isLastQuestion
+                  ? "Finish Quiz"
+                  : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -136,7 +148,7 @@ const styles = StyleSheet.create({
   },
   options: {
     marginTop: 10,
-    flex: 1
+    flex: 1,
   },
   optionsContent: {
     flexDirection: "column",

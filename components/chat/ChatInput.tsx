@@ -1,8 +1,8 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Design } from "@/utils/design";
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 interface ChatInputProps {
   value: string;
@@ -19,23 +19,22 @@ export function ChatInput({
   onSubmit,
   onRecordStart,
   isLoading = false,
-  placeholder = 'Type a message...',
+  placeholder = "Type a message...",
 }: ChatInputProps) {
   const { colors, palette } = useTheme();
 
   return (
-    <View style={[
-      styles.container,
-      {
-        backgroundColor: colors.surface,
-        borderColor: palette.border.input,
-      }
-    ]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.surface,
+          borderColor: palette.border.input,
+        },
+      ]}
+    >
       <TextInput
-        style={[
-          styles.input,
-          { color: colors.textPrimary }
-        ]}
+        style={[styles.input, { color: colors.textPrimary }]}
         placeholder={placeholder}
         placeholderTextColor={palette.text.placeholder}
         value={value}
@@ -50,7 +49,7 @@ export function ChatInput({
         disabled={isLoading}
       >
         <Image
-          source={require('@/assets/images/icons/microphone.png')}
+          source={require("@/assets/images/icons/microphone.png")}
           style={styles.voiceIcon}
         />
       </TouchableOpacity>
@@ -61,7 +60,7 @@ export function ChatInput({
         disabled={!value.trim() || isLoading}
       >
         <Image
-          source={require('@/assets/images/icons/send.png')}
+          source={require("@/assets/images/icons/send.png")}
           style={styles.sendIcon}
         />
       </TouchableOpacity>
@@ -71,8 +70,8 @@ export function ChatInput({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     paddingHorizontal: Design.spacing.md,
     paddingVertical: Design.spacing.sm,
     borderTopWidth: 1,

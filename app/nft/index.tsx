@@ -5,8 +5,8 @@ import { RewardsService } from "@/services/rewards.service";
 import { format } from "date-fns";
 import { BlurView } from "expo-blur";
 import { Image } from "expo-image";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { router } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -35,7 +35,8 @@ const NFT = (props: Props) => {
   >("claimed");
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [selectedReward, setSelectedReward] = useState<UserRewardWithDetails | null>(null);
+  const [selectedReward, setSelectedReward] =
+    useState<UserRewardWithDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { user, theme } = useUserStore();
@@ -49,6 +50,10 @@ const NFT = (props: Props) => {
   } = useRewardsStore();
 
   const userRewards = user?.id ? (userRewardsByUserId[user.id] ?? []) : [];
+  const hasAllRewardsInStore = allRewards.length > 0;
+  const hasUserRewardsInStore = user?.id
+    ? userRewardsByUserId[user.id] !== undefined
+    : false;
   const claimedRewards = userRewards.filter((r) => r.signature);
   const unclaimedRewards = userRewards.filter((r) => !r.signature);
   const userRewardIds = new Set(userRewards.map((r) => r.id));
@@ -74,11 +79,16 @@ const NFT = (props: Props) => {
     ]);
   }, [user?.id, fetchAllRewards, fetchUserRewards]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadAllRewards();
-    }, [loadAllRewards])
-  );
+  useEffect(() => {
+    if (!user?.id) return;
+    if (hasAllRewardsInStore && hasUserRewardsInStore) return;
+    loadAllRewards();
+  }, [
+    user?.id,
+    hasAllRewardsInStore,
+    hasUserRewardsInStore,
+    loadAllRewards,
+  ]);
 
   const handleClaimReward = async (rewardId: string) => {
     if (!user?.id) return;
@@ -91,7 +101,7 @@ const NFT = (props: Props) => {
         const rewardsService = new RewardsService();
         const result = await rewardsService.claimReward(
           user.id as unknown as string,
-          rewardId
+          rewardId,
         );
         await loadAllRewards();
         setActiveTab("claimed");
@@ -109,7 +119,9 @@ const NFT = (props: Props) => {
       const products = await Purchases.getProducts([productIdentifier]);
 
       if (products.length === 0) {
-        throw new Error("Badge claim product not found. Please contact support.");
+        throw new Error(
+          "Badge claim product not found. Please contact support.",
+        );
       }
 
       const product = products[0];
@@ -119,7 +131,9 @@ const NFT = (props: Props) => {
         if (purchaseError.userCancelled) {
           throw new Error("Purchase cancelled");
         }
-        throw new Error(purchaseError.message || "Purchase failed. Please try again.");
+        throw new Error(
+          purchaseError.message || "Purchase failed. Please try again.",
+        );
       }
 
       let attempts = 0;
@@ -127,18 +141,17 @@ const NFT = (props: Props) => {
       let claimed = false;
 
       while (attempts < maxAttempts && !claimed) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         try {
           const status = await fetchClaimStatus(
             user.id as unknown as string,
-            rewardId
+            rewardId,
           );
           if (status.claimed && status.signature) {
             claimed = true;
             break;
           }
-        } catch (statusError) {
-        }
+        } catch (statusError) {}
         attempts++;
       }
 
@@ -159,10 +172,10 @@ const NFT = (props: Props) => {
       }
     } catch (_error: any) {
       let errorMessage = "Failed to claim badge. Please try again.";
-      
+
       setError(errorMessage);
       toggleModal();
-      
+
       setTimeout(() => {
         setSelectedReward(null);
         setModalVisible(true);
@@ -195,7 +208,14 @@ const NFT = (props: Props) => {
     <View style={[styles.container, theme === "dark" && styles.darkContainer]}>
       <View style={styles.headerNav}>
         <BackButton />
-        <Text style={[styles.headerTitle, theme === "dark" && styles.darkHeaderTitle]}>Badges</Text>
+        <Text
+          style={[
+            styles.headerTitle,
+            theme === "dark" && styles.darkHeaderTitle,
+          ]}
+        >
+          Badges
+        </Text>
       </View>
 
       <View style={styles.tabsContainer}>
@@ -206,7 +226,9 @@ const NFT = (props: Props) => {
                 styles.tabText,
                 activeTab === "claimed" && styles.activeTab,
                 theme === "dark" && styles.darkTabText,
-                activeTab === "claimed" && theme === "dark" && styles.darkActiveTab,
+                activeTab === "claimed" &&
+                  theme === "dark" &&
+                  styles.darkActiveTab,
               ]}
             >
               Claimed
@@ -218,7 +240,9 @@ const NFT = (props: Props) => {
                 styles.tabText,
                 activeTab === "unclaimed" && styles.activeTab,
                 theme === "dark" && styles.darkTabText,
-                activeTab === "unclaimed" && theme === "dark" && styles.darkActiveTab,
+                activeTab === "unclaimed" &&
+                  theme === "dark" &&
+                  styles.darkActiveTab,
               ]}
             >
               Unclaimed
@@ -230,7 +254,9 @@ const NFT = (props: Props) => {
                 styles.tabText,
                 activeTab === "locked" && styles.activeTab,
                 theme === "dark" && styles.darkTabText,
-                activeTab === "locked" && theme === "dark" && styles.darkActiveTab,
+                activeTab === "locked" &&
+                  theme === "dark" &&
+                  styles.darkActiveTab,
               ]}
             >
               Locked
@@ -250,11 +276,16 @@ const NFT = (props: Props) => {
             numColumns={2}
             renderItem={({ item }: { item: UserRewardWithDetails }) => (
               <TouchableOpacity
-                style={[styles.rewardCard, theme === "dark" && styles.darkRewardCard]}
-                onPress={() => router.push({
-                  pathname: "/nft/[id]",
-                  params: { id: item.id }
-                })}
+                style={[
+                  styles.rewardCard,
+                  theme === "dark" && styles.darkRewardCard,
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/nft/[id]",
+                    params: { id: item.id },
+                  })
+                }
               >
                 <View style={styles.rewardImageCard}>
                   <Image
@@ -267,7 +298,12 @@ const NFT = (props: Props) => {
                     source={require("@/assets/images/icons/dark/calendar.png")}
                     style={styles.calendarIcon}
                   />
-                  <Text style={[styles.rewardText, theme === "dark" && styles.darkRewardText]}>
+                  <Text
+                    style={[
+                      styles.rewardText,
+                      theme === "dark" && styles.darkRewardText,
+                    ]}
+                  >
                     {formatDate(item.earnedAt)}
                   </Text>
                 </View>
@@ -282,8 +318,14 @@ const NFT = (props: Props) => {
               source={require("@/assets/images/eddie/eddy.gif")}
               style={{ width: 150, height: 150, marginBottom: 20 }}
             />
-            <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
-              You havent claimed any badges yet. Earn badges by completing courses and quizzes 🫠
+            <Text
+              style={[
+                styles.emptyStateText,
+                theme === "dark" && styles.darkEmptyStateText,
+              ]}
+            >
+              You havent claimed any badges yet. Earn badges by completing
+              courses and quizzes 🫠
             </Text>
           </View>
         )
@@ -293,23 +335,38 @@ const NFT = (props: Props) => {
             data={unclaimedRewards}
             numColumns={2}
             renderItem={({ item }: { item: UserRewardWithDetails }) => (
-              <View style={[styles.rewardCard, theme === "dark" && styles.darkRewardCard]}>
+              <View
+                style={[
+                  styles.rewardCard,
+                  theme === "dark" && styles.darkRewardCard,
+                ]}
+              >
                 <View style={styles.rewardImageCard}>
                   <Image
                     style={styles.rewardImage}
                     source={getImageSource(item.imageUrl as unknown as string)}
                   />
                 </View>
-               
+
                 <TouchableOpacity
-                  style={[styles.claimButton, theme === "dark" && {backgroundColor: "#00FF80"}]}
+                  style={[
+                    styles.claimButton,
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                  ]}
                   onPress={() => toggleModal(item)}
                   disabled={isLoading && claimingId === item.id}
                 >
                   {isLoading && claimingId === item.id ? (
                     <ActivityIndicator size="small" color="#FFF" />
                   ) : (
-                    <Text style={[styles.claimButtonText, theme === "dark" && {color: "#000"} ]}>Claim</Text>
+                    <Text
+                      style={[
+                        styles.claimButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Claim
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -319,7 +376,12 @@ const NFT = (props: Props) => {
           />
         ) : (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>
+            <Text
+              style={[
+                styles.emptyStateText,
+                theme === "dark" && styles.darkEmptyStateText,
+              ]}
+            >
               No unclaimed badges found.
             </Text>
           </View>
@@ -329,20 +391,19 @@ const NFT = (props: Props) => {
           data={lockedRewards}
           numColumns={2}
           renderItem={({ item }) => (
-            <View style={[styles.rewardCard, theme === "dark" && styles.darkRewardCard]}>
+            <View
+              style={[
+                styles.rewardCard,
+                theme === "dark" && styles.darkRewardCard,
+              ]}
+            >
               <View style={styles.lockedOverlay}>
                 <Image
                   style={styles.lockedImage}
                   source={getImageSource(item.imageUrl ?? "")}
                 />
-                <BlurView
-                  intensity={20}
-                  tint="dark"
-                  style={styles.blurOverlay}
-                >
-                  <Text style={styles.lockedText}>
-                    {item.title}
-                  </Text>
+                <BlurView intensity={20} tint="dark" style={styles.blurOverlay}>
+                  <Text style={styles.lockedText}>{item.title}</Text>
                 </BlurView>
               </View>
             </View>
@@ -352,12 +413,19 @@ const NFT = (props: Props) => {
         />
       ) : (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyStateText, theme === "dark" && styles.darkEmptyStateText]}>No locked rewards found.</Text>
+          <Text
+            style={[
+              styles.emptyStateText,
+              theme === "dark" && styles.darkEmptyStateText,
+            ]}
+          >
+            No locked rewards found.
+          </Text>
         </View>
       )}
 
-      <Modal 
-        isVisible={isModalVisible} 
+      <Modal
+        isVisible={isModalVisible}
         style={styles.rewardModal}
         animationIn="zoomIn"
         animationOut="zoomOut"
@@ -371,16 +439,35 @@ const NFT = (props: Props) => {
         hideModalContentWhileAnimating={true}
         onBackdropPress={() => toggleModal()}
       >
-        <View style={[styles.modalContent, theme === "dark" && styles.darkModalContent]}>
+        <View
+          style={[
+            styles.modalContent,
+            theme === "dark" && styles.darkModalContent,
+          ]}
+        >
           {error ? (
             <>
-              <Text style={[styles.errorTitle, theme === "dark" && styles.darkErrorTitle]}>Error Claiming Badge</Text>
-              <Image 
-                source={require("@/assets/images/icons/error.png")} 
+              <Text
+                style={[
+                  styles.errorTitle,
+                  theme === "dark" && styles.darkErrorTitle,
+                ]}
+              >
+                Error Claiming Badge
+              </Text>
+              <Image
+                source={require("@/assets/images/icons/error.png")}
                 style={styles.errorIcon}
                 defaultSource={require("@/assets/images/icons/SealCheck.png")}
               />
-              <Text style={[styles.errorText, theme === "dark" && styles.darkErrorText]}>{error}</Text>
+              <Text
+                style={[
+                  styles.errorText,
+                  theme === "dark" && styles.darkErrorText,
+                ]}
+              >
+                {error}
+              </Text>
               <TouchableOpacity
                 style={[styles.claimModalButton, styles.fullWidthButton]}
                 onPress={() => {
@@ -396,29 +483,58 @@ const NFT = (props: Props) => {
               {selectedReward && (
                 <Image
                   style={styles.modalImage}
-                  source={getImageSource(selectedReward.imageUrl as unknown as string)}
+                  source={getImageSource(
+                    selectedReward.imageUrl as unknown as string,
+                  )}
                 />
               )}
-              <Text style={[styles.claimModalTitle, theme === "dark" && {color: "#E0E0E0"}]}>Ready to Claim?🎉</Text>
-              <Text style={[styles.modalText, theme === "dark" && styles.darkModalText]}>
+              <Text
+                style={[
+                  styles.claimModalTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                Ready to Claim?🎉
+              </Text>
+              <Text
+                style={[
+                  styles.modalText,
+                  theme === "dark" && styles.darkModalText,
+                ]}
+              >
                 You&apos;re about to claim{" "}
-                <Text style={[styles.nftNameText, theme === "dark" && styles.darkNftNameText]}>
+                <Text
+                  style={[
+                    styles.nftNameText,
+                    theme === "dark" && styles.darkNftNameText,
+                  ]}
+                >
                   {selectedReward?.title}
                 </Text>
                 , collectible badge for your achievement!
               </Text>
               <View style={styles.modalButtons}>
                 <TouchableOpacity
-                  style={[styles.cancelButton, theme === "dark" && styles.darkCancelButton]}
+                  style={[
+                    styles.cancelButton,
+                    theme === "dark" && styles.darkCancelButton,
+                  ]}
                   onPress={() => toggleModal()}
                 >
-                  <Text style={[styles.cancelButtonText, theme === "dark" && {color: "#00FF80"}]}>Cancel</Text>
+                  <Text
+                    style={[
+                      styles.cancelButtonText,
+                      theme === "dark" && { color: "#00FF80" },
+                    ]}
+                  >
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[
-                    styles.claimModalButton, 
-                    theme === "dark" && styles.darkClaimModalButton
+                    styles.claimModalButton,
+                    theme === "dark" && styles.darkClaimModalButton,
                   ]}
                   onPress={() => {
                     if (selectedReward) {
@@ -427,7 +543,14 @@ const NFT = (props: Props) => {
                     }
                   }}
                 >
-                  <Text style={[styles.claimModalButtonText, theme === "dark" && {color: "#000"}]}>Claim Now</Text>
+                  <Text
+                    style={[
+                      styles.claimModalButtonText,
+                      theme === "dark" && { color: "#000" },
+                    ]}
+                  >
+                    Claim Now
+                  </Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -473,7 +596,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
-    paddingVertical: 24
+    paddingVertical: 24,
   },
   activeTab: {
     color: "#000",
@@ -510,9 +633,7 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingBottom: 20,
   },
-  rewardImageCard: {
-
-  },
+  rewardImageCard: {},
   rewardCard: {
     borderRadius: 12,
 
@@ -724,7 +845,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
-    lineHeight: 36
+    lineHeight: 36,
   },
   errorTitle: {
     color: "#FF3B30",
@@ -790,6 +911,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
-    lineHeight: 36
+    lineHeight: 36,
   },
 });

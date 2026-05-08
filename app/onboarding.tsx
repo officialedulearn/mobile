@@ -1,5 +1,5 @@
 import useUserStore from "@/core/userState";
-import { getScreenTopPadding } from '@/utils/design';
+import { getScreenTopPadding } from "@/utils/design";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -17,7 +17,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type OnBoardingSteps = {
   title: string;
@@ -60,10 +60,11 @@ const OnBoarding = () => {
 
   const goToStep = useCallback(
     (index: number) => {
-      if (index < 0 || index >= ONBOARDING_STEPS.length || index === stepIndex) return;
+      if (index < 0 || index >= ONBOARDING_STEPS.length || index === stepIndex)
+        return;
       listRef.current?.scrollToIndex({ index, animated: true });
     },
-    [stepIndex]
+    [stepIndex],
   );
 
   const onMomentumScrollEnd = useCallback(
@@ -73,7 +74,7 @@ const OnBoarding = () => {
       const clamped = Math.min(ONBOARDING_STEPS.length - 1, Math.max(0, idx));
       setStepIndex(clamped);
     },
-    [windowWidth]
+    [windowWidth],
   );
 
   const goToNextStep = () => {
@@ -89,13 +90,23 @@ const OnBoarding = () => {
     ({ item }: { item: OnBoardingSteps }) => (
       <View style={[styles.page, { width: windowWidth }]}>
         <View style={styles.content}>
-          <Image source={item.illustration} style={styles.illustration} resizeMode="contain" />
-          <Text style={[styles.title, theme === "dark" && styles.titleDark]}>{item.title}</Text>
-          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>{item.subtitle}</Text>
+          <Image
+            source={item.illustration}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+          <Text style={[styles.title, theme === "dark" && styles.titleDark]}>
+            {item.title}
+          </Text>
+          <Text
+            style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}
+          >
+            {item.subtitle}
+          </Text>
         </View>
       </View>
     ),
-    [theme, windowWidth]
+    [theme, windowWidth],
   );
 
   const getItemLayout = useCallback(
@@ -104,22 +115,35 @@ const OnBoarding = () => {
       offset: windowWidth * index,
       index,
     }),
-    [windowWidth]
+    [windowWidth],
   );
 
   return (
-    <SafeAreaView style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        theme === "dark" && styles.containerDark,
+        { paddingTop: topPadding },
+      ]}
+    >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
       <View style={styles.topNavigation}>
         <Image
-          source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
+          source={
+            theme === "dark"
+              ? require("@/assets/images/logo.png")
+              : require("@/assets/images/LOGO-1.png")
+          }
           style={styles.logo}
           resizeMode="contain"
         />
         {stepIndex < ONBOARDING_STEPS.length - 1 && (
-          <TouchableOpacity 
-            style={[styles.skipButton, theme === "dark" && styles.skipButtonDark]} 
+          <TouchableOpacity
+            style={[
+              styles.skipButton,
+              theme === "dark" && styles.skipButtonDark,
+            ]}
             onPress={() => {
               Haptics.selectionAsync();
               router.push("/auth?signUp=1");
@@ -127,9 +151,17 @@ const OnBoarding = () => {
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={[styles.skipText, theme === "dark" && styles.skipTextDark]}>Skip</Text>
+            <Text
+              style={[styles.skipText, theme === "dark" && styles.skipTextDark]}
+            >
+              Skip
+            </Text>
             <Image
-              source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
+              source={
+                theme === "dark"
+                  ? require("@/assets/images/icons/dark/CaretRight.png")
+                  : require("@/assets/images/icons/CaretRight.png")
+              }
               style={styles.skipIcon}
               resizeMode="contain"
             />
@@ -150,11 +182,19 @@ const OnBoarding = () => {
         onMomentumScrollEnd={onMomentumScrollEnd}
         getItemLayout={getItemLayout}
         onScrollToIndexFailed={({ index }) => {
-          listRef.current?.scrollToOffset({ offset: index * windowWidth, animated: true });
+          listRef.current?.scrollToOffset({
+            offset: index * windowWidth,
+            animated: true,
+          });
         }}
       />
 
-      <View style={[styles.stepsDisplay, theme === "dark" && styles.stepsDisplayDark]}>
+      <View
+        style={[
+          styles.stepsDisplay,
+          theme === "dark" && styles.stepsDisplayDark,
+        ]}
+      >
         {ONBOARDING_STEPS.map((_, index) => (
           <TouchableOpacity
             key={index}
@@ -165,10 +205,10 @@ const OnBoarding = () => {
           >
             <View
               style={[
-                styles.dot, 
+                styles.dot,
                 stepIndex === index && styles.activeDot,
                 theme === "dark" && styles.dotDark,
-                theme === "dark" && stepIndex === index && styles.activeDotDark
+                theme === "dark" && stepIndex === index && styles.activeDotDark,
               ]}
             />
           </TouchableOpacity>
@@ -179,38 +219,66 @@ const OnBoarding = () => {
         {stepIndex === ONBOARDING_STEPS.length - 1 ? (
           <View style={styles.authButtonsContainer}>
             <TouchableOpacity
-              style={[styles.signInButton, theme === "dark" && styles.signInButtonDark]}
+              style={[
+                styles.signInButton,
+                theme === "dark" && styles.signInButtonDark,
+              ]}
               onPress={() => {
                 router.push({
                   pathname: "/auth",
-                  params: { signUp: '0' },
+                  params: { signUp: "0" },
                 });
               }}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={[styles.signInText, theme === "dark" && styles.signInTextDark]}>Sign In</Text>
+              <Text
+                style={[
+                  styles.signInText,
+                  theme === "dark" && styles.signInTextDark,
+                ]}
+              >
+                Sign In
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.signUpButton, theme === "dark" && styles.signUpButtonDark]}
+              style={[
+                styles.signUpButton,
+                theme === "dark" && styles.signUpButtonDark,
+              ]}
               onPress={() => {
                 router.push({
                   pathname: "/auth",
-                  params: { signUp: '1' },
+                  params: { signUp: "1" },
                 });
               }}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={[styles.signUpText, theme === "dark" && styles.signUpTextDark]}>Sign Up</Text>
+              <Text
+                style={[
+                  styles.signUpText,
+                  theme === "dark" && styles.signUpTextDark,
+                ]}
+              >
+                Sign Up
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.getStarted, theme === "dark" && styles.getStartedDark]}
+            style={[
+              styles.getStarted,
+              theme === "dark" && styles.getStartedDark,
+            ]}
             onPress={goToNextStep}
           >
-            <Text style={[styles.getStartedText, theme === "dark" && styles.getStartedTextDark]}>
+            <Text
+              style={[
+                styles.getStartedText,
+                theme === "dark" && styles.getStartedTextDark,
+              ]}
+            >
               {currentStep.buttonTexts[0]}
             </Text>
           </TouchableOpacity>

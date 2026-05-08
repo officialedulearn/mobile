@@ -16,7 +16,12 @@ export default function ScreenLoader({ visible, message }: ScreenLoaderProps) {
   const isDark = theme === "dark";
 
   return (
-    <Modal transparent visible={visible} animationType="fade" statusBarTranslucent>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      statusBarTranslucent
+    >
       <View style={styles.overlay}>
         <View style={[styles.card, isDark && styles.cardDark]}>
           <View style={styles.markWrap}>

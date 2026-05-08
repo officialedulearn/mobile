@@ -1,13 +1,13 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Design } from "@/utils/design";
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 const ACHIEVEMENT_IMAGES: { [key: string]: any } = {
-  xp: require('@/assets/images/icons/medal-06.png'),
-  nft: require('@/assets/images/icons/nft.png'),
-  quiz: require('@/assets/images/icons/brain-03.png'),
+  xp: require("@/assets/images/icons/medal-06.png"),
+  nft: require("@/assets/images/icons/nft.png"),
+  quiz: require("@/assets/images/icons/brain-03.png"),
 };
 
 interface AchievementCardProps {
@@ -16,28 +16,28 @@ interface AchievementCardProps {
   metric: string;
 }
 
-export function AchievementCard({ title, imageKey, metric }: AchievementCardProps) {
+export function AchievementCard({
+  title,
+  imageKey,
+  metric,
+}: AchievementCardProps) {
   const { colors } = useTheme();
 
   return (
-    <View style={[
-      styles.container,
-      { backgroundColor: colors.surface, borderColor: colors.borderMuted },
-    ]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.surface, borderColor: colors.borderMuted },
+      ]}
+    >
       <Image
         source={ACHIEVEMENT_IMAGES[imageKey]}
         style={{ width: 30, height: 30 }}
       />
-      <Text style={[
-        styles.metric,
-        { color: colors.textPrimary }
-      ]}>
+      <Text style={[styles.metric, { color: colors.textPrimary }]}>
         {metric}
       </Text>
-      <Text style={[
-        styles.title,
-        { color: colors.textSecondary }
-      ]}>
+      <Text style={[styles.title, { color: colors.textSecondary }]}>
         {title}
       </Text>
     </View>
@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: Design.spacing.md,
     paddingHorizontal: Design.spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     flex: 1,
     marginHorizontal: Design.spacing.xs,
@@ -66,6 +66,6 @@ const styles = StyleSheet.create({
     fontSize: Design.typography.fontSize.xs,
     fontWeight: Design.typography.fontWeight.regular,
     marginTop: Design.spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

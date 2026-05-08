@@ -1,8 +1,8 @@
 import {
-  SocialService,
   FollowStats,
-  UserFollow,
   NotificationPreferences,
+  SocialService,
+  UserFollow,
 } from "@/services/social.service";
 import { create } from "zustand";
 
@@ -18,13 +18,29 @@ interface SocialState {
   fetchFollowStats: (userId: string) => Promise<void>;
   fetchFollowers: (userId: string) => Promise<void>;
   fetchFollowing: (userId: string) => Promise<void>;
-  checkIsFollowing: (currentUserId: string, targetUserId: string) => Promise<boolean>;
+  checkIsFollowing: (
+    currentUserId: string,
+    targetUserId: string,
+  ) => Promise<boolean>;
   fetchNotificationPreferences: (userId: string) => Promise<void>;
-  followUser: (userId: string, preferences?: Partial<NotificationPreferences>) => Promise<void>;
+  followUser: (
+    userId: string,
+    preferences?: Partial<NotificationPreferences>,
+  ) => Promise<void>;
   unfollowUser: (userId: string) => Promise<void>;
-  updateNotificationPreferences: (userId: string, prefs: Partial<NotificationPreferences>) => Promise<void>;
-  setFollowingCache: (currentUserId: string, targetUserId: string, isFollowing: boolean) => void;
-  setNotificationPrefsCache: (userId: string, prefs: NotificationPreferences) => void;
+  updateNotificationPreferences: (
+    userId: string,
+    prefs: Partial<NotificationPreferences>,
+  ) => Promise<void>;
+  setFollowingCache: (
+    currentUserId: string,
+    targetUserId: string,
+    isFollowing: boolean,
+  ) => void;
+  setNotificationPrefsCache: (
+    userId: string,
+    prefs: NotificationPreferences,
+  ) => void;
   resetState: () => void;
 }
 
@@ -50,11 +66,13 @@ const useSocialStore = create<SocialState>((set, get) => ({
         isLoading: false,
       }));
     } catch (error) {
-      console.error("Failed to fetch follow stats:", error);
+      //console.error("Failed to fetch follow stats:", error);
       set({
         isLoading: false,
         error:
-          error instanceof Error ? error.message : "Failed to fetch follow stats",
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch follow stats",
       });
     }
   },
@@ -66,7 +84,7 @@ const useSocialStore = create<SocialState>((set, get) => ({
         followersByUserId: { ...state.followersByUserId, [userId]: followers },
       }));
     } catch (error) {
-      console.error("Failed to fetch followers:", error);
+      //console.error("Failed to fetch followers:", error);
       throw error;
     }
   },
@@ -78,7 +96,7 @@ const useSocialStore = create<SocialState>((set, get) => ({
         followingByUserId: { ...state.followingByUserId, [userId]: following },
       }));
     } catch (error) {
-      console.error("Failed to fetch following:", error);
+      //console.error("Failed to fetch following:", error);
       throw error;
     }
   },
@@ -92,7 +110,7 @@ const useSocialStore = create<SocialState>((set, get) => ({
       }));
       return isFollowing;
     } catch (error) {
-      console.error("Failed to check follow status:", error);
+      //console.error("Failed to check follow status:", error);
       throw error;
     }
   },
@@ -101,16 +119,22 @@ const useSocialStore = create<SocialState>((set, get) => ({
     try {
       const prefs = await socialService.getNotificationPreferences(userId);
       set((state) => ({
-        notificationPrefsByUserId: { ...state.notificationPrefsByUserId, [userId]: prefs },
+        notificationPrefsByUserId: {
+          ...state.notificationPrefsByUserId,
+          [userId]: prefs,
+        },
       }));
       return;
     } catch (error) {
-      console.error("Failed to fetch notification preferences:", error);
+      //console.error("Failed to fetch notification preferences:", error);
       throw error;
     }
   },
 
-  followUser: async (userId: string, preferences?: Partial<NotificationPreferences>) => {
+  followUser: async (
+    userId: string,
+    preferences?: Partial<NotificationPreferences>,
+  ) => {
     await socialService.followUser(userId, preferences);
   },
 
@@ -118,20 +142,33 @@ const useSocialStore = create<SocialState>((set, get) => ({
     await socialService.unfollowUser(userId);
   },
 
-  updateNotificationPreferences: async (userId: string, prefs: Partial<NotificationPreferences>) => {
+  updateNotificationPreferences: async (
+    userId: string,
+    prefs: Partial<NotificationPreferences>,
+  ) => {
     await socialService.updateNotificationPreferences(userId, prefs);
   },
 
-  setFollowingCache: (currentUserId: string, targetUserId: string, isFollowing: boolean) => {
+  setFollowingCache: (
+    currentUserId: string,
+    targetUserId: string,
+    isFollowing: boolean,
+  ) => {
     const key = followKey(currentUserId, targetUserId);
     set((state) => ({
       isFollowingByKey: { ...state.isFollowingByKey, [key]: isFollowing },
     }));
   },
 
-  setNotificationPrefsCache: (userId: string, prefs: NotificationPreferences) => {
+  setNotificationPrefsCache: (
+    userId: string,
+    prefs: NotificationPreferences,
+  ) => {
     set((state) => ({
-      notificationPrefsByUserId: { ...state.notificationPrefsByUserId, [userId]: prefs },
+      notificationPrefsByUserId: {
+        ...state.notificationPrefsByUserId,
+        [userId]: prefs,
+      },
     }));
   },
 

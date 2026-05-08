@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,13 +7,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 // import * as AppleAuthentication from 'expo-apple-authentication';
-import useUserStore from '@/core/userState';
-import { supabase } from '@/utils/supabase';
-import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+import useUserStore from "@/core/userState";
+import { supabase } from "@/utils/supabase";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -22,24 +22,27 @@ interface OAuthButtonsProps {
 }
 
 export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
-  const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
+  const [loading, setLoading] = useState<"google" | "apple" | null>(null);
   const theme = useUserStore((state) => state.theme);
 
   const handleOAuthCallback = async (
     supabaseUser: any,
-    provider: 'google' | 'apple',
-    providerId: string
+    provider: "google" | "apple",
+    providerId: string,
   ) => {
     const API_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-    
+
     try {
       const response = await fetch(`${API_URL}/auth/oauth/callback`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supabaseUserId: supabaseUser.id,
           email: supabaseUser.email,
-          name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || '',
+          name:
+            supabaseUser.user_metadata?.full_name ||
+            supabaseUser.user_metadata?.name ||
+            "",
           provider: provider,
           providerId: providerId,
         }),
@@ -47,33 +50,36 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error('Failed to process OAuth callback');
+        throw new Error("Failed to process OAuth callback");
       }
 
       const { isNewUser, needsUsername } = await response.json();
 
       if (needsUsername) {
-        router.push('/auth/setupUsername' as any);
+        router.push("/auth/setupUsername" as any);
       } else {
         await useUserStore.getState().setUserAsync();
-        router.push('/(tabs)');
+        router.push("/(tabs)");
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to complete authentication. Please try again.');
+      Alert.alert(
+        "Error",
+        "Failed to complete authentication. Please try again.",
+      );
     }
   };
 
   const handleGoogleLogin = async () => {
-    setLoading('google');
+    setLoading("google");
     onLoadingChange?.(true);
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
-          redirectTo: 'edulearnv2://auth/callback',
+          redirectTo: "edulearnv2://auth/callback",
           skipBrowserRedirect: true,
-        }
+        },
       });
 
       if (error) {
@@ -83,32 +89,40 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
       if (data?.url) {
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
-          'edulearnv2://auth/callback'
+          "edulearnv2://auth/callback",
         );
 
-        if (result.type === 'success' && result.url) {
+        if (result.type === "success" && result.url) {
           const url = new URL(result.url);
-          const accessToken = url.searchParams.get('access_token');
-          const refreshToken = url.searchParams.get('refresh_token');
+          const accessToken = url.searchParams.get("access_token");
+          const refreshToken = url.searchParams.get("refresh_token");
 
           if (accessToken) {
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken || '',
-            });
+            const { data: sessionData, error: sessionError } =
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken || "",
+              });
 
             if (sessionError) {
               throw sessionError;
             }
 
             if (sessionData?.user) {
-              await handleOAuthCallback(sessionData.user, 'google', sessionData.user.id);
+              await handleOAuthCallback(
+                sessionData.user,
+                "google",
+                sessionData.user.id,
+              );
             }
           }
         }
       }
     } catch (error: any) {
-      Alert.alert('Authentication Error', error.message || 'Failed to sign in with Google');
+      Alert.alert(
+        "Authentication Error",
+        error.message || "Failed to sign in with Google",
+      );
     } finally {
       setLoading(null);
       onLoadingChange?.(false);
@@ -140,7 +154,7 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
   //       });
 
   //       if (error) {
-  //         console.error('Apple Sign-In Supabase error:', error);
+  //         //console.error('Apple Sign-In Supabase error:', error);
   //         Alert.alert('Authentication Error', error.message);
   //         return;
   //       }
@@ -151,9 +165,9 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
   //     }
   //   } catch (e: any) {
   //     if (e.code === 'ERR_REQUEST_CANCELED') {
-  //       console.log('User canceled Apple Sign-In');
+  //       //console.log('User canceled Apple Sign-In');
   //     } else {
-  //       console.error('Apple Sign-In error:', e);
+  //       //console.error('Apple Sign-In error:', e);
   //       Alert.alert('Error', 'Failed to sign in with Apple');
   //     }
   //   } finally {
@@ -162,7 +176,7 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
   //   }
   // };
 
-  const isDark = theme === 'dark';
+  const isDark = theme === "dark";
 
   return (
     <View style={styles.container}>
@@ -172,13 +186,16 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
           styles.googleButton,
           isDark && styles.googleButtonDark,
           loading !== null && styles.buttonDisabled,
-          Platform.OS === 'ios' && { display: 'none' },
+          Platform.OS === "ios" && { display: "none" },
         ]}
         onPress={handleGoogleLogin}
         disabled={loading !== null}
       >
-        {loading === 'google' ? (
-          <ActivityIndicator size="small" color={isDark ? '#E0E0E0' : '#2D3C52'} />
+        {loading === "google" ? (
+          <ActivityIndicator
+            size="small"
+            color={isDark ? "#E0E0E0" : "#2D3C52"}
+          />
         ) : (
           <GoogleIcon />
         )}
@@ -207,7 +224,10 @@ export default function OAuthButtons({ onLoadingChange }: OAuthButtonsProps) {
 function GoogleIcon() {
   return (
     <View style={styles.iconContainer}>
-      <Image source={require('@/assets/images/icons/Google.png')} style={styles.googleIcon} />
+      <Image
+        source={require("@/assets/images/icons/Google.png")}
+        style={styles.googleIcon}
+      />
     </View>
   );
 }
@@ -215,50 +235,50 @@ function GoogleIcon() {
 const styles = StyleSheet.create({
   container: {
     gap: 12,
-    width: '100%',
+    width: "100%",
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 32,
     gap: 12,
   },
   googleButton: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
   },
   googleButtonDark: {
-    backgroundColor: '#1a1a1a',
-    borderColor: '#2E3033',
+    backgroundColor: "#1a1a1a",
+    borderColor: "#2E3033",
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    fontWeight: "600",
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
   },
   buttonTextDark: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
   },
   appleButton: {
-    width: '100%',
+    width: "100%",
     height: 50,
   },
   iconContainer: {
     width: 20,
     height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   googleIcon: {
     width: 18,
     height: 18,
-  }
+  },
 });

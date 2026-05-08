@@ -1,13 +1,13 @@
-import React from 'react';
+import React from "react";
 import {
   Modal,
   StyleSheet,
   TouchableOpacity,
   ViewStyle,
   ModalProps,
-} from 'react-native';
+} from "react-native";
 
-interface AppModalProps extends Omit<ModalProps, 'visible'> {
+interface AppModalProps extends Omit<ModalProps, "visible"> {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
@@ -49,16 +49,16 @@ const AppModal: React.FC<AppModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   content: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 12,
     padding: 20,
-    width: '85%',
-    maxHeight: '80%',
+    width: "85%",
+    maxHeight: "80%",
   },
 });
 

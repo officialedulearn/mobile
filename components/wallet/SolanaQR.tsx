@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
-import useUserStore from '@/core/userState';
+import React from "react";
+import { View, StyleSheet, Text } from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import useUserStore from "@/core/userState";
 
 interface SolanaQRProps {
   address: string;
@@ -9,25 +9,28 @@ interface SolanaQRProps {
   label?: string;
 }
 
-const SolanaQR = ({ address, amount = '', label = 'EduLearn Wallet' }: SolanaQRProps) => {
-
+const SolanaQR = ({
+  address,
+  amount = "",
+  label = "EduLearn Wallet",
+}: SolanaQRProps) => {
   const buildSolanaUri = () => {
-    if (!address) return '';
-    
+    if (!address) return "";
+
     let uri = `solana:${address}`;
     const params = [];
-    
+
     if (amount) {
       params.push(`amount=${amount}`);
     }
     if (label) {
       params.push(`label=${encodeURIComponent(label)}`);
     }
-    
+
     if (params.length > 0) {
-      uri += `?${params.join('&')}`;
+      uri += `?${params.join("&")}`;
     }
-    
+
     return uri;
   };
 
@@ -36,7 +39,7 @@ const SolanaQR = ({ address, amount = '', label = 'EduLearn Wallet' }: SolanaQRP
   if (!solanaUri) {
     return (
       <View style={styles.container}>
-        <View style={[styles.qrWrapper, { backgroundColor: '#FFFFFF' }]}>
+        <View style={[styles.qrWrapper, { backgroundColor: "#FFFFFF" }]}>
           <Text style={styles.errorText}>Invalid address</Text>
         </View>
       </View>
@@ -45,7 +48,7 @@ const SolanaQR = ({ address, amount = '', label = 'EduLearn Wallet' }: SolanaQRP
 
   return (
     <View style={styles.container}>
-      <View style={[styles.qrWrapper, { backgroundColor: '#FFFFFF' }]}>
+      <View style={[styles.qrWrapper, { backgroundColor: "#FFFFFF" }]}>
         <QRCode
           value={solanaUri}
           size={192}
@@ -66,17 +69,17 @@ export default SolanaQR;
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   qrWrapper: {
     padding: 16,
     borderRadius: 16,
     minHeight: 224,
     minWidth: 224,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -86,9 +89,9 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   errorText: {
-    color: '#FF3B30',
-    fontFamily: 'Satoshi-Regular',
+    color: "#FF3B30",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

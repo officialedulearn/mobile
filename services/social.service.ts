@@ -26,10 +26,10 @@ export interface NotificationPreferences {
 export class SocialService extends BaseService {
   async followUser(
     userId: string,
-    preferences?: Partial<NotificationPreferences>
+    preferences?: Partial<NotificationPreferences>,
   ): Promise<{ message: string }> {
     const response = await this.executeRequest(
-      this.getClient().post(`/social/follow/${userId}`, preferences)
+      this.getClient().post(`/social/follow/${userId}`, preferences),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -37,7 +37,7 @@ export class SocialService extends BaseService {
 
   async unfollowUser(userId: string): Promise<{ message: string }> {
     const response = await this.executeRequest(
-      this.getClient().delete(`/social/unfollow/${userId}`)
+      this.getClient().delete(`/social/unfollow/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -45,7 +45,7 @@ export class SocialService extends BaseService {
 
   async isFollowing(userId: string): Promise<boolean> {
     const response = await this.executeRequest(
-      this.getClient().get(`/social/is-following/${userId}`)
+      this.getClient().get(`/social/is-following/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data?.isFollowing ?? false;
@@ -53,7 +53,7 @@ export class SocialService extends BaseService {
 
   async getFollowers(userId: string): Promise<UserFollow[]> {
     const response = await this.executeRequest(
-      this.getClient().get(`/social/followers/${userId}`)
+      this.getClient().get(`/social/followers/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data?.followers ?? [];
@@ -61,7 +61,7 @@ export class SocialService extends BaseService {
 
   async getFollowing(userId: string): Promise<UserFollow[]> {
     const response = await this.executeRequest(
-      this.getClient().get(`/social/following/${userId}`)
+      this.getClient().get(`/social/following/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data?.following ?? [];
@@ -69,7 +69,7 @@ export class SocialService extends BaseService {
 
   async getFollowStats(userId: string): Promise<FollowStats> {
     const response = await this.executeRequest<FollowStats>(
-      this.getClient().get(`/social/stats/${userId}`)
+      this.getClient().get(`/social/stats/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data!;
@@ -77,18 +77,23 @@ export class SocialService extends BaseService {
 
   async updateNotificationPreferences(
     userId: string,
-    preferences: Partial<NotificationPreferences>
+    preferences: Partial<NotificationPreferences>,
   ): Promise<{ message: string }> {
     const response = await this.executeRequest(
-      this.getClient().put(`/social/notification-preferences/${userId}`, preferences)
+      this.getClient().put(
+        `/social/notification-preferences/${userId}`,
+        preferences,
+      ),
     );
     if (response.error) throw response.error;
     return response.data!;
   }
 
-  async getNotificationPreferences(userId: string): Promise<NotificationPreferences> {
+  async getNotificationPreferences(
+    userId: string,
+  ): Promise<NotificationPreferences> {
     const response = await this.executeRequest<NotificationPreferences>(
-      this.getClient().get(`/social/notification-preferences/${userId}`)
+      this.getClient().get(`/social/notification-preferences/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data!;

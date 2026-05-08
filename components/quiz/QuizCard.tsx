@@ -1,8 +1,8 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Design } from "@/utils/design";
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface QuizCardProps {
   title: string;
@@ -11,7 +11,12 @@ interface QuizCardProps {
   onPress: () => void;
 }
 
-export function QuizCard({ title, description, tested = false, onPress }: QuizCardProps) {
+export function QuizCard({
+  title,
+  description,
+  tested = false,
+  onPress,
+}: QuizCardProps) {
   const { colors, spacing } = useTheme();
 
   return (
@@ -23,7 +28,7 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
           borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
-        }
+        },
       ]}
       activeOpacity={0.8}
       onPress={onPress}
@@ -31,19 +36,13 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
     >
       <View style={{ flex: 1 }}>
         <Text
-          style={[
-            styles.title,
-            { color: colors.textPrimary }
-          ]}
+          style={[styles.title, { color: colors.textPrimary }]}
           numberOfLines={2}
         >
           {title}
         </Text>
         <Text
-          style={[
-            styles.description,
-            { color: colors.textSecondary }
-          ]}
+          style={[styles.description, { color: colors.textSecondary }]}
           numberOfLines={3}
         >
           {description}
@@ -57,7 +56,7 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
       {tested && (
         <View style={styles.testedBadge}>
           <Image
-            source={require('@/assets/images/icons/medal-05.png')}
+            source={require("@/assets/images/icons/medal-05.png")}
             style={{ width: 20, height: 20 }}
           />
           <Text style={styles.testedText}>Completed</Text>
@@ -69,13 +68,13 @@ export function QuizCard({ title, description, tested = false, onPress }: QuizCa
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     borderWidth: 1,
     paddingRight: Design.spacing.md,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexDirection: 'row',
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexDirection: "row",
     marginHorizontal: Design.spacing.sm,
     marginBottom: Design.spacing.md,
     minHeight: 100,
@@ -98,7 +97,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Design.spacing.md,
     paddingVertical: Design.spacing.xs,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   badgeText: {
     color: Design.colors.mint.DEFAULT,
@@ -107,9 +106,9 @@ const styles = StyleSheet.create({
     fontWeight: Design.typography.fontWeight.medium,
   },
   testedBadge: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Design.spacing.xs,
-    alignItems: 'center',
+    alignItems: "center",
   },
   testedText: {
     color: Design.colors.semantic.success,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,39 +6,36 @@ import {
   Platform,
   TouchableOpacity,
   Dimensions,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSegments } from 'expo-router';
-import Animated, {
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import useUserStore from '@/core/userState';
-import AnimatedTabIcon from './AnimatedTabIcon';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSegments } from "expo-router";
+import Animated, { withSpring, withTiming } from "react-native-reanimated";
+import useUserStore from "@/core/userState";
+import AnimatedTabIcon from "./AnimatedTabIcon";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface BottomTabBarProps {
   onTabPress?: (tabName: string) => void;
 }
 
-const TAB_ORDER = ['index', 'hub', 'chat', 'rewards', 'profile'];
+const TAB_ORDER = ["index", "hub", "chat", "rewards", "profile"];
 
 const BottomTabBar: React.FC<BottomTabBarProps> = ({ onTabPress }) => {
   const theme = useUserStore((s) => s.theme);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const segments = useSegments();
-  const isChatTab = segments.includes('chat');
+  const isChatTab = segments.includes("chat");
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true)
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => setKeyboardVisible(true),
     );
     const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false)
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardVisible(false),
     );
 
     return () => {
@@ -54,12 +51,12 @@ const BottomTabBar: React.FC<BottomTabBarProps> = ({ onTabPress }) => {
       style={[
         styles.container,
         {
-          borderTopColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC',
-          backgroundColor: theme === 'dark' ? '#0d0d0d' : '#F9FBFC',
+          borderTopColor: theme === "dark" ? "#0d0d0d" : "#F9FBFC",
+          backgroundColor: theme === "dark" ? "#0d0d0d" : "#F9FBFC",
           height: 70 + insets.bottom,
           paddingBottom: Math.max(insets.bottom, 15),
           paddingTop: 15,
-          display: shouldHide ? 'none' : 'flex',
+          display: shouldHide ? "none" : "flex",
         },
       ]}
     >
@@ -87,15 +84,15 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   tabsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
     flex: 1,
   },
   tabButton: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

@@ -1,7 +1,7 @@
 import { FlashcardsService } from "@/services/flashcards.service";
 import type {
-    FlashcardDeck,
-    FlashcardDeckWithFlashcards,
+  FlashcardDeck,
+  FlashcardDeckWithFlashcards,
 } from "@/types/flashcards.types";
 import { create } from "zustand";
 
@@ -45,7 +45,7 @@ const useFlashCardStore = create<FlashCardState>((set, get) => ({
       const flashcardDecks = await flashcardsService.getFlashcardDecks(userId);
       set({ flashcardDecks, decksUserId: userId, isLoading: false });
     } catch (error) {
-      console.error("Failed to fetch flashcard decks:", error);
+      //console.error("Failed to fetch flashcard decks:", error);
       set({ isLoading: false, error: "Failed to load flashcard decks" });
     }
   },
@@ -75,7 +75,7 @@ const useFlashCardStore = create<FlashCardState>((set, get) => ({
       }));
       return payload;
     } catch (error) {
-      console.error("Failed to fetch flashcard deck by ID:", error);
+      //console.error("Failed to fetch flashcard deck by ID:", error);
       set({ isLoading: false, error: "Failed to load flashcards" });
       return undefined;
     }

@@ -21,7 +21,13 @@ function getNextMidnight(): Date {
   return midnight;
 }
 
-function CountdownTimer({ until, theme }: { until: Date; theme?: "light" | "dark" }) {
+function CountdownTimer({
+  until,
+  theme,
+}: {
+  until: Date;
+  theme?: "light" | "dark";
+}) {
   const [remaining, setRemaining] = useState("");
 
   useEffect(() => {
@@ -42,7 +48,9 @@ function CountdownTimer({ until, theme }: { until: Date; theme?: "light" | "dark
   }, [until]);
 
   return (
-    <Text style={[styles.countdownText, theme === "dark" && { color: "#E0E0E0" }]}>
+    <Text
+      style={[styles.countdownText, theme === "dark" && { color: "#E0E0E0" }]}
+    >
       {remaining}
     </Text>
   );
@@ -84,7 +92,13 @@ export default function QuizRefreshModal({
       }
 
       Alert.alert("Success!", "You now have 5 more quiz attempts.", [
-        { text: "OK", onPress: () => { onClose(); onSuccess?.(); } },
+        {
+          text: "OK",
+          onPress: () => {
+            onClose();
+            onSuccess?.();
+          },
+        },
       ]);
     } catch (error: any) {
       if (!error?.userCancelled) {
@@ -97,7 +111,10 @@ export default function QuizRefreshModal({
 
   const handleUpgrade = () => {
     onClose();
-    router.push("/subscription");
+    router.push({
+      pathname: "/subscription",
+      params: { source: "quiz_limit" },
+    });
   };
 
   const maxAttempts = user?.isPremium ? 15 : 5;
@@ -125,10 +142,7 @@ export default function QuizRefreshModal({
             Out of Quiz Attempts
           </Text>
           <Text
-            style={[
-              styles.modalText,
-              theme === "dark" && styles.modalTextDark,
-            ]}
+            style={[styles.modalText, theme === "dark" && styles.modalTextDark]}
           >
             You have used all {maxAttempts} daily attempts.
           </Text>
@@ -145,10 +159,7 @@ export default function QuizRefreshModal({
             <CountdownTimer until={getNextMidnight()} theme={theme} />
 
             <Text
-              style={[
-                styles.orText,
-                theme === "dark" && styles.orTextDark,
-              ]}
+              style={[styles.orText, theme === "dark" && styles.orTextDark]}
             >
               OR
             </Text>

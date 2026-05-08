@@ -25,10 +25,18 @@ interface QuizState {
   quizCompleted: boolean;
   loading: boolean;
   error: string | null;
-  
+
   generateQuiz: (chatId: string, userId: string) => Promise<void>;
   fetchQuiz: (chatId: string, userId: string) => Promise<void>;
-  submitQuizAnswers: (userId: string, chatId: string, chatTitle: string) => Promise<{ score: number; xpEarned: number; validatedAnswers: UserAnswer[] }>;
+  submitQuizAnswers: (
+    userId: string,
+    chatId: string,
+    chatTitle: string,
+  ) => Promise<{
+    score: number;
+    xpEarned: number;
+    validatedAnswers: UserAnswer[];
+  }>;
   selectAnswer: (option: string) => void;
   goToQuestion: (index: number) => void;
   clearQuiz: () => void;
@@ -51,7 +59,7 @@ const useQuizStore = create<QuizState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const response = await aiService.generateQuiz({ chatId, userId });
-      
+
       if (Array.isArray(response) && response.length > 0) {
         set({
           questions: response,
@@ -61,7 +69,8 @@ const useQuizStore = create<QuizState>((set, get) => ({
       } else {
         set({
           loading: false,
-          error: "No quiz questions could be generated from this conversation. Please ensure you had an educational discussion and try again.",
+          error:
+            "No quiz questions could be generated from this conversation. Please ensure you had an educational discussion and try again.",
         });
       }
     } catch (error: any) {
@@ -76,7 +85,8 @@ const useQuizStore = create<QuizState>((set, get) => ({
       } else {
         set({
           loading: false,
-          error: "Something went wrong while generating your quiz. Please try again later.",
+          error:
+            "Something went wrong while generating your quiz. Please try again later.",
         });
       }
     }
@@ -86,7 +96,7 @@ const useQuizStore = create<QuizState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const response = await aiService.generateQuiz({ chatId, userId });
-      
+
       if (Array.isArray(response) && response.length > 0) {
         set({
           questions: response,
@@ -96,7 +106,8 @@ const useQuizStore = create<QuizState>((set, get) => ({
       } else {
         set({
           loading: false,
-          error: "No quiz questions could be generated from this conversation. Please ensure you had an educational discussion and try again.",
+          error:
+            "No quiz questions could be generated from this conversation. Please ensure you had an educational discussion and try again.",
         });
       }
     } catch (error: any) {
@@ -111,26 +122,31 @@ const useQuizStore = create<QuizState>((set, get) => ({
       } else {
         set({
           loading: false,
-          error: "Something went wrong while generating your quiz. Please try again later.",
+          error:
+            "Something went wrong while generating your quiz. Please try again later.",
         });
       }
     }
   },
 
-  submitQuizAnswers: async (userId: string, chatId: string, chatTitle: string) => {
+  submitQuizAnswers: async (
+    userId: string,
+    chatId: string,
+    chatTitle: string,
+  ) => {
     const state = get();
     const { questions, selectedAnswers } = state;
-    
+
     if (!questions.length) {
       throw new Error("No questions available");
     }
 
     try {
       set({ loading: true });
-      
+
       const quizAnswers = questions.map((question, index) => ({
         question: question.question,
-        selectedAnswer: selectedAnswers[index] || '',
+        selectedAnswer: selectedAnswers[index] || "",
         correctAnswer: question.correctAnswer,
       }));
 
@@ -141,12 +157,14 @@ const useQuizStore = create<QuizState>((set, get) => ({
         answers: quizAnswers,
       });
 
-      const userAnswersList: UserAnswer[] = result.validatedAnswers.map((answer: any) => ({
-        question: answer.question,
-        selectedAnswer: answer.selectedAnswer,
-        correctAnswer: answer.correctAnswer,
-        isCorrect: answer.isCorrect,
-      }));
+      const userAnswersList: UserAnswer[] = result.validatedAnswers.map(
+        (answer: any) => ({
+          question: answer.question,
+          selectedAnswer: answer.selectedAnswer,
+          correctAnswer: answer.correctAnswer,
+          isCorrect: answer.isCorrect,
+        }),
+      );
 
       set({
         userAnswers: userAnswersList,
@@ -161,7 +179,10 @@ const useQuizStore = create<QuizState>((set, get) => ({
         validatedAnswers: userAnswersList,
       };
     } catch (error) {
-      set({ loading: false, error: error instanceof Error ? error.message : "Failed to submit quiz" });
+      set({
+        loading: false,
+        error: error instanceof Error ? error.message : "Failed to submit quiz",
+      });
       throw error;
     }
   },

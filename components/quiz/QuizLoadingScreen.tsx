@@ -6,7 +6,9 @@ type Theme = "light" | "dark";
 export const QuizLoadingScreen = ({ theme }: { theme: Theme }) => (
   <View style={styles.loadingContainer}>
     <ActivityIndicator size="large" color="#00FF80" />
-    <Text style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}>
+    <Text
+      style={[styles.loadingText, theme === "dark" && { color: "#B3B3B3" }]}
+    >
       Loading quiz questions...
     </Text>
   </View>

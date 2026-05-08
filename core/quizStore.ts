@@ -1,14 +1,15 @@
 import { QuizService } from "@/services/quiz.service";
 import {
-    ListMyPublicQuizzesResponse,
-    ListPublicQuizzesResponse,
-    ListQuizzesQuery,
-    PublicQuizDetail,
-    PublicQuizListItem,
-    PublishPublicQuizRequest,
-    StartPublicQuizParticipationResponse,
-    SubmitPublicQuizRequest,
-    SubmitPublicQuizResponse,
+  ListMyPublicQuizzesResponse,
+  ListPublicQuizzesResponse,
+  ListQuizzesQuery,
+  PublicQuizDetail,
+  PublicQuizListItem,
+  PublishPublicQuizRequest,
+  StartPublicQuizParticipationResponse,
+  SubmitPublicQuizRequest,
+  SubmitPublicQuizResponse,
+  LeaderBoardResponse,
 } from "@/types/quizzes.types";
 import { create } from "zustand";
 
@@ -19,7 +20,10 @@ interface QuizStore {
   participationByQuiz: Record<string, string>;
   publicQuizzes: ListPublicQuizzesResponse;
   myQuizzes: ListMyPublicQuizzesResponse;
+  leaderboardById: Record<string, LeaderBoardResponse>;
+  leaderboardLoading: Record<string, boolean>;
   quizError: string | null;
+  leaderboardError: Record<string, string | null>;
 
   fetchPublicQuizzes: (query?: ListQuizzesQuery) => Promise<void>;
   fetchMyQuizzes: (
@@ -33,6 +37,7 @@ interface QuizStore {
     payload: SubmitPublicQuizRequest,
   ) => Promise<SubmitPublicQuizResponse>;
   clearParticipation: (quizId: string) => void;
+  fetchLeaderboard: (quizId: string) => Promise<void>;
 
   resetState: () => void;
 }
@@ -61,6 +66,9 @@ const emptyState = (): Pick<
   | "participationByQuiz"
   | "publicQuizzes"
   | "myQuizzes"
+  | "leaderboardById"
+  | "leaderboardLoading"
+  | "leaderboardError"
   | "quizError"
 > => ({
   quizzes: [],
@@ -69,6 +77,9 @@ const emptyState = (): Pick<
   participationByQuiz: {},
   publicQuizzes: [],
   myQuizzes: [],
+  leaderboardById: {},
+  leaderboardLoading: {},
+  leaderboardError: {},
   quizError: null,
 });
 
@@ -129,6 +140,29 @@ const useQuizStore = create<QuizStore>((set, get) => ({
           error instanceof Error ? error.message : "Failed to load quiz",
         quizLoading: { ...s.quizLoading, [quizId]: false },
       }));
+    }
+  },
+
+  fetchLeaderboard: async (quizId: string) => {
+    try {
+      set((s) => ({
+        leaderboardLoading: { ...s.leaderboardLoading, [quizId]: true },
+        leaderboardError: { ...s.leaderboardError, [quizId]: null },
+      }));
+      const leaderboard = (await quizService.getQuizLeaderboard(quizId)) ?? [];
+      set((s) => ({
+        leaderboardById: { ...s.leaderboardById, [quizId]: leaderboard },
+        leaderboardLoading: { ...s.leaderboardLoading, [quizId]: false },
+        leaderboardError: { ...s.leaderboardError, [quizId]: null },
+      }));
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load leaderboard";
+      set((s) => ({
+        leaderboardLoading: { ...s.leaderboardLoading, [quizId]: false },
+        leaderboardError: { ...s.leaderboardError, [quizId]: message },
+      }));
+      throw error;
     }
   },
 

@@ -3,6 +3,13 @@ import { ChatService } from "@/services/chat.service";
 import { create } from "zustand";
 
 const MAX_CACHED_CHATS = 10;
+const INITIAL_MESSAGES_LIMIT = 5;
+
+type MessagePagination = {
+  offset?: number;
+  limit?: number;
+  beforeMessageId?: string;
+};
 
 interface ChatState {
   chatList: Chat[];
@@ -15,7 +22,15 @@ interface ChatState {
   lastFetchedAt: Date | null;
 
   fetchChatList: (userId: string) => Promise<void>;
-  fetchMessages: (chatId: string) => Promise<Message[]>;
+  fetchMessages: (
+    chatId: string,
+    pagination?: MessagePagination,
+  ) => Promise<Message[]>;
+  fetchOlderMessages: (
+    chatId: string,
+    beforeMessageId: string,
+    limit?: number,
+  ) => Promise<Message[]>;
   fetchChatById: (chatId: string) => Promise<Chat | undefined>;
   addMessage: (chatId: string, message: Message) => void;
   setMessages: (chatId: string, messages: Message[]) => void;
@@ -29,8 +44,11 @@ const chatService = new ChatService();
 const evictLruIfNeeded = (
   messagesByChatId: Record<string, Message[]>,
   messagesLruOrder: string[],
-  newChatId: string
-): { messagesByChatId: Record<string, Message[]>; messagesLruOrder: string[] } => {
+  newChatId: string,
+): {
+  messagesByChatId: Record<string, Message[]>;
+  messagesLruOrder: string[];
+} => {
   const order = messagesLruOrder.filter((id) => id !== newChatId);
   order.push(newChatId);
   if (order.length <= MAX_CACHED_CHATS) {
@@ -40,6 +58,17 @@ const evictLruIfNeeded = (
   const next = { ...messagesByChatId };
   delete next[toEvict];
   return { messagesByChatId: next, messagesLruOrder: order };
+};
+
+const dedupeMessagesById = (messages: Message[]): Message[] => {
+  const seen = new Set<string>();
+  return messages.filter((msg) => {
+    if (!msg?.id || seen.has(msg.id)) {
+      return false;
+    }
+    seen.add(msg.id);
+    return true;
+  });
 };
 
 const useChatStore = create<ChatState>((set, get) => ({
@@ -58,7 +87,7 @@ const useChatStore = create<ChatState>((set, get) => ({
       const chatList = await chatService.getHistory(userId);
       const sorted = chatList.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
       set({
         chatList: sorted,
@@ -67,7 +96,6 @@ const useChatStore = create<ChatState>((set, get) => ({
         lastFetchedAt: new Date(),
       });
     } catch (error) {
-      console.error("Failed to fetch chat list:", error);
       set({
         isLoading: false,
         error:
@@ -76,13 +104,22 @@ const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  fetchMessages: async (chatId: string) => {
+  fetchMessages: async (chatId: string, pagination: MessagePagination = {}) => {
     try {
-      const messages = await chatService.getMessagesInChat(chatId);
+      const {
+        offset = 0,
+        limit = INITIAL_MESSAGES_LIMIT,
+        beforeMessageId,
+      } = pagination;
+      const messages = await chatService.getMessagesInChat(chatId, {
+        offset,
+        limit,
+        beforeMessageId,
+      });
       const { messagesByChatId, messagesLruOrder } = evictLruIfNeeded(
         get().messagesByChatId,
         get().messagesLruOrder,
-        chatId
+        chatId,
       );
       set({
         messagesByChatId: { ...messagesByChatId, [chatId]: messages || [] },
@@ -90,7 +127,46 @@ const useChatStore = create<ChatState>((set, get) => ({
       });
       return messages || [];
     } catch (error) {
-      console.error("Failed to fetch messages:", error);
+      //console.error("Failed to fetch messages:", error);
+      throw error;
+    }
+  },
+
+  fetchOlderMessages: async (
+    chatId: string,
+    beforeMessageId: string,
+    limit: number = INITIAL_MESSAGES_LIMIT,
+  ) => {
+    try {
+      if (!beforeMessageId) return [];
+
+      const olderMessages = await chatService.getMessagesInChat(chatId, {
+        limit,
+        beforeMessageId,
+      });
+
+      if (!olderMessages?.length) {
+        return [];
+      }
+
+      const { messagesByChatId, messagesLruOrder } = evictLruIfNeeded(
+        get().messagesByChatId,
+        get().messagesLruOrder,
+        chatId,
+      );
+      const existingMessages = messagesByChatId[chatId] || [];
+      const mergedMessages = dedupeMessagesById([
+        ...olderMessages,
+        ...existingMessages,
+      ]);
+
+      set({
+        messagesByChatId: { ...messagesByChatId, [chatId]: mergedMessages },
+        messagesLruOrder,
+      });
+
+      return olderMessages;
+    } catch (error) {
       throw error;
     }
   },
@@ -103,7 +179,7 @@ const useChatStore = create<ChatState>((set, get) => ({
       }));
       return chat;
     } catch (error) {
-      console.error("Failed to fetch chat by ID:", error);
+      //console.error("Failed to fetch chat by ID:", error);
       return undefined;
     }
   },
@@ -113,9 +189,7 @@ const useChatStore = create<ChatState>((set, get) => ({
       const current = state.messagesByChatId[chatId] || [];
       const exists = current.some((m) => m.id === message.id);
       if (exists) {
-        const updated = current.map((m) =>
-          m.id === message.id ? message : m
-        );
+        const updated = current.map((m) => (m.id === message.id ? message : m));
         return {
           messagesByChatId: { ...state.messagesByChatId, [chatId]: updated },
         };
@@ -123,7 +197,7 @@ const useChatStore = create<ChatState>((set, get) => ({
       const { messagesByChatId, messagesLruOrder } = evictLruIfNeeded(
         state.messagesByChatId,
         state.messagesLruOrder,
-        chatId
+        chatId,
       );
       return {
         messagesByChatId: {
@@ -139,7 +213,7 @@ const useChatStore = create<ChatState>((set, get) => ({
     const { messagesByChatId, messagesLruOrder } = evictLruIfNeeded(
       get().messagesByChatId,
       get().messagesLruOrder,
-      chatId
+      chatId,
     );
     set({
       messagesByChatId: { ...messagesByChatId, [chatId]: messages },

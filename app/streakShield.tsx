@@ -40,14 +40,11 @@ export default function StreakShieldScreen() {
       Alert.alert(
         "Streak Shield Activated!",
         `Your ${user.streak}-day streak is now protected for 7 days. You can miss one day without losing your progress!`,
-        [{ text: "Awesome!", onPress: () => router.back() }]
+        [{ text: "Awesome!", onPress: () => router.back() }],
       );
     } catch (error: any) {
       if (!error?.userCancelled) {
-        Alert.alert(
-          "Purchase Failed",
-          error?.message || "Please try again"
-        );
+        Alert.alert("Purchase Failed", error?.message || "Please try again");
       }
     } finally {
       setIsLoading(false);
@@ -59,7 +56,12 @@ export default function StreakShieldScreen() {
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.headerNav}>
         <BackButton />
-        <Text style={[styles.headerTitle, theme === "dark" && styles.headerTitleDark]}>
+        <Text
+          style={[
+            styles.headerTitle,
+            theme === "dark" && styles.headerTitleDark,
+          ]}
+        >
           Streak Shield
         </Text>
       </View>
@@ -68,18 +70,31 @@ export default function StreakShieldScreen() {
         <Text style={[styles.title, theme === "dark" && styles.titleDark]}>
           Protect your {user?.streak || 0}-day streak from expiring!
         </Text>
-        <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
+        <Text
+          style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}
+        >
           Shield valid for 7 days. Automatically activates when you miss a day.
         </Text>
 
-        <View style={[styles.benefitsCard, theme === "dark" && styles.benefitsCardDark]}>
-          <Text style={[styles.benefit, theme === "dark" && styles.benefitDark]}>
+        <View
+          style={[
+            styles.benefitsCard,
+            theme === "dark" && styles.benefitsCardDark,
+          ]}
+        >
+          <Text
+            style={[styles.benefit, theme === "dark" && styles.benefitDark]}
+          >
             Protects against one missed day
           </Text>
-          <Text style={[styles.benefit, theme === "dark" && styles.benefitDark]}>
+          <Text
+            style={[styles.benefit, theme === "dark" && styles.benefitDark]}
+          >
             Valid for 7 days
           </Text>
-          <Text style={[styles.benefit, theme === "dark" && styles.benefitDark]}>
+          <Text
+            style={[styles.benefit, theme === "dark" && styles.benefitDark]}
+          >
             Automatically activates when needed
           </Text>
         </View>

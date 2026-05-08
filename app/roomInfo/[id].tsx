@@ -1,29 +1,30 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
 import BackButton from "@/components/common/backButton";
-import { Image } from "expo-image";
-import * as Clipboard from "expo-clipboard";
-import useUserStore from "@/core/userState";
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import Modal from "react-native-modal";
-import { useLocalSearchParams } from "expo-router";
-import { CommunityService } from "@/services/community.service";
 import useCommunityStore from "@/core/communityState";
+import useUserStore from "@/core/userState";
 import type {
   Community,
-  CommunityMember,
   CommunityJoinRequest,
+  CommunityMember,
   CommunityMod,
 } from "@/interface/Community";
-import * as Haptics from "expo-haptics";
+import { CommunityService } from "@/services/community.service";
+import { createCommunityInviteDeepLink } from "@/utils/deepLinks";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { FlashList } from "@shopify/flash-list";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { useLocalSearchParams } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Modal from "react-native-modal";
 
 const communityService = new CommunityService();
 
@@ -32,7 +33,11 @@ type MemberRow =
   | { key: string; type: "moderator"; mod: CommunityMod }
   | { key: string; type: "member"; member: CommunityMember };
 
-type PendingRow = { key: string; type: "pending"; request: CommunityJoinRequest };
+type PendingRow = {
+  key: string;
+  type: "pending";
+  request: CommunityJoinRequest;
+};
 
 const RoomInfo = () => {
   const { theme } = useUserStore();
@@ -44,7 +49,9 @@ const RoomInfo = () => {
 
   const communityId = Array.isArray(id) ? id[0] : id;
 
-  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
+  const getHighQualityImageUrl = (
+    url: string | null | undefined,
+  ): string | undefined => {
     if (!url || typeof url !== "string") return undefined;
     return url
       .replace(/_normal(\.[a-z]+)$/i, "_400x400$1")
@@ -53,13 +60,17 @@ const RoomInfo = () => {
   };
 
   const [activeTab, setActiveTab] = useState<"members" | "pending">("members");
-  const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(null);
+  const [selectedMember, setSelectedMember] = useState<CommunityMember | null>(
+    null,
+  );
   const [showMemberModal, setShowMemberModal] = useState(false);
 
   const [community, setCommunity] = useState<Community | null>(null);
   const [moderator, setModerator] = useState<CommunityMod | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<CommunityJoinRequest[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<
+    CommunityJoinRequest[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMod, setIsMod] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +78,8 @@ const RoomInfo = () => {
   const loadCommunityInfo = useCallback(
     async (options?: { force?: boolean }) => {
       if (!communityId || !user?.id) return;
-      const cached = useCommunityStore.getState().roomInfoByCommunityId[communityId];
+      const cached =
+        useCommunityStore.getState().roomInfoByCommunityId[communityId];
       if (cached && !options?.force) {
         return;
       }
@@ -77,8 +89,10 @@ const RoomInfo = () => {
           setIsLoading(true);
         }
 
-        const cachedCommunity = useCommunityStore.getState().communityById[communityId];
-        const communityData = cachedCommunity ?? (await fetchCommunityById(communityId));
+        const cachedCommunity =
+          useCommunityStore.getState().communityById[communityId];
+        const communityData =
+          cachedCommunity ?? (await fetchCommunityById(communityId));
         setCommunity(communityData ?? null);
         if (communityData) mergeCommunity(communityData);
 
@@ -96,10 +110,13 @@ const RoomInfo = () => {
         let requests: CommunityJoinRequest[] = [];
         if (userIsMod) {
           try {
-            requests = await communityService.getPendingJoinRequests(communityId, user.id);
+            requests = await communityService.getPendingJoinRequests(
+              communityId,
+              user.id,
+            );
             setPendingRequests(requests);
           } catch (error) {
-            console.error("Error fetching pending requests:", error);
+            //console.error("Error fetching pending requests:", error);
           }
         } else {
           setPendingRequests([]);
@@ -112,17 +129,24 @@ const RoomInfo = () => {
           isMod: userIsMod,
         });
       } catch (error) {
-        console.error("Error loading community info:", error);
+        //console.error("Error loading community info:", error);
       } finally {
         setIsLoading(false);
       }
     },
-    [communityId, user?.id, fetchCommunityById, mergeCommunity, setRoomInfoCache],
+    [
+      communityId,
+      user?.id,
+      fetchCommunityById,
+      mergeCommunity,
+      setRoomInfoCache,
+    ],
   );
 
   useEffect(() => {
     if (!communityId || !user?.id) return;
-    const cached = useCommunityStore.getState().roomInfoByCommunityId[communityId];
+    const cached =
+      useCommunityStore.getState().roomInfoByCommunityId[communityId];
     const comm = useCommunityStore.getState().communityById[communityId];
     if (cached) {
       setMembers(cached.members);
@@ -143,7 +167,13 @@ const RoomInfo = () => {
       return;
     }
     void loadCommunityInfo();
-  }, [communityId, user?.id, loadCommunityInfo, fetchCommunityById, mergeCommunity]);
+  }, [
+    communityId,
+    user?.id,
+    loadCommunityInfo,
+    fetchCommunityById,
+    mergeCommunity,
+  ]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -163,11 +193,16 @@ const RoomInfo = () => {
     if (!communityId || !user?.id) return;
 
     try {
-      await communityService.updateJoinRequestStatus(requestId, "approved", communityId, user.id);
+      await communityService.updateJoinRequestStatus(
+        requestId,
+        "approved",
+        communityId,
+        user.id,
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadCommunityInfo({ force: true });
     } catch (error) {
-      console.error("Error accepting request:", error);
+      //console.error("Error accepting request:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -176,11 +211,16 @@ const RoomInfo = () => {
     if (!communityId || !user?.id) return;
 
     try {
-      await communityService.updateJoinRequestStatus(requestId, "rejected", communityId, user.id);
+      await communityService.updateJoinRequestStatus(
+        requestId,
+        "rejected",
+        communityId,
+        user.id,
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadCommunityInfo({ force: true });
     } catch (error) {
-      console.error("Error rejecting request:", error);
+      //console.error("Error rejecting request:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -195,7 +235,7 @@ const RoomInfo = () => {
       setSelectedMember(null);
       await loadCommunityInfo({ force: true });
     } catch (error) {
-      console.error("Error removing member:", error);
+      //console.error("Error removing member:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
@@ -208,21 +248,32 @@ const RoomInfo = () => {
       title: `Moderators - ${moderator ? 1 : 0}`,
     });
     if (moderator) {
-      rows.push({ key: `mod-${moderator.user.id}`, type: "moderator", mod: moderator });
+      rows.push({
+        key: `mod-${moderator.user.id}`,
+        type: "moderator",
+        mod: moderator,
+      });
     }
     rows.push({
       key: "sec-mem",
       type: "section",
       title: `Members - ${members.length}`,
     });
-    for (const m of members.filter((mem) => mem.user.id !== moderator?.user.id)) {
+    for (const m of members.filter(
+      (mem) => mem.user.id !== moderator?.user.id,
+    )) {
       rows.push({ key: `mem-${m.user.id}`, type: "member", member: m });
     }
     return rows;
   }, [moderator, members]);
 
   const pendingRows: PendingRow[] = useMemo(
-    () => pendingRequests.map((r) => ({ key: r.id, type: "pending" as const, request: r })),
+    () =>
+      pendingRequests.map((r) => ({
+        key: r.id,
+        type: "pending" as const,
+        request: r,
+      })),
     [pendingRequests],
   );
 
@@ -233,37 +284,86 @@ const RoomInfo = () => {
       if (item.type === "section") {
         return (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, theme === "dark" && styles.darkSectionTitle]}>{item.title}</Text>
+            <Text
+              style={[
+                styles.sectionTitle,
+                theme === "dark" && styles.darkSectionTitle,
+              ]}
+            >
+              {item.title}
+            </Text>
           </View>
         );
       }
       if (item.type === "moderator") {
         return (
           <View
-            style={[styles.memberCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+            style={[
+              styles.memberCard,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
           >
             <Image
               source={
                 getHighQualityImageUrl(item.mod.user.profilePictureURL)
-                  ? { uri: getHighQualityImageUrl(item.mod.user.profilePictureURL) }
+                  ? {
+                      uri: getHighQualityImageUrl(
+                        item.mod.user.profilePictureURL,
+                      ),
+                    }
                   : require("@/assets/images/memoji.png")
               }
               style={styles.memberAvatar}
             />
-            <Text style={[styles.memberName, theme === "dark" && { color: "#E0E0E0" }]}>{item.mod.user.name}</Text>
-            <View style={[styles.modBadge, theme === "dark" && styles.darkModBadge]}>
-              <Text style={[styles.modBadgeText, theme === "dark" && styles.darkModBadgeText]}>MOD</Text>
+            <Text
+              style={[
+                styles.memberName,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              {item.mod.user.name}
+            </Text>
+            <View
+              style={[styles.modBadge, theme === "dark" && styles.darkModBadge]}
+            >
+              <Text
+                style={[
+                  styles.modBadgeText,
+                  theme === "dark" && styles.darkModBadgeText,
+                ]}
+              >
+                MOD
+              </Text>
             </View>
           </View>
         );
       }
       return (
         <TouchableOpacity
-          style={[styles.memberCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+          style={[
+            styles.memberCard,
+            theme === "dark" && {
+              backgroundColor: "#131313",
+              borderColor: "#2E3033",
+            },
+          ]}
           onPress={() => (isMod ? handleMemberClick(item.member) : null)}
         >
-          <Image source={require("@/assets/images/memoji.png")} style={styles.memberAvatar} />
-          <Text style={[styles.memberName, theme === "dark" && { color: "#E0E0E0" }]}>{item.member.user.name}</Text>
+          <Image
+            source={require("@/assets/images/memoji.png")}
+            style={styles.memberAvatar}
+          />
+          <Text
+            style={[
+              styles.memberName,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            {item.member.user.name}
+          </Text>
           {isMod && (
             <FontAwesome5
               name="chevron-right"
@@ -280,14 +380,35 @@ const RoomInfo = () => {
 
   const renderPendingRow = useCallback(
     ({ item }: { item: PendingRow }) => (
-      <View style={[styles.pendingCard, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
-        <Image source={require("@/assets/images/memoji.png")} style={styles.memberAvatar} />
-        <Text style={[styles.memberName, theme === "dark" && { color: "#E0E0E0" }]}>{item.request.user.name}</Text>
+      <View
+        style={[
+          styles.pendingCard,
+          theme === "dark" && {
+            backgroundColor: "#131313",
+            borderColor: "#2E3033",
+          },
+        ]}
+      >
+        <Image
+          source={require("@/assets/images/memoji.png")}
+          style={styles.memberAvatar}
+        />
+        <Text
+          style={[styles.memberName, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          {item.request.user.name}
+        </Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.acceptButton} onPress={() => handleAcceptRequest(item.request.id)}>
+          <TouchableOpacity
+            style={styles.acceptButton}
+            onPress={() => handleAcceptRequest(item.request.id)}
+          >
             <FontAwesome5 name="check" size={16} color="#00FF80" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.rejectButton} onPress={() => handleRejectRequest(item.request.id)}>
+          <TouchableOpacity
+            style={styles.rejectButton}
+            onPress={() => handleRejectRequest(item.request.id)}
+          >
             <FontAwesome5 name="times" size={16} color="#FF3B30" />
           </TouchableOpacity>
         </View>
@@ -310,41 +431,105 @@ const RoomInfo = () => {
     () =>
       !community ? null : (
         <View style={styles.content}>
-          <View style={[styles.communityCard, theme === "dark" && { backgroundColor: "#131313" }]}>
+          <View
+            style={[
+              styles.communityCard,
+              theme === "dark" && { backgroundColor: "#131313" },
+            ]}
+          >
             <Image
               source={{
-                uri: community.imageUrl || "https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png",
+                uri:
+                  community.imageUrl ||
+                  "https://s2.coinmarketcap.com/static/img/coins/200x200/5426.png",
               }}
               style={styles.communityImage}
             />
             <View style={styles.communityDetails}>
-              <Text style={[styles.communityTitle, theme === "dark" && { color: "#E0E0E0" }]}>{community.title}</Text>
-              <Text style={[styles.communityStats, theme === "dark" && { color: "#B3B3B3" }]}>
+              <Text
+                style={[
+                  styles.communityTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {community.title}
+              </Text>
+              <Text
+                style={[
+                  styles.communityStats,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 {members.length} {members.length === 1 ? "member" : "members"}
               </Text>
-              <Text style={[styles.communityDescription, theme === "dark" && { color: "#B3B3B3" }]}>
-                {community.visibility === "public" ? "🌐 Public Community" : "🔒 Private Community"}
+              <Text
+                style={[
+                  styles.communityDescription,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                {community.visibility === "public"
+                  ? "🌐 Public Community"
+                  : "🔒 Private Community"}
               </Text>
             </View>
           </View>
 
           <View
-            style={[styles.inviteCode, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+            style={[
+              styles.inviteCode,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
           >
-            <Text style={[styles.inviteSubtitle, theme === "dark" && { color: "#B3B3B3" }]}>
-              Share this code to invite others. to the Community
+            <Text
+              style={[
+                styles.inviteSubtitle,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
+            >
+              Share this link to invite others to the community.
             </Text>
 
-            <View style={[styles.referralCodeContainer, theme === "dark" && styles.darkReferralCodeContainer]}>
-              <Text style={[styles.referralCode, theme === "dark" && { color: "#E0E0E0" }]}>{community.inviteCode}</Text>
+            <View
+              style={[
+                styles.referralCodeContainer,
+                theme === "dark" && styles.darkReferralCodeContainer,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.referralCode,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {community.inviteCode}
+              </Text>
               <TouchableOpacity
                 onPress={async () => {
-                  await Clipboard.setStringAsync(community.inviteCode);
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  const inviteLink = createCommunityInviteDeepLink(
+                    community.inviteCode,
+                  );
+                  await Clipboard.setStringAsync(inviteLink);
+                  Haptics.notificationAsync(
+                    Haptics.NotificationFeedbackType.Success,
+                  );
                 }}
-                style={[styles.copyCodeButton, theme === "dark" && styles.darkCopyCodeButton]}
+                style={[
+                  styles.copyCodeButton,
+                  theme === "dark" && styles.darkCopyCodeButton,
+                ]}
               >
-                <Text style={[styles.copyCodeText, theme === "dark" && styles.darkCopyCodeText]}>Copy Code</Text>
+                <Text
+                  style={[
+                    styles.copyCodeText,
+                    theme === "dark" && styles.darkCopyCodeText,
+                  ]}
+                >
+                  Copy Link
+                </Text>
                 <Image
                   source={
                     theme === "dark"
@@ -358,28 +543,45 @@ const RoomInfo = () => {
           </View>
 
           {isMod && (
-            <View style={[styles.tabsContainer, theme === "dark" && { backgroundColor: "#131313" }]}>
-              <View style={[styles.tabs, theme === "dark" && styles.darkTabBorder]}>
-                <TouchableOpacity onPress={() => setActiveTab("members")} style={styles.tabButton}>
+            <View
+              style={[
+                styles.tabsContainer,
+                theme === "dark" && { backgroundColor: "#131313" },
+              ]}
+            >
+              <View
+                style={[styles.tabs, theme === "dark" && styles.darkTabBorder]}
+              >
+                <TouchableOpacity
+                  onPress={() => setActiveTab("members")}
+                  style={styles.tabButton}
+                >
                   <Text
                     style={[
                       styles.tabText,
                       activeTab === "members" && styles.activeTab,
                       theme === "dark" && styles.darkTabText,
-                      activeTab === "members" && theme === "dark" && styles.darkActiveTab,
+                      activeTab === "members" &&
+                        theme === "dark" &&
+                        styles.darkActiveTab,
                     ]}
                   >
                     Members
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => setActiveTab("pending")} style={styles.tabButton}>
+                <TouchableOpacity
+                  onPress={() => setActiveTab("pending")}
+                  style={styles.tabButton}
+                >
                   <Text
                     style={[
                       styles.tabText,
                       activeTab === "pending" && styles.activeTab,
                       theme === "dark" && styles.darkTabText,
-                      activeTab === "pending" && theme === "dark" && styles.darkActiveTab,
+                      activeTab === "pending" &&
+                        theme === "dark" &&
+                        styles.darkActiveTab,
                     ]}
                   >
                     Pending Requests
@@ -395,9 +597,22 @@ const RoomInfo = () => {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.centerContainer, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-        <ActivityIndicator size="large" color={theme === "dark" ? "#00FF80" : "#000"} />
-        <Text style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}>Loading community info...</Text>
+      <View
+        style={[
+          styles.container,
+          styles.centerContainer,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={theme === "dark" ? "#00FF80" : "#000"}
+        />
+        <Text
+          style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          Loading community info...
+        </Text>
       </View>
     );
   }
@@ -405,13 +620,22 @@ const RoomInfo = () => {
   if (!community) {
     return (
       <View style={[styles.container, styles.centerContainer]}>
-        <Text style={[styles.errorText, theme === "dark" && { color: "#E0E0E0" }]}>Community not found</Text>
+        <Text
+          style={[styles.errorText, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          Community not found
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <FlashList
         style={{ flex: 1 }}
         data={listData}
@@ -419,9 +643,21 @@ const RoomInfo = () => {
         keyExtractor={(item) => item.key}
         ListHeaderComponent={
           <View>
-            <View style={[styles.topNav, theme === "dark" && { backgroundColor: "#131313" }]}>
+            <View
+              style={[
+                styles.topNav,
+                theme === "dark" && { backgroundColor: "#131313" },
+              ]}
+            >
               <BackButton />
-              <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>Community Info</Text>
+              <Text
+                style={[
+                  styles.headerText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                Community Info
+              </Text>
             </View>
             {ListHeader}
           </View>
@@ -430,7 +666,14 @@ const RoomInfo = () => {
         ListEmptyComponent={
           activeTab === "pending" && isMod ? (
             <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, theme === "dark" && { color: "#E0E0E0" }]}>No pending requests</Text>
+              <Text
+                style={[
+                  styles.emptyText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                No pending requests
+              </Text>
             </View>
           ) : null
         }
@@ -450,8 +693,18 @@ const RoomInfo = () => {
         swipeDirection={["down"]}
         style={styles.bottomModal}
       >
-        <View style={[styles.modalContent, theme === "dark" && { backgroundColor: "#131313" }]}>
-          <View style={[styles.modalHandle, theme === "dark" && styles.darkModalHandle]} />
+        <View
+          style={[
+            styles.modalContent,
+            theme === "dark" && { backgroundColor: "#131313" },
+          ]}
+        >
+          <View
+            style={[
+              styles.modalHandle,
+              theme === "dark" && styles.darkModalHandle,
+            ]}
+          />
 
           <TouchableOpacity
             style={styles.modalOption}
@@ -459,14 +712,30 @@ const RoomInfo = () => {
               setShowMemberModal(false);
             }}
           >
-            <FontAwesome5 name="user" size={20} color={theme === "dark" ? "#E0E0E0" : "#2D3C52"} />
-            <Text style={[styles.modalOptionText, theme === "dark" && { color: "#E0E0E0" }]}>View Profile</Text>
+            <FontAwesome5
+              name="user"
+              size={20}
+              color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
+            />
+            <Text
+              style={[
+                styles.modalOptionText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              View Profile
+            </Text>
           </TouchableOpacity>
 
           {isMod && (
-            <TouchableOpacity style={styles.modalOption} onPress={handleRemoveMember}>
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={handleRemoveMember}
+            >
               <FontAwesome5 name="user-times" size={20} color="#FF3B30" />
-              <Text style={styles.modalOptionTextDanger}>Remove from Community</Text>
+              <Text style={styles.modalOptionTextDanger}>
+                Remove from Community
+              </Text>
             </TouchableOpacity>
           )}
         </View>

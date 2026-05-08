@@ -2,10 +2,7 @@ import useUserStore from "@/core/userState";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import React from "react";
-import {
-  StyleSheet,
-  ViewStyle,
-} from "react-native";
+import { StyleSheet, ViewStyle } from "react-native";
 // eslint-disable-next-line import/no-named-as-default
 import AnimatedPressable from "./AnimatedPressable";
 
@@ -52,7 +49,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: "#fff",
     borderWidth: 0.5,
-    borderColor: "#EDF3FC"
+    borderColor: "#EDF3FC",
   },
   icon: {
     width: 20,

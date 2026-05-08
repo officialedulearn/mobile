@@ -26,23 +26,35 @@ export const QuizProgress = ({
     <>
       <View style={styles.metrics}>
         <View>
-          <Text style={[styles.metricText, theme === "dark" && { color: "#B3B3B3" }]}>
+          <Text
+            style={[
+              styles.metricText,
+              theme === "dark" && { color: "#B3B3B3" },
+            ]}
+          >
             Question
           </Text>
-          <Text style={[styles.questionsText, theme === "dark" && { color: "#E0E0E0" }]}>
+          <Text
+            style={[
+              styles.questionsText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
             {currentIndex + 1} of {totalQuestions}
           </Text>
         </View>
 
         <View style={styles.timeContainer}>
-          <Text style={[styles.metricText, theme === "dark" && { color: "#B3B3B3" }]}>
+          <Text
+            style={[
+              styles.metricText,
+              theme === "dark" && { color: "#B3B3B3" },
+            ]}
+          >
             Time Left
           </Text>
           <Text
-            style={[
-              styles.timeLeft,
-              timeLeft < 10 ? styles.timeWarning : null,
-            ]}
+            style={[styles.timeLeft, timeLeft < 10 ? styles.timeWarning : null]}
           >
             {formatTime(timeLeft)}
           </Text>

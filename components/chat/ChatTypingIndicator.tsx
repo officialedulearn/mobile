@@ -57,8 +57,8 @@ const ChatTypingIndicator = React.memo(() => {
             userHasAgent
               ? { uri: agentProfilePictureUrl || "" }
               : theme === "dark"
-              ? require("@/assets/images/icons/dark/LOGO.png")
-              : require("@/assets/images/chatbotlogo.png")
+                ? require("@/assets/images/icons/dark/LOGO.png")
+                : require("@/assets/images/chatbotlogo.png")
           }
           style={[styles.avatar, dark && { width: 20, height: 20 }]}
         />

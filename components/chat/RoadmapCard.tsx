@@ -4,12 +4,7 @@ import { RoadmapWithSteps } from "@/interface/Roadmap";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import AnimatedPressable from "../common/AnimatedPressable";
 
 type Props = {
@@ -37,13 +32,12 @@ const RoadmapCard = ({ roadmapId }: Props) => {
         const data = await fetchRoadmapById(roadmapId);
         setRoadmapData(data ?? null);
       } catch (error) {
-        console.error("Failed to load roadmap:", error);
       } finally {
         setLoading(false);
       }
     };
     load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roadmapId]);
 
   const handleViewRoadmap = () => {
@@ -52,12 +46,7 @@ const RoadmapCard = ({ roadmapId }: Props) => {
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.card,
-          theme === "dark" && styles.cardDark,
-        ]}
-      >
+      <View style={[styles.card, theme === "dark" && styles.cardDark]}>
         <ActivityIndicator
           size="small"
           color={theme === "dark" ? "#00FF80" : "#2D3C52"}
@@ -75,24 +64,19 @@ const RoadmapCard = ({ roadmapId }: Props) => {
   const completedSteps = steps.filter((step) => step.done).length;
 
   return (
-    <View
-      style={[
-        styles.card,
-        theme === "dark" && styles.cardDark,
-      ]}
-    >
+    <View style={[styles.card, theme === "dark" && styles.cardDark]}>
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <Image source={require("@/assets/images/icons/roadmap.png")} style={{
-            width: 24,
-            height: 24,
-          }} />
+          <Image
+            source={require("@/assets/images/icons/roadmap.png")}
+            style={{
+              width: 24,
+              height: 24,
+            }}
+          />
         </View>
         <Text
-          style={[
-            styles.title,
-            theme === "dark" && styles.textDark,
-          ]}
+          style={[styles.title, theme === "dark" && styles.textDark]}
           numberOfLines={2}
         >
           {roadmap.title}
@@ -112,7 +96,11 @@ const RoadmapCard = ({ roadmapId }: Props) => {
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Image
-            source={theme == "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/dark/clock.png")}
+            source={
+              theme == "dark"
+                ? require("@/assets/images/icons/dark/clock.png")
+                : require("@/assets/images/icons/dark/clock.png")
+            }
             style={{
               width: 24,
               height: 24,
@@ -129,10 +117,17 @@ const RoadmapCard = ({ roadmapId }: Props) => {
         </View>
 
         <View style={styles.statItem}>
-          <Image source={theme == "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")} style={{
-            width: 24,
-            height: 24,
-          }} />
+          <Image
+            source={
+              theme == "dark"
+                ? require("@/assets/images/icons/dark/notebook.png")
+                : require("@/assets/images/icons/notebook.png")
+            }
+            style={{
+              width: 24,
+              height: 24,
+            }}
+          />
           <Text
             style={[
               styles.statText,
@@ -146,10 +141,7 @@ const RoadmapCard = ({ roadmapId }: Props) => {
         {completedSteps > 0 && (
           <View style={styles.statItem}>
             <Text
-              style={[
-                styles.statText,
-                { color: "#00FF80", fontWeight: "600" },
-              ]}
+              style={[styles.statText, { color: "#00FF80", fontWeight: "600" }]}
             >
               {completedSteps}/{steps.length} ✓
             </Text>
@@ -159,18 +151,12 @@ const RoadmapCard = ({ roadmapId }: Props) => {
 
       <AnimatedPressable
         onPress={handleViewRoadmap}
-        style={[
-          styles.button,
-          theme === "dark" && styles.buttonDark,
-        ]}
+        style={[styles.button, theme === "dark" && styles.buttonDark]}
         scale={0.95}
         hapticFeedback={true}
       >
         <Text
-          style={[
-            styles.buttonText,
-            theme === "dark" && styles.buttonTextDark,
-          ]}
+          style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}
         >
           View Learning Path
         </Text>

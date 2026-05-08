@@ -2,13 +2,7 @@ import Design from "@/utils/design";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import React from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   title: string;
@@ -20,131 +14,128 @@ type Props = {
   onRequestDelete: () => void | Promise<void>;
 };
 
-const ChatHeaderBar = React.memo(({
-  title,
-  theme,
-  isEmpty,
-  onOpenDrawer,
-  onNewChat,
-  onQuiz,
-  onRequestDelete,
-}: Props) => {
-  const dark = theme === "dark";
-  const handleOpenDrawer = React.useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onOpenDrawer();
-  }, [onOpenDrawer]);
+const ChatHeaderBar = React.memo(
+  ({
+    title,
+    theme,
+    isEmpty,
+    onOpenDrawer,
+    onNewChat,
+    onQuiz,
+    onRequestDelete,
+  }: Props) => {
+    const dark = theme === "dark";
+    const handleOpenDrawer = React.useCallback(() => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onOpenDrawer();
+    }, [onOpenDrawer]);
 
-  const handleNewChat = React.useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onNewChat();
-  }, [onNewChat]);
+    const handleNewChat = React.useCallback(() => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onNewChat();
+    }, [onNewChat]);
 
-  const handleQuizPress = React.useCallback(() => {
-    void onQuiz();
-  }, [onQuiz]);
+    const handleQuizPress = React.useCallback(() => {
+      void onQuiz();
+    }, [onQuiz]);
 
-  const handleDeletePress = React.useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert(
-      "Delete Chat",
-      "Are you sure you want to delete this chat? This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-          onPress: () =>
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            void onRequestDelete();
+    const handleDeletePress = React.useCallback(() => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Alert.alert(
+        "Delete Chat",
+        "Are you sure you want to delete this chat? This action cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () =>
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
           },
-        },
-      ],
-    );
-  }, [onRequestDelete]);
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              void onRequestDelete();
+            },
+          },
+        ],
+      );
+    }, [onRequestDelete]);
 
-  return (
-    <View
-      style={[
-        styles.topNav,
-        dark && styles.topNavDark,
-      ]}
-    >
-      <View style={styles.leftNavContainer}>
-        <TouchableOpacity
-          style={[styles.button, dark && styles.buttonDark]}
-          onPress={handleOpenDrawer}
-          activeOpacity={0.8}
-        >
-          <Image
-            source={
-              dark
-                ? require("@/assets/images/icons/dark/menu.png")
-                : require("@/assets/images/icons/menu.png")
-            }
-            style={{ width: 20, height: 20 }}
-          />
-        </TouchableOpacity>
-        <Text
-          style={[styles.headerText, dark && styles.headerTextDark]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {title}
-        </Text>
-      </View>
-      {isEmpty ? (
-        <TouchableOpacity
-          style={[styles.button, dark && styles.buttonDark]}
-          activeOpacity={0.8}
-          onPress={handleNewChat}
-        >
-          <Image
-            source={
-              dark
-                ? require("@/assets/images/icons/dark/pen.png")
-                : require("@/assets/images/icons/pen.png")
-            }
-            style={{ width: 20, height: 20 }}
-          />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.headerActions}>
+    return (
+      <View style={[styles.topNav, dark && styles.topNavDark]}>
+        <View style={styles.leftNavContainer}>
           <TouchableOpacity
             style={[styles.button, dark && styles.buttonDark]}
-            onPress={handleQuizPress}
+            onPress={handleOpenDrawer}
+            activeOpacity={0.8}
           >
             <Image
               source={
                 dark
-                  ? require("@/assets/images/icons/dark/BrainChat.png")
-                  : require("@/assets/images/icons/BrainChat.png")
+                  ? require("@/assets/images/icons/dark/menu.png")
+                  : require("@/assets/images/icons/menu.png")
               }
               style={{ width: 20, height: 20 }}
             />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, dark && styles.buttonDark]}
-            onPress={handleDeletePress}
+          <Text
+            style={[styles.headerText, dark && styles.headerTextDark]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
-            <Image
-              source={
-                dark
-                  ? require("@/assets/images/icons/dark/delete.png")
-                  : require("@/assets/images/icons/delete.png")
-              }
-              style={{ width: 20, height: 20 }}
-            />
-          </TouchableOpacity>
+            {title}
+          </Text>
         </View>
-      )}
-    </View>
-  );
-});
+        {isEmpty ? (
+          <TouchableOpacity
+            style={[styles.button, dark && styles.buttonDark]}
+            activeOpacity={0.8}
+            onPress={handleNewChat}
+          >
+            <Image
+              source={
+                dark
+                  ? require("@/assets/images/icons/dark/pen.png")
+                  : require("@/assets/images/icons/pen.png")
+              }
+              style={{ width: 20, height: 20 }}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[styles.button, dark && styles.buttonDark]}
+              onPress={handleQuizPress}
+            >
+              <Image
+                source={
+                  dark
+                    ? require("@/assets/images/icons/dark/BrainChat.png")
+                    : require("@/assets/images/icons/BrainChat.png")
+                }
+                style={{ width: 20, height: 20 }}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, dark && styles.buttonDark]}
+              onPress={handleDeletePress}
+            >
+              <Image
+                source={
+                  dark
+                    ? require("@/assets/images/icons/dark/delete.png")
+                    : require("@/assets/images/icons/delete.png")
+                }
+                style={{ width: 20, height: 20 }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  },
+);
 ChatHeaderBar.displayName = "ChatHeaderBar";
 
 export default ChatHeaderBar;

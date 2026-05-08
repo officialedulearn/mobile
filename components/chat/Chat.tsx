@@ -6,8 +6,11 @@ import { Message } from "@/interface/Chat";
 import { AIService } from "@/services/ai.service";
 import { generateUUID } from "@/utils/constants";
 import Design, { getScreenTopPadding } from "@/utils/design";
-import { type LegendListRef } from "@legendapp/list";
-import { KeyboardChatLegendList } from "@legendapp/list/keyboard-chat";
+import {
+  KeyboardChatLegendList,
+  useKeyboardScrollToEnd,
+} from "@legendapp/list/keyboard-chat";
+import type { LegendListRef } from "@legendapp/list/react-native";
 import {
   AudioModule,
   RecordingPresets,
@@ -77,6 +80,7 @@ const KEYBOARD_MAINTAIN_SCROLL_AT_END = {
 } as const;
 
 const DEFAULT_HEADER_TITLE = "AI Tutor Chat";
+const MESSAGE_PAGE_LIMIT = 5;
 
 const keyExtractor = (item: Message) => item.id;
 const dismissKeyboard = () => Keyboard.dismiss();
@@ -108,15 +112,14 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const deleteChat = useChatStore((s) => s.deleteChat);
   const addMessage = useChatStore((s) => s.addMessage);
   const syncMessagesToStore = useChatStore((s) => s.setMessages);
+  const fetchOlderMessages = useChatStore((s) => s.fetchOlderMessages);
   const { isNavigating, createNewChat, refreshChatList } = useChatNavigation();
   const messagesRef = React.useRef<Message[]>([]);
   const [messages, setMessages] = useState<Message[]>(initialMessages || []);
   const [isGenerating, setIsGenerating] = useState(false);
-  const userId = useUserStore((s) => s.user?.id);
-  const userCredits = useUserStore((s) => s.user?.credits);
-  const userQuizLimit = useUserStore((s) => s.user?.quizLimit);
-  const theme = useUserStore((s) => s.theme);
-  const updateUserCredits = useUserStore((s) => s.updateUserCredits);
+
+  const { user, theme, updateUserCredits } = useUserStore();
+  const userId = user?.id;
   const [inputText, setInputText] = useState("");
   const dragStartOffset = useSharedValue(0);
   const sidebarWidthSV = useSharedValue(0);
@@ -128,6 +131,14 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [waitingForStream, setWaitingForStream] = useState(false);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(
+    initialMessages.length >= MESSAGE_PAGE_LIMIT,
+  );
+  const { scrollMessageToEnd } = useKeyboardScrollToEnd({
+    listRef: legendListRef,
+  });
+
   const [selectedAttachments, setSelectedAttachments] = useState<
     {
       uri: string;
@@ -143,6 +154,7 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
   const messageContentRef = useRef<Map<string, string>>(new Map());
   const streamingAssistantIdRef = useRef<string | null>(null);
   const showScrollButtonRef = useRef(false);
+  const lastOlderCursorRef = useRef<string | null>(null);
   const streamCleanupRef = useRef<null | (() => void)>(null);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
@@ -253,6 +265,12 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     }
   }, [initialMessages, safeSetMessages]);
 
+  useEffect(() => {
+    setIsLoadingOlderMessages(false);
+    setHasMoreOlderMessages(initialMessages.length >= MESSAGE_PAGE_LIMIT);
+    lastOlderCursorRef.current = null;
+  }, [chatId, initialMessages.length]);
+
   const fetchSuggestions = useCallback(async () => {
     if (!userId) return;
 
@@ -263,7 +281,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       });
       setSuggestions(fetchedSuggestions || []);
     } catch (error) {
-      console.error("Error fetching suggestions:", error);
       setSuggestions([
         "Teach me about DeFi",
         "Learn about RWAs",
@@ -271,7 +288,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       ]);
     } finally {
       setLoadingSuggestions(false);
-
     }
   }, [userId]);
 
@@ -287,8 +303,12 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       cancelAnimationFrame(scrollRafRef.current);
       scrollRafRef.current = null;
     }
-    void legendListRef.current?.scrollToEnd({ animated: true });
-  }, []);
+    scrollMessageToEnd({ animated: true, closeKeyboard: true });
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      void legendListRef.current?.scrollToEnd({ animated: false });
+    });
+  }, [scrollMessageToEnd]);
 
   const handleScroll = useCallback(
     (event: {
@@ -315,243 +335,308 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     [],
   );
 
-  const handleSendMessage = useCallback(async (messageText?: string) => {
-    const textToSend = messageText || inputText.trim();
-    if (textToSend === "" || isGenerating || isNavigating) return;
+  const handleLoadOlderMessages = useCallback(async () => {
+    if (isLoadingOlderMessages || !hasMoreOlderMessages) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    const currentCredits = Number(userCredits) || 0;
-
-    if (currentCredits <= 0.5) {
-      router.push("/freeTrialIntro");
+    const currentMessages = messagesRef.current || [];
+    if (!currentMessages.length) {
+      setHasMoreOlderMessages(false);
       return;
     }
 
-    updateUserCredits(currentCredits - 0.5);
-
-    const attachmentsDraft = selectedAttachments;
-    setInputText("");
-    setSelectedAttachments([]);
-
-    const inferMimeTypeFromUri = (uri: string, kind: "image" | "document") => {
-      const ext = uri.split("?")[0]?.split("#")[0]?.split(".").pop()?.toLowerCase();
-      if (kind === "image") {
-        if (ext === "png") return "image/png";
-        if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
-        if (ext === "webp") return "image/webp";
-        if (ext === "heic") return "image/heic";
-        return "image/jpeg";
-      }
-      if (ext === "pdf") return "application/pdf";
-      if (ext === "txt") return "text/plain";
-      if (ext === "md") return "text/markdown";
-      if (ext === "json") return "application/json";
-      if (ext === "docx")
-        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      return "application/octet-stream";
-    };
-
-    let attachmentsPayload: {
-      data: string;
-      mimeType: string;
-      name?: string;
-      kind?: "image" | "document";
-      localUri?: string;
-    }[] = [];
-
-    if (attachmentsDraft.length > 0) {
-      try {
-        attachmentsPayload = await Promise.all(
-          attachmentsDraft.map(async (att) => {
-            const data = await FileSystem.readAsStringAsync(att.uri, {
-              // Some Expo runtimes/types don't expose EncodingType; string literal is supported.
-              encoding: ("base64" as any),
-            });
-            return {
-              data,
-              mimeType:
-                att.mimeType ||
-                inferMimeTypeFromUri(att.uri, att.kind),
-              name: att.name,
-              kind: att.kind,
-              localUri: att.uri,
-            };
-          }),
-        );
-      } catch (e) {
-        console.error("Failed to read attachment:", e);
-        Alert.alert(
-          "Attachment error",
-          "Couldn't attach that file. Try again with a smaller file.",
-        );
-      }
+    const oldestLoadedMessage = currentMessages[0];
+    if (!oldestLoadedMessage?.id) {
+      return;
     }
 
-    const newMessage: Message = {
-      id: generateUUID(),
-      role: "user",
-      content:
-        attachmentsPayload.length > 0
-          ? { text: textToSend, attachments: attachmentsPayload }
-          : textToSend,
-      createdAt: new Date(),
-      chatId: chatId,
-    };
+    if (lastOlderCursorRef.current === oldestLoadedMessage.id) {
+      return;
+    }
 
-    const updatedMessages = [...(messagesRef.current || []), newMessage];
-
-    const messagesForApi = updatedMessages.map((m) => {
-      if (
-        m &&
-        typeof m.content === "object" &&
-        m.content &&
-        "attachments" in (m.content as any) &&
-        Array.isArray((m.content as any).attachments)
-      ) {
-        const c: any = m.content;
-        return {
-          ...m,
-          content: {
-            ...c,
-            attachments: c.attachments.map((a: any) => {
-              const { localUri, ...rest } = a || {};
-              return rest;
-            }),
-          },
-        };
-      }
-      return m;
-    });
-    safeSetMessages(updatedMessages);
-    addMessage(chatId, newMessage);
-    setIsGenerating(true);
-    setWaitingForStream(true);
-    streamCleanupRef.current?.();
-    streamCleanupRef.current = null;
-
-    const assistantMessageId = generateUUID();
-    let messageCreated = false;
+    lastOlderCursorRef.current = oldestLoadedMessage.id;
+    setIsLoadingOlderMessages(true);
 
     try {
-      const cleanup = await chatAiService.generateMessagesStream(
-        {
-          messages: messagesForApi,
-          chatId: chatId,
-          userId: userId as unknown as string,
-        },
-        (token: string, _type?: string) => {
-          if (!messageCreated) {
-            setWaitingForStream(false);
-            setStreamingMessageId(assistantMessageId);
-            streamingAssistantIdRef.current = assistantMessageId;
-            messageContentRef.current.set(assistantMessageId, "");
-            const assistantMessage: Message = {
-              id: assistantMessageId,
-              role: "assistant",
-              content: "",
-              createdAt: new Date(),
-              chatId: chatId,
-            };
-            addMessage(chatId, assistantMessage);
-            safeSetMessages((currentMessages) => {
-              const messagesCopy = [...currentMessages];
-              messagesCopy.push(assistantMessage);
-              return messagesCopy;
-            });
-            messageCreated = true;
-          }
-
-          const currentContent =
-            messageContentRef.current.get(assistantMessageId) || "";
-          const newContent = currentContent + token;
-          messageContentRef.current.set(assistantMessageId, newContent);
-          safeSetMessages((currentMessages) => {
-            const messagesCopy = [...currentMessages];
-            const messageIndex = messagesCopy.findIndex(
-              (msg) => msg && msg.id === assistantMessageId,
-            );
-            if (messageIndex === -1) return currentMessages;
-            const message = messagesCopy[messageIndex];
-            messagesCopy[messageIndex] = {
-              ...message,
-              content: newContent,
-            };
-            return messagesCopy;
-          });
-        },
-        (_fullMessage: Message) => {
-          messageContentRef.current.delete(assistantMessageId);
-          streamingAssistantIdRef.current = null;
-          streamCleanupRef.current = null;
-          setIsGenerating(false);
-          setStreamingMessageId(null);
-          queueMicrotask(() => {
-            syncMessagesToStore(chatId, messagesRef.current);
-            refreshChatList();
-          });
-        },
-        (error: Error) => {
-          console.error("Error generating message:", error);
-          setInputText(textToSend);
-
-          messageContentRef.current.delete(assistantMessageId);
-          streamingAssistantIdRef.current = null;
-          streamCleanupRef.current = null;
-
-          if (messageCreated) {
-            safeSetMessages((currentMessages) =>
-              currentMessages.filter((msg) => msg.id !== assistantMessageId),
-            );
-          }
-
-          setIsGenerating(false);
-          setWaitingForStream(false);
-          setStreamingMessageId(null);
-          Alert.alert(
-            "Error",
-            error.message || "Failed to generate response. Please try again.",
-          );
-        },
+      const olderMessages = await fetchOlderMessages(
+        chatId,
+        oldestLoadedMessage.id,
+        MESSAGE_PAGE_LIMIT,
       );
-      streamCleanupRef.current = cleanup ?? null;
-    } catch (error: any) {
-      console.error("Error generating message:", error);
-      setInputText(textToSend);
-      setIsGenerating(false);
-      setWaitingForStream(false);
-      setStreamingMessageId(null);
 
-      messageContentRef.current.delete(assistantMessageId);
-      streamingAssistantIdRef.current = null;
-      streamCleanupRef.current = null;
-
-      if (messageCreated) {
-        safeSetMessages((currentMessages) =>
-          currentMessages.filter((msg) => msg.id !== assistantMessageId),
-        );
+      const nextMessages = useChatStore.getState().messagesByChatId[chatId];
+      if (nextMessages && nextMessages.length > 0) {
+        safeSetMessages(nextMessages);
       }
 
-      Alert.alert(
-        "Error",
-        error.message || "Failed to start streaming. Please try again.",
-      );
+      setHasMoreOlderMessages(olderMessages.length >= MESSAGE_PAGE_LIMIT);
+    } catch {
+      lastOlderCursorRef.current = null;
+    } finally {
+      setIsLoadingOlderMessages(false);
     }
   }, [
-    addMessage,
     chatId,
-    inputText,
-    isGenerating,
-    isNavigating,
-    refreshChatList,
-    router,
+    fetchOlderMessages,
+    hasMoreOlderMessages,
+    isLoadingOlderMessages,
     safeSetMessages,
-    selectedAttachments,
-    syncMessagesToStore,
-    updateUserCredits,
-    userCredits,
-    userId,
   ]);
+
+  const handleSendMessage = useCallback(
+    async (messageText?: string) => {
+      const textToSend = messageText || inputText.trim();
+      if (textToSend === "" || isGenerating || isNavigating) return;
+
+      requestAnimationFrame(() => {
+        scrollMessageToEnd({ animated: true, closeKeyboard: true });
+      });
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      const currentCredits = Number(user?.credits) || 0;
+
+      if (currentCredits <= 0.5) {
+        router.push({
+          pathname: "/freeTrialIntro",
+          params: { source: "chat_limit" },
+        });
+        return;
+      }
+
+      updateUserCredits(currentCredits - 0.5);
+
+      const attachmentsDraft = selectedAttachments;
+      setInputText("");
+      setSelectedAttachments([]);
+
+      const inferMimeTypeFromUri = (
+        uri: string,
+        kind: "image" | "document",
+      ) => {
+        const ext = uri
+          .split("?")[0]
+          ?.split("#")[0]
+          ?.split(".")
+          .pop()
+          ?.toLowerCase();
+        if (kind === "image") {
+          if (ext === "png") return "image/png";
+          if (ext === "jpg" || ext === "jpeg") return "image/jpeg";
+          if (ext === "webp") return "image/webp";
+          if (ext === "heic") return "image/heic";
+          return "image/jpeg";
+        }
+        if (ext === "pdf") return "application/pdf";
+        if (ext === "txt") return "text/plain";
+        if (ext === "md") return "text/markdown";
+        if (ext === "json") return "application/json";
+        if (ext === "docx")
+          return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        return "application/octet-stream";
+      };
+
+      let attachmentsPayload: {
+        data: string;
+        mimeType: string;
+        name?: string;
+        kind?: "image" | "document";
+        localUri?: string;
+      }[] = [];
+
+      if (attachmentsDraft.length > 0) {
+        try {
+          attachmentsPayload = await Promise.all(
+            attachmentsDraft.map(async (att) => {
+              const data = await FileSystem.readAsStringAsync(att.uri, {
+                // Some Expo runtimes/types don't expose EncodingType; string literal is supported.
+                encoding: "base64" as any,
+              });
+              return {
+                data,
+                mimeType:
+                  att.mimeType || inferMimeTypeFromUri(att.uri, att.kind),
+                name: att.name,
+                kind: att.kind,
+                localUri: att.uri,
+              };
+            }),
+          );
+        } catch (e) {
+          Alert.alert(
+            "Attachment error",
+            "Couldn't attach that file. Try again with a smaller file.",
+          );
+        }
+      }
+
+      const newMessage: Message = {
+        id: generateUUID(),
+        role: "user",
+        content:
+          attachmentsPayload.length > 0
+            ? { text: textToSend, attachments: attachmentsPayload }
+            : textToSend,
+        createdAt: new Date(),
+        chatId: chatId,
+      };
+
+      const updatedMessages = [...(messagesRef.current || []), newMessage];
+
+      const messagesForApi = updatedMessages.map((m) => {
+        if (
+          m &&
+          typeof m.content === "object" &&
+          m.content &&
+          "attachments" in (m.content as any) &&
+          Array.isArray((m.content as any).attachments)
+        ) {
+          const c: any = m.content;
+          return {
+            ...m,
+            content: {
+              ...c,
+              attachments: c.attachments.map((a: any) => {
+                const { localUri, ...rest } = a || {};
+                return rest;
+              }),
+            },
+          };
+        }
+        return m;
+      });
+      safeSetMessages(updatedMessages);
+      addMessage(chatId, newMessage);
+      setIsGenerating(true);
+      setWaitingForStream(true);
+      streamCleanupRef.current?.();
+      streamCleanupRef.current = null;
+
+      const assistantMessageId = generateUUID();
+      let messageCreated = false;
+
+      try {
+        const cleanup = await chatAiService.generateMessagesStream(
+          {
+            messages: messagesForApi,
+            chatId: chatId,
+            userId: userId as unknown as string,
+          },
+          (token: string, _type?: string) => {
+            if (!messageCreated) {
+              setWaitingForStream(false);
+              setStreamingMessageId(assistantMessageId);
+              streamingAssistantIdRef.current = assistantMessageId;
+              messageContentRef.current.set(assistantMessageId, "");
+              const assistantMessage: Message = {
+                id: assistantMessageId,
+                role: "assistant",
+                content: "",
+                createdAt: new Date(),
+                chatId: chatId,
+              };
+              addMessage(chatId, assistantMessage);
+              safeSetMessages((currentMessages) => {
+                const messagesCopy = [...currentMessages];
+                messagesCopy.push(assistantMessage);
+                return messagesCopy;
+              });
+              messageCreated = true;
+            }
+
+            const currentContent =
+              messageContentRef.current.get(assistantMessageId) || "";
+            const newContent = currentContent + token;
+            messageContentRef.current.set(assistantMessageId, newContent);
+            safeSetMessages((currentMessages) => {
+              const messagesCopy = [...currentMessages];
+              const messageIndex = messagesCopy.findIndex(
+                (msg) => msg && msg.id === assistantMessageId,
+              );
+              if (messageIndex === -1) return currentMessages;
+              const message = messagesCopy[messageIndex];
+              messagesCopy[messageIndex] = {
+                ...message,
+                content: newContent,
+              };
+              return messagesCopy;
+            });
+          },
+          (_fullMessage: Message) => {
+            messageContentRef.current.delete(assistantMessageId);
+            streamingAssistantIdRef.current = null;
+            streamCleanupRef.current = null;
+            setIsGenerating(false);
+            setStreamingMessageId(null);
+            queueMicrotask(() => {
+              syncMessagesToStore(chatId, messagesRef.current);
+              refreshChatList();
+            });
+          },
+          (error: Error) => {
+            setInputText(textToSend);
+
+            messageContentRef.current.delete(assistantMessageId);
+            streamingAssistantIdRef.current = null;
+            streamCleanupRef.current = null;
+
+            if (messageCreated) {
+              safeSetMessages((currentMessages) =>
+                currentMessages.filter((msg) => msg.id !== assistantMessageId),
+              );
+            }
+
+            setIsGenerating(false);
+            setWaitingForStream(false);
+            setStreamingMessageId(null);
+            Alert.alert(
+              "Error",
+              error.message || "Failed to generate response. Please try again.",
+            );
+          },
+        );
+
+        streamCleanupRef.current = cleanup ?? null;
+      } catch (error: any) {
+        setInputText(textToSend);
+        setIsGenerating(false);
+        setWaitingForStream(false);
+        setStreamingMessageId(null);
+
+        messageContentRef.current.delete(assistantMessageId);
+        streamingAssistantIdRef.current = null;
+        streamCleanupRef.current = null;
+
+        if (messageCreated) {
+          safeSetMessages((currentMessages) =>
+            currentMessages.filter((msg) => msg.id !== assistantMessageId),
+          );
+        }
+
+        Alert.alert(
+          "Error",
+          error.message || "Failed to start streaming. Please try again.",
+        );
+        requestAnimationFrame(() => {
+          scrollMessageToEnd({ animated: true, closeKeyboard: true });
+        });
+      }
+    },
+    [
+      addMessage,
+      chatId,
+      inputText,
+      isGenerating,
+      isNavigating,
+      refreshChatList,
+      router,
+      safeSetMessages,
+      selectedAttachments,
+      syncMessagesToStore,
+      updateUserCredits,
+      user?.credits,
+      userId,
+    ],
+  );
 
   const dismissKeyboardJs = useCallback(() => {
     Keyboard.dismiss();
@@ -698,7 +783,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       micButtonRotation.value = withTiming(0, {
         duration: 200,
         easing: Easing.out(Easing.cubic),
-
       });
     }
   }, [
@@ -730,7 +814,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
       await audioRecorder.prepareToRecordAsync();
       audioRecorder.record();
     } catch (error) {
-      console.error("Error starting recording:", error);
       Alert.alert("Error", "Failed to start recording");
 
       micButtonScale.value = withTiming(1, { duration: 150 });
@@ -751,7 +834,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
           setInputText(response.transcription);
         } catch (transcriptionError) {
-          console.error("Error transcribing audio:", transcriptionError);
           Alert.alert(
             "Error",
             "Failed to process your audio message. Please try again.",
@@ -761,7 +843,6 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
         }
       }
     } catch (error) {
-      console.error("Error stopping recording:", error);
       Alert.alert("Error", "Failed to stop recording");
     }
   }, [audioRecorder]);
@@ -801,6 +882,23 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
     [waitingForStream],
   );
 
+  const listHeader = useMemo(
+    () =>
+      isLoadingOlderMessages ? (
+        <View style={styles.loadingOlderMessagesContainer}>
+          <Text
+            style={[
+              styles.loadingOlderMessagesText,
+              theme === "dark" && { color: "#A7B1C2" },
+            ]}
+          >
+            Loading older messages...
+          </Text>
+        </View>
+      ) : null,
+    [isLoadingOlderMessages, theme],
+  );
+
   const listExtraData = useMemo(
     () => ({ streamingMessageId, theme }),
     [streamingMessageId, theme],
@@ -816,21 +914,24 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
 
   const handleHeaderQuiz = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const quizLimit = userQuizLimit ?? 0;
-    const currentCredits = Number(userCredits) || 0;
+    const quizLimit = user?.quizLimit ?? 0;
+    const currentCredits = Number(user?.credits) || 0;
     if (quizLimit <= 0) {
       setShowQuizRefreshModal(true);
       return;
     }
     if (currentCredits <= 0.5) {
-      router.push("/freeTrialIntro");
+      router.push({
+        pathname: "/freeTrialIntro",
+        params: { source: "chat_limit" },
+      });
       return;
     }
     router.navigate({
       pathname: "/quiz",
       params: { chatId },
     });
-  }, [userQuizLimit, userCredits, chatId, router]);
+  }, [user?.quizLimit, user?.credits, chatId, router]);
 
   const handleConfirmDeleteChat = useCallback(async () => {
     try {
@@ -927,20 +1028,20 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     {!messages || messages.length === 0 ? (
                       <TouchableWithoutFeedback onPress={dismissKeyboard}>
                         <View style={styles.emptyStateContainer}>
-                        <View style={styles.emptyImageContainer}>
-                          <Image
-                            source={require("@/assets/images/eddie/Mischievous.png")}
-                            style={styles.emptyImage}
-                          />
-                          <Image
-                            source={
-                              theme === "dark"
-                                ? require("@/assets/images/logo.png")
-                                : require("@/assets/images/LOGO-2.png")
-                            }
-                            style={styles.logo}
-                          />
-                        </View>
+                          <View style={styles.emptyImageContainer}>
+                            <Image
+                              source={require("@/assets/images/eddie/Mischievous.png")}
+                              style={styles.emptyImage}
+                            />
+                            <Image
+                              source={
+                                theme === "dark"
+                                  ? require("@/assets/images/logo.png")
+                                  : require("@/assets/images/LOGO-2.png")
+                              }
+                              style={styles.logo}
+                            />
+                          </View>
                         </View>
                       </TouchableWithoutFeedback>
                     ) : (
@@ -959,7 +1060,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                           maintainVisibleContentPosition
                           keyExtractor={keyExtractor}
                           renderItem={renderMessage}
+                          ListHeaderComponent={listHeader}
                           ListFooterComponent={listFooter}
+                          onStartReached={handleLoadOlderMessages}
+                          onStartReachedThreshold={0.1}
                           onScroll={handleScroll}
                           onScrollBeginDrag={dismissKeyboard}
                           scrollEventThrottle={16}
@@ -987,10 +1091,10 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                     )}
                   </KeyboardGestureArea>
 
-                  <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
+                  <KeyboardStickyView
+                    offset={{ closed: 0, opened: insets.bottom }}
+                  >
                     <View>
-
-
                       {(!messages || messages.length === 0) &&
                         !loadingSuggestions &&
                         suggestions &&
@@ -1007,7 +1111,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                             <ScrollView
                               horizontal
                               showsHorizontalScrollIndicator={false}
-                              contentContainerStyle={styles.suggestionsScrollContent}
+                              contentContainerStyle={
+                                styles.suggestionsScrollContent
+                              }
                               style={styles.suggestionsScroll}
                             >
                               {suggestions.map((suggestion, index) => (
@@ -1020,7 +1126,9 @@ const Chat = ({ title, initialMessages = [], chatId }: Props) => {
                                       borderColor: "#2E3033",
                                     },
                                   ]}
-                                  onPress={() => handleSuggestionPress(suggestion)}
+                                  onPress={() =>
+                                    handleSuggestionPress(suggestion)
+                                  }
                                   activeOpacity={0.7}
                                 >
                                   <Text
@@ -1223,6 +1331,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingBottom: 20,
     flexGrow: 1,
+  },
+  loadingOlderMessagesContainer: {
+    alignItems: "center",
+    paddingBottom: 8,
+  },
+  loadingOlderMessagesText: {
+    fontFamily: "Satoshi-Regular",
+    fontSize: 12,
+    color: "#6B7C93",
   },
   inputContainer: {
     paddingHorizontal: 12,

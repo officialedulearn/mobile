@@ -1,11 +1,11 @@
-import { Image } from 'expo-image';
-import React from 'react';
+import { Image } from "expo-image";
+import React from "react";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface AnimatedTabIconProps {
   source: any;

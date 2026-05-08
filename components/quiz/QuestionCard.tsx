@@ -12,12 +12,7 @@ export const QuestionCard = ({
   theme: Theme;
 }) => (
   <View>
-    <Text
-      style={[
-        styles.question,
-        theme === "dark" && { color: "#E0E0E0" },
-      ]}
-    >
+    <Text style={[styles.question, theme === "dark" && { color: "#E0E0E0" }]}>
       {question.question}
     </Text>
   </View>

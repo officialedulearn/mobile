@@ -1,6 +1,7 @@
 import { UserAnswer } from "@/core/quizState";
 import { Image } from "expo-image";
-import React from "react";
+import { VideoView, useVideoPlayer } from "expo-video";
+import React, { useEffect } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -11,6 +12,51 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Theme = "light" | "dark";
+
+const AnimatedMascot = ({
+  source,
+  startAt = 0,
+  theme,
+}: {
+  source: number;
+  startAt?: number;
+  theme: Theme;
+}) => {
+  const player = useVideoPlayer(source, (instance) => {
+    instance.muted = true;
+    instance.loop = startAt === 0;
+    instance.currentTime = startAt;
+    instance.play();
+  });
+
+  useEffect(() => {
+    if (startAt <= 0) return;
+
+    // Replay from the trimmed start point so the intro segment never comes back.
+    const subscription = player.addListener("playToEnd", () => {
+      player.currentTime = startAt;
+      player.play();
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [player, startAt]);
+
+  return (
+    <View
+      style={[styles.mascotFrame, theme === "dark" && styles.mascotFrameDark]}
+    >
+      <VideoView
+        player={player}
+        style={styles.mascotVideo}
+        nativeControls={false}
+        contentFit="cover"
+        surfaceType="textureView"
+      />
+    </View>
+  );
+};
 
 const ScoreBreakdown = ({
   score,
@@ -23,7 +69,6 @@ const ScoreBreakdown = ({
   theme: Theme;
   xpEarned?: number;
 }) => {
-  const insets = useSafeAreaInsets();
   const isPassing = score >= totalQuestions / 2;
   const xp = xpEarned ?? score;
 
@@ -38,37 +83,57 @@ const ScoreBreakdown = ({
       >
         Quiz Result
       </Text>
-      <Image
+      <AnimatedMascot
         source={
           isPassing
-            ? require("@/assets/images/eddie/congrats.png")
-            : require("@/assets/images/eddie/failed.png")
+            ? require("@/assets/images/eddie/proud_higgsfield.mp4")
+            : require("@/assets/images/eddie/sad_higgsfield.mp4")
         }
-        style={styles.medalImage}
+        startAt={isPassing ? 1 : 0}
+        theme={theme}
       />
-      <Text style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}>
+      <Text
+        style={[styles.quizResult, theme === "dark" && { color: "#E0E0E0" }]}
+      >
         {isPassing ? "Congratulations" : "Don't worry, learning is a journey."}
       </Text>
 
-      <Text style={[styles.resultsMessage, theme === "dark" && { color: "#B3B3B3" }]}>
+      <Text
+        style={[
+          styles.resultsMessage,
+          theme === "dark" && { color: "#B3B3B3" },
+        ]}
+      >
         {isPassing
           ? "You're one step closer to your next badge. Keep the momentum going! Want to sharpen your skills even more? Try a follow-up quiz or review your answers."
           : `You got ${score} out of ${totalQuestions}, which means there's room to grow. You still earned ${xp} XP just for trying, and now you know where to improve. Review your answers and give it another go. You've got this!`}
       </Text>
 
-      <Text style={[styles.scoreText, { marginTop: 10 }, theme === "dark" && { color: "#E0E0E0" }]}>
+      <Text
+        style={[
+          styles.scoreText,
+          { marginTop: 10 },
+          theme === "dark" && { color: "#E0E0E0" },
+        ]}
+      >
         Your Score
       </Text>
 
       <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
-        {isPassing ? <Text style={{ color: "#00FF80" }}>{score}</Text> : score}/{totalQuestions}
+        {isPassing ? <Text style={{ color: "#00FF80" }}>{score}</Text> : score}/
+        {totalQuestions}
       </Text>
 
-      <Text style={[styles.scoreText, theme === "dark" && { color: "#E0E0E0" }]}>
+      <Text
+        style={[styles.scoreText, theme === "dark" && { color: "#E0E0E0" }]}
+      >
         Earned XP
       </Text>
       <View style={styles.xpContainer}>
-        <Image source={require("@/assets/images/icons/medal-05.png")} style={styles.xpImage} />
+        <Image
+          source={require("@/assets/images/icons/medal-05.png")}
+          style={styles.xpImage}
+        />
         <Text style={[styles.score, theme === "dark" && { color: "#E0E0E0" }]}>
           +{xp} XP
         </Text>
@@ -87,17 +152,28 @@ const AnswersReview = ({
   <View
     style={[
       styles.fullScreenAnswers,
-      theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
+      theme === "dark" && {
+        backgroundColor: "#131313",
+        borderColor: "#2E3033",
+      },
     ]}
   >
-    <Text style={[styles.answersTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+    <Text
+      style={[styles.answersTitle, theme === "dark" && { color: "#E0E0E0" }]}
+    >
       Your Answers:
     </Text>
-    <ScrollView style={styles.answersList} contentContainerStyle={styles.answersListContent}>
+    <ScrollView
+      style={styles.answersList}
+      contentContainerStyle={styles.answersListContent}
+    >
       {userAnswers.map((answer, index) => (
         <View
           key={index}
-          style={[styles.answerItem, theme === "dark" && { borderBottomColor: "#2E3033" }]}
+          style={[
+            styles.answerItem,
+            theme === "dark" && { borderBottomColor: "#2E3033" },
+          ]}
         >
           <Text
             style={[
@@ -115,10 +191,13 @@ const AnswersReview = ({
                 answer.isCorrect ? styles.correctAnswer : styles.wrongAnswer,
               ]}
             >
-              Your answer: {answer.selectedAnswer ? (
+              Your answer:{" "}
+              {answer.selectedAnswer ? (
                 answer.selectedAnswer
               ) : (
-                <Text style={{ fontStyle: "italic", opacity: 0.6 }}>Not answered</Text>
+                <Text style={{ fontStyle: "italic", opacity: 0.6 }}>
+                  Not answered
+                </Text>
               )}
             </Text>
             {!answer.isCorrect && (
@@ -154,69 +233,73 @@ export const QuizResultsScreen = ({
 }) => {
   const insets = useSafeAreaInsets();
   return (
-  <View style={[styles.resultsContainer, { paddingBottom: insets.bottom }]}>
-    {!reviewAnswers && (
-      <ScoreBreakdown
-        score={score}
-        totalQuestions={totalQuestions}
-        theme={theme}
-        xpEarned={xpEarned}
-      />
-    )}
-    {reviewAnswers && <AnswersReview userAnswers={userAnswers} theme={theme} />}
+    <View style={[styles.resultsContainer, { paddingBottom: insets.bottom }]}>
+      {!reviewAnswers && (
+        <ScoreBreakdown
+          score={score}
+          totalQuestions={totalQuestions}
+          theme={theme}
+          xpEarned={xpEarned}
+        />
+      )}
+      {reviewAnswers && (
+        <AnswersReview userAnswers={userAnswers} theme={theme} />
+      )}
 
-    <View
-      style={[
-        styles.bottomButtonsContainer,
-        theme === "dark" && { backgroundColor: "#0D0D0D" },
-      ]}
-    >
-      <View style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}>
-        <TouchableOpacity
-          style={[
-            styles.resultsButton,
-            theme === "dark" && {
-              backgroundColor: "#131313",
-              borderColor: "#2E3033",
-            },
-          ]}
-          onPress={onToggleReview}
+      <View
+        style={[
+          styles.bottomButtonsContainer,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
+      >
+        <View
+          style={[styles.navigationButtons, { paddingBottom: insets.bottom }]}
         >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.resultsButtonText,
-              theme === "dark" && { color: "#E0E0E0" },
+              styles.resultsButton,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
             ]}
+            onPress={onToggleReview}
           >
-            {reviewAnswers ? "Hide Answers" : "Review Answers"}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.resultsButtonText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              {reviewAnswers ? "Hide Answers" : "Review Answers"}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.resultsButton,
-            styles.resultsButtonPrimary,
-            theme === "dark" && {
-              backgroundColor: "#00FF80",
-              borderColor: "#00FF80",
-            },
-          ]}
-          onPress={onReturnToQuizzes}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.resultsButtonText,
-              styles.resultsButtonTextPrimary,
-              theme === "dark" && { color: "#000" },
+              styles.resultsButton,
+              styles.resultsButtonPrimary,
+              theme === "dark" && {
+                backgroundColor: "#00FF80",
+                borderColor: "#00FF80",
+              },
             ]}
+            onPress={onReturnToQuizzes}
           >
-            Return to Quizzes
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.resultsButtonText,
+                styles.resultsButtonTextPrimary,
+                theme === "dark" && { color: "#000" },
+              ]}
+            >
+              Return to Quizzes
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
 };
 
 const styles = StyleSheet.create({
@@ -226,10 +309,21 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 40,
   },
-  medalImage: {
-    width: 120,
-    height: 120,
+  mascotFrame: {
+    width: 150,
+    height: 150,
     marginBottom: 20,
+    borderRadius: 28,
+    overflow: "hidden",
+    backgroundColor: "#000000",
+  },
+  mascotFrameDark: {
+    borderWidth: 1,
+    borderColor: "#1F1F1F",
+  },
+  mascotVideo: {
+    width: "100%",
+    height: "100%",
   },
   quizResult: {
     color: "#2D3C52",

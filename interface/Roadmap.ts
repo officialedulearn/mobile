@@ -1,59 +1,54 @@
 export type Roadmap = {
-    id: string;
-    userId: string;
-    chatId: string;
-    topic: string;
-    title: string;
-    description: string;
-    claimableNFT?: string | null;
-    createdAt: Date;
-}
+  id: string;
+  userId: string;
+  chatId: string;
+  topic: string;
+  title: string;
+  description: string;
+  claimableNFT?: string | null;
+  createdAt: Date;
+};
 
 export type RoadmapStep = {
-    id: string;
-    roadmapId: string;
-    prompt: string;
-    title: string;
-    description: string;
-    time: number;
-    done?: boolean;
-    createdAt: Date;
-}
+  id: string;
+  roadmapId: string;
+  prompt: string;
+  title: string;
+  description: string;
+  time: number;
+  done?: boolean;
+  createdAt: Date;
+};
 
 export type RoadmapWithSteps = {
-    roadmap: Roadmap;
-    steps: RoadmapStep[];
-}
+  roadmap: Roadmap;
+  steps: RoadmapStep[];
+};
 
 export type GenerateRoadmapDto = {
-    userId: string;
-    topic: string;
-}
+  userId: string;
+  topic: string;
+};
 
 export type StartRoadmapStepDto = {
-    userId: string;
-}
+  userId: string;
+};
 
 export type StartRoadmapStepResponse = {
-    step: RoadmapStep;
-    userMessage: {
-        id: string;
-        role: string;
-        content: { text: string };
-        createdAt: Date;
-        chatId: string;
-    };
-    aiResponse: {
-        id: string;
-        role: string;
-        content: { text: string };
-        createdAt: Date;
-        chatId: string;
-    };
-    nftAwarded?: boolean;
-}
-
-
-
-
-
+  step: RoadmapStep;
+  userMessage: {
+    id: string;
+    role: string;
+    content: { text: string };
+    createdAt: Date;
+    chatId: string;
+  };
+  aiResponse: {
+    id: string;
+    role: string;
+    content: { text: string };
+    createdAt: Date;
+    chatId: string;
+  };
+  nftAwarded?: boolean;
+};

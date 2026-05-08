@@ -1,5 +1,5 @@
-import type { IsoDateString } from './common.types';
-import type { UserLevel } from './user.types';
+import type { IsoDateString } from "./common.types";
+import type { UserLevel } from "./user.types";
 
 export type WeeklyLeaderboardRow = {
   id: string;
@@ -28,5 +28,5 @@ export type MonthlyLeaderboardPreviewParams = {
   year: number;
   month: number;
   mock?: boolean;
-  theme?: 'light' | 'dark';
+  theme?: "light" | "dark";
 };

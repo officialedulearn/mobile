@@ -16,10 +16,7 @@ import {
   widgetAccentedRenderingMode,
   widgetURL,
 } from "@expo/ui/swift-ui/modifiers";
-import {
-  createWidget,
-  type WidgetEnvironment,
-} from "expo-widgets";
+import { createWidget, type WidgetEnvironment } from "expo-widgets";
 
 type EddyXpWidgetProps = {
   totalXp: number;
@@ -41,8 +38,7 @@ function EddyXpWidgetView(
   const textPrimary = isDark ? "#FFFFFF" : "#1C1C1E";
   const textSecondary = isDark ? "#D1D1D6" : "#636366";
   const textTertiary = isDark ? "#8E8E93" : "#8E8E93";
-  const progressValue =
-    p.progress >= 0 && p.progress <= 1 ? p.progress : 0;
+  const progressValue = p.progress >= 0 && p.progress <= 1 ? p.progress : 0;
 
   const mascot = (
     <Image

@@ -1,8 +1,8 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Design } from '@/utils/design';
-import { Image } from 'expo-image';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Design } from "@/utils/design";
+import { Image } from "expo-image";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 interface HomeCardProps {
   icon: any;
@@ -23,25 +23,14 @@ export function HomeCard({ icon, title, subtitle, onPress }: HomeCardProps) {
           borderColor: colors.borderMuted,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.md,
-        }
+        },
       ]}
       activeOpacity={0.8}
       onPress={onPress}
     >
-      <Image
-        source={icon}
-        style={{ width: 44, height: 44 }}
-      />
-      <Text style={[
-        styles.title,
-        { color: colors.textPrimary }
-      ]}>
-        {title}
-      </Text>
-      <Text style={[
-        styles.subtitle,
-        { color: colors.textSecondary }
-      ]}>
+      <Image source={icon} style={{ width: 44, height: 44 }} />
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
         {subtitle}
       </Text>
     </TouchableOpacity>
@@ -50,13 +39,13 @@ export function HomeCard({ icon, title, subtitle, onPress }: HomeCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 16,
     flex: 1,
     marginHorizontal: Design.spacing.sm,
     borderWidth: 1,
     height: 150,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   title: {
     fontFamily: Design.typography.fontFamily.satoshi.medium,

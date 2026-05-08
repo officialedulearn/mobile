@@ -7,7 +7,7 @@ import { supabase } from "@/utils/supabase";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -23,35 +23,58 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const Auth = () => {
-  const { signUp } = useLocalSearchParams<{ signUp: string }>();
+  const { signUp, referralCode: referralCodeParam } = useLocalSearchParams<{
+    signUp?: string | string[];
+    referralCode?: string | string[];
+  }>();
   const theme = useUserStore((state) => state.theme);
   const scrollViewRef = useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
-  const [isSignUp, setIsSignUp] = useState(signUp === "1");
+  const normalizedReferralCode = useMemo(() => {
+    const value = Array.isArray(referralCodeParam)
+      ? referralCodeParam[0]
+      : referralCodeParam;
+    return value ? value.trim().toUpperCase() : "";
+  }, [referralCodeParam]);
+
+  const [isSignUp, setIsSignUp] = useState(
+    (Array.isArray(signUp) ? signUp[0] : signUp) === "1" ||
+      !!normalizedReferralCode,
+  );
   const [oauthLoading, setOauthLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     referralCode: "",
-    username: ""
+    username: "",
   });
 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setIsSignUp(signUp === "1");
-  }, [signUp]);
+    const signUpParam = Array.isArray(signUp) ? signUp[0] : signUp;
+    const nextIsSignUp = signUpParam === "1" || !!normalizedReferralCode;
+    setIsSignUp((prev) => (prev === nextIsSignUp ? prev : nextIsSignUp));
+
+    if (normalizedReferralCode) {
+      setFormData((prev) =>
+        prev.referralCode === normalizedReferralCode
+          ? prev
+          : { ...prev, referralCode: normalizedReferralCode },
+      );
+    }
+  }, [signUp, normalizedReferralCode]);
 
   const handleChange = (field: string, value: string) => {
     let sanitizedValue = value;
 
-    if (field === 'email') {
+    if (field === "email") {
       sanitizedValue = value.trim().toLowerCase();
-    } else if (field === 'username') {
-      sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-    } else if (field === 'referralCode') {
+    } else if (field === "username") {
+      sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+    } else if (field === "referralCode") {
       sanitizedValue = value.trim().toUpperCase();
     }
 
@@ -60,7 +83,7 @@ const Auth = () => {
 
   const handleInputFocus = (inputType: string) => {
     setTimeout(() => {
-      if (scrollViewRef.current && inputType === 'username') {
+      if (scrollViewRef.current && inputType === "username") {
         scrollViewRef.current.scrollToEnd({ animated: true });
       }
     }, 100);
@@ -78,7 +101,10 @@ const Auth = () => {
     }
 
     if (!validateEmail(formData.email)) {
-      Alert.alert("Invalid Email", "Please enter a valid email address (e.g., user@example.com)");
+      Alert.alert(
+        "Invalid Email",
+        "Please enter a valid email address (e.g., user@example.com)",
+      );
       return false;
     }
 
@@ -99,7 +125,10 @@ const Auth = () => {
       }
 
       if (formData.username.length < 3) {
-        Alert.alert("Invalid Username", "Username must be at least 3 characters long");
+        Alert.alert(
+          "Invalid Username",
+          "Username must be at least 3 characters long",
+        );
         return false;
       }
     }
@@ -118,7 +147,7 @@ const Auth = () => {
           const userService = new UserService();
           const availabilityResult = await userService.checkAvailability(
             formData.email,
-            ""
+            "",
           );
 
           if (availabilityResult.emailAvailable) {
@@ -134,7 +163,7 @@ const Auth = () => {
                   text: "Cancel",
                   style: "cancel",
                 },
-              ]
+              ],
             );
             setLoading(false);
             return;
@@ -142,7 +171,7 @@ const Auth = () => {
         } catch (availabilityError) {
           Alert.alert(
             "Login Failed",
-            "Unable to verify account. Please try again."
+            "Unable to verify account. Please try again.",
           );
           setLoading(false);
           return;
@@ -154,13 +183,13 @@ const Auth = () => {
           const userService = new UserService();
           const availabilityResult = await userService.checkAvailability(
             formData.email,
-            formData.username
+            formData.username,
           );
 
           if (!availabilityResult.emailAvailable) {
             Alert.alert(
               "Email Already Registered",
-              "This email is already registered. Please use a different email or try logging in."
+              "This email is already registered. Please use a different email or try logging in.",
             );
             setLoading(false);
             return;
@@ -169,7 +198,7 @@ const Auth = () => {
           if (!availabilityResult.usernameAvailable) {
             Alert.alert(
               "Username Taken",
-              "This username is already taken. Please choose a different username."
+              "This username is already taken. Please choose a different username.",
             );
             setLoading(false);
             return;
@@ -177,7 +206,7 @@ const Auth = () => {
         } catch (availabilityError) {
           Alert.alert(
             "Connection Error",
-            "Failed to verify availability. Please try again."
+            "Failed to verify availability. Please try again.",
           );
           setLoading(false);
           return;
@@ -187,22 +216,22 @@ const Auth = () => {
       if (formData.email === "playreview@edulearn.com") {
         if (isSignUp) {
           router.push({
-            pathname: '/auth/verifyOtp',
+            pathname: "/auth/verifyOtp",
             params: {
               email: formData.email,
               isSignUp: "1",
               name: formData.name,
               referralCode: formData.referralCode || "",
               username: formData.username || "",
-              isReviewer: "1"
+              isReviewer: "1",
             },
           });
         } else {
           router.push({
-            pathname: '/auth/verifyOtp',
+            pathname: "/auth/verifyOtp",
             params: {
               email: formData.email,
-              isReviewer: "1"
+              isReviewer: "1",
             },
           });
         }
@@ -211,8 +240,8 @@ const Auth = () => {
 
       if (isSignUp) {
         try {
-          const { UserService } = await import('@/services/auth.service');
-          const { generateUUID } = await import('@/utils/constants');
+          const { UserService } = await import("@/services/auth.service");
+          const { generateUUID } = await import("@/utils/constants");
           const userService = new UserService();
           const userId = generateUUID();
 
@@ -225,18 +254,26 @@ const Auth = () => {
           });
 
           if (!newUser) {
-            Alert.alert("Sign Up Failed", "Failed to create account. Please try again.");
+            Alert.alert(
+              "Sign Up Failed",
+              "Failed to create account. Please try again.",
+            );
             setLoading(false);
             return;
           }
-
         } catch (dbError: any) {
-          const errorMessage = dbError?.response?.data?.message || dbError?.message || "Unknown error";
+          const errorMessage =
+            dbError?.response?.data?.message ||
+            dbError?.message ||
+            "Unknown error";
 
-          if (errorMessage.toLowerCase().includes('already exists') || errorMessage.toLowerCase().includes('duplicate')) {
+          if (
+            errorMessage.toLowerCase().includes("already exists") ||
+            errorMessage.toLowerCase().includes("duplicate")
+          ) {
             Alert.alert(
               "Account Already Exists",
-              "This email is already registered. Please try logging in instead."
+              "This email is already registered. Please try logging in instead.",
             );
           } else {
             Alert.alert("Sign Up Failed", `Error: ${errorMessage}`);
@@ -251,10 +288,16 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes('rate limit')) {
-          Alert.alert("Too Many Attempts", "Please wait before requesting another code");
-        } else if (error.message.includes('invalid email')) {
-          Alert.alert("Invalid Email", "Please check your email address and try again");
+        if (error.message.includes("rate limit")) {
+          Alert.alert(
+            "Too Many Attempts",
+            "Please wait before requesting another code",
+          );
+        } else if (error.message.includes("invalid email")) {
+          Alert.alert(
+            "Invalid Email",
+            "Please check your email address and try again",
+          );
         } else {
           Alert.alert("Authentication Error", error.message);
         }
@@ -262,24 +305,23 @@ const Auth = () => {
         if (isSignUp) {
           Alert.alert(
             "Partial Account Created",
-            "Database user created but email verification failed. Please contact support."
+            "Database user created but email verification failed. Please contact support.",
           );
         }
         return;
       }
 
       router.push({
-        pathname: '/auth/verifyOtp',
+        pathname: "/auth/verifyOtp",
         params: {
           email: formData.email,
-          isLogin: isSignUp ? "0" : "1"
+          isLogin: isSignUp ? "0" : "1",
         },
       });
-
     } catch (err) {
       Alert.alert(
         "Connection Error",
-        "Unable to connect to our servers. Please check your internet connection and try again."
+        "Unable to connect to our servers. Please check your internet connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -288,7 +330,11 @@ const Auth = () => {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, theme === "dark" && styles.containerDark, { paddingTop: topPadding }]}
+      style={[
+        styles.container,
+        theme === "dark" && styles.containerDark,
+        { paddingTop: topPadding },
+      ]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
@@ -300,7 +346,6 @@ const Auth = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-
         <View style={{ marginTop: 20, marginBottom: -10 }}>
           <TouchableOpacity
             style={[
@@ -324,17 +369,25 @@ const Auth = () => {
         </View>
         <View style={styles.topNavigation}>
           <Image
-            source={theme === "dark" ? require("@/assets/images/logo.png") : require("@/assets/images/LOGO-1.png")}
+            source={
+              theme === "dark"
+                ? require("@/assets/images/logo.png")
+                : require("@/assets/images/LOGO-1.png")
+            }
             style={styles.logo}
             resizeMode="contain"
           />
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={[styles.welcome, theme === "dark" && styles.welcomeDark]}>
+          <Text
+            style={[styles.welcome, theme === "dark" && styles.welcomeDark]}
+          >
             {isSignUp ? "Create account" : "Welcome back 👋"}
           </Text>
-          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
+          <Text
+            style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}
+          >
             {isSignUp
               ? "Sign up to begin your learning journey"
               : "Log in to continue your learning journey"}
@@ -342,9 +395,13 @@ const Auth = () => {
         </View>
 
         <View style={styles.content}>
-
           {isSignUp && (
-            <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
+            <View
+              style={[
+                styles.inputContainer,
+                theme === "dark" && styles.inputContainerDark,
+              ]}
+            >
               <TextInput
                 style={[styles.input, theme === "dark" && styles.inputDark]}
                 placeholder="Full Name"
@@ -359,7 +416,12 @@ const Auth = () => {
             </View>
           )}
 
-          <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
+          <View
+            style={[
+              styles.inputContainer,
+              theme === "dark" && styles.inputContainerDark,
+            ]}
+          >
             <TextInput
               style={[styles.input, theme === "dark" && styles.inputDark]}
               placeholder="Email"
@@ -373,7 +435,11 @@ const Auth = () => {
               textContentType="emailAddress"
             />
             <Image
-              source={theme === "dark" ? require("@/assets/images/icons/dark/mail.png") : require("@/assets/images/icons/mail.png")}
+              source={
+                theme === "dark"
+                  ? require("@/assets/images/icons/dark/mail.png")
+                  : require("@/assets/images/icons/mail.png")
+              }
               style={styles.icon}
               resizeMode="contain"
             />
@@ -381,11 +447,18 @@ const Auth = () => {
 
           {isSignUp && (
             <>
-              <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  theme === "dark" && styles.inputContainerDark,
+                ]}
+              >
                 <TextInput
                   style={[styles.input, theme === "dark" && styles.inputDark]}
                   placeholder="Referral Code (Optional)"
-                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+                  placeholderTextColor={
+                    theme === "dark" ? "#B3B3B3" : "#61728C"
+                  }
                   value={formData.referralCode}
                   onChangeText={(text) => handleChange("referralCode", text)}
                   autoCapitalize="characters"
@@ -393,11 +466,22 @@ const Auth = () => {
                   returnKeyType="next"
                 />
               </View>
-              <View style={[styles.inputContainer, theme === "dark" && styles.inputContainerDark]}>
+              <View
+                style={[
+                  styles.inputContainer,
+                  theme === "dark" && styles.inputContainerDark,
+                ]}
+              >
                 <TextInput
-                  style={[styles.input, styles.usernameInput, theme === "dark" && styles.inputDark]}
+                  style={[
+                    styles.input,
+                    styles.usernameInput,
+                    theme === "dark" && styles.inputDark,
+                  ]}
                   placeholder="X username"
-                  placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
+                  placeholderTextColor={
+                    theme === "dark" ? "#B3B3B3" : "#61728C"
+                  }
                   value={formData.username}
                   onChangeText={(text) => handleChange("username", text)}
                   onFocus={() => handleInputFocus("username")}
@@ -405,7 +489,6 @@ const Auth = () => {
                   autoCorrect={false}
                   returnKeyType="done"
                   textContentType="username"
-
                 />
               </View>
             </>
@@ -414,33 +497,64 @@ const Auth = () => {
           <TouchableOpacity
             style={[
               styles.signInButton,
-              (loading || oauthLoading) ? styles.disabledButton : null,
-              theme === "dark" && styles.signInButtonDark
+              loading || oauthLoading ? styles.disabledButton : null,
+              theme === "dark" && styles.signInButtonDark,
             ]}
             onPress={() => handleAuth()}
             disabled={loading || oauthLoading}
           >
-            <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
+            <Text
+              style={[
+                styles.buttonText,
+                theme === "dark" && styles.buttonTextDark,
+              ]}
+            >
               {isSignUp ? "Sign Up" : "Sign In"}
             </Text>
           </TouchableOpacity>
 
-
           <View style={styles.dividerContainer}>
-            <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
-            <Text style={[styles.dividerText, theme === "dark" && styles.dividerTextDark]}>OR</Text>
-            <View style={[styles.dividerLine, theme === "dark" && styles.dividerLineDark]} />
+            <View
+              style={[
+                styles.dividerLine,
+                theme === "dark" && styles.dividerLineDark,
+              ]}
+            />
+            <Text
+              style={[
+                styles.dividerText,
+                theme === "dark" && styles.dividerTextDark,
+              ]}
+            >
+              OR
+            </Text>
+            <View
+              style={[
+                styles.dividerLine,
+                theme === "dark" && styles.dividerLineDark,
+              ]}
+            />
           </View>
 
           <OAuthButtons onLoadingChange={setOauthLoading} />
           {isSignUp && (
             <View style={styles.privacyContainer}>
-              <Text style={[styles.privacyText, theme === "dark" && styles.privacyTextDark]}>
+              <Text
+                style={[
+                  styles.privacyText,
+                  theme === "dark" && styles.privacyTextDark,
+                ]}
+              >
                 By signing up, you are agreeing to our{" "}
                 <Text
-                  style={[styles.privacyLink, theme === "dark" && styles.privacyLinkDark]}
+                  style={[
+                    styles.privacyLink,
+                    theme === "dark" && styles.privacyLinkDark,
+                  ]}
                   onPress={() => {
-                    Linking.openURL("https://support.edulearn.fun/privacy-policy");
+                    Linking.openURL(
+                      "https://support.edulearn.fun/privacy-policy",
+                    );
                   }}
                 >
                   Privacy Policy
@@ -450,12 +564,27 @@ const Auth = () => {
           )}
         </View>
 
-        <View style={{ marginTop: 30, alignItems: "center", justifyContent: "center" }}>
-          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
+        <View
+          style={{
+            marginTop: 30,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}
+          >
             {isSignUp ? "Already have an account? " : "Don't have an account? "}
             <Text
               onPress={() => setIsSignUp(!isSignUp)}
-              style={[{ fontWeight: "700", textDecorationLine: "underline", lineHeight: 24 }, theme === "dark" ? { color: "#00FF80" } : { color: "#000" }]}
+              style={[
+                {
+                  fontWeight: "700",
+                  textDecorationLine: "underline",
+                  lineHeight: 24,
+                },
+                theme === "dark" ? { color: "#00FF80" } : { color: "#000" },
+              ]}
             >
               {isSignUp ? "Sign In" : "Sign Up"}
             </Text>
@@ -609,27 +738,27 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#EDF3FC',
+    backgroundColor: "#EDF3FC",
   },
   dividerLineDark: {
-    backgroundColor: '#2E3033',
+    backgroundColor: "#2E3033",
   },
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,
-    fontWeight: '500',
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    fontWeight: "500",
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
   },
   dividerTextDark: {
-    color: '#B3B3B3',
+    color: "#B3B3B3",
   },
 });
 

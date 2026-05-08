@@ -6,14 +6,20 @@ import {
   THEME_STORAGE_KEY,
   writeStoredTheme,
 } from "@/utils/design";
-import { syncEddyXpWidgetFromUser } from "@/utils/syncEddyXpWidget";
 import { supabase } from "@/utils/supabase";
+import { syncEddyXpWidgetFromUser } from "@/utils/syncEddyXpWidget";
+import {
+  STORE_REVIEW_LAST_PROMPT_KEY,
+  STORE_REVIEW_USER_COMPLETED_KEY,
+} from "@/utils/storeReviewPrompt";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import useActivityStore from "./activityState";
 import useChatStore from "./chatState";
 import useCommunityStore from "./communityState";
+import useLeaderboardStore from "./leaderboardState";
 import useNotificationsStore from "./notificationsState";
+import useReferralStore from "./referralState";
 import useRewardsStore from "./rewardsState";
 import useRoadmapStore from "./roadmapState";
 import useSocialStore from "./socialState";
@@ -109,8 +115,8 @@ const calculateAndUpdateStreak = async (
     }
 
     return newStreak;
-  } catch (error) {
-    console.error("Error calculating streak:", error);
+  } catch {
+    //console.error("Error calculating streak:", error);
     const fallbackStreak = user.streak || 1;
     await userService.updateUserStreak(user.id, fallbackStreak);
     return fallbackStreak;
@@ -145,7 +151,7 @@ const useUserStore = create<UserState>((set, get) => ({
       } = await supabase.auth.getUser();
 
       if (error) {
-        console.error("Supabase auth error:", error);
+        //console.error("Supabase auth error:", error);
         return;
       }
 
@@ -184,10 +190,13 @@ const useUserStore = create<UserState>((set, get) => ({
 
       set({ user: userData });
       syncEddyXpWidgetFromUser(userData);
+      useLeaderboardStore
+        .getState()
+        .syncCachedUser(userData, { includeAllTimeXp: true });
 
       await get().fetchWalletBalance();
     } catch (error) {
-      console.error("Failed to fetch user data:", error);
+      //console.error("Failed to fetch user data:", error);
       throw error;
     } finally {
       set({ isLoading: false });
@@ -211,7 +220,13 @@ const useUserStore = create<UserState>((set, get) => ({
         ? { ...state.user, xp: (state.user.xp || 0) + xpEarned }
         : null,
     }));
-    syncEddyXpWidgetFromUser(get().user);
+    const updatedUser = get().user;
+    syncEddyXpWidgetFromUser(updatedUser);
+    if (updatedUser) {
+      useLeaderboardStore
+        .getState()
+        .syncCachedUser(updatedUser, { includeAllTimeXp: true });
+    }
 
     activityService
       .createActivity({
@@ -220,9 +235,7 @@ const useUserStore = create<UserState>((set, get) => ({
         type,
         xpEarned,
       })
-      .catch((error) =>
-        console.error("Failed to update XP in database:", error),
-      );
+      .catch(() => {});
   },
 
   updateUserPointsFromQuiz: (xpEarned: number) => {
@@ -234,7 +247,13 @@ const useUserStore = create<UserState>((set, get) => ({
         ? { ...state.user, xp: (state.user.xp || 0) + xpEarned }
         : null,
     }));
-    syncEddyXpWidgetFromUser(get().user);
+    const updatedUser = get().user;
+    syncEddyXpWidgetFromUser(updatedUser);
+    if (updatedUser) {
+      useLeaderboardStore
+        .getState()
+        .syncCachedUser(updatedUser, { includeAllTimeXp: true });
+    }
   },
 
   updateLevel: (
@@ -246,17 +265,20 @@ const useUserStore = create<UserState>((set, get) => ({
     set((state) => ({
       user: state.user ? { ...state.user, level } : null,
     }));
+    const updatedUser = get().user;
+    if (updatedUser) {
+      useLeaderboardStore.getState().syncCachedUser(updatedUser);
+    }
 
-    userService
-      .updateUserLevel(currentUser.email, level)
-      .catch((error) =>
-        console.error("Failed to update level in database:", error),
-      );
+    userService.updateUserLevel(currentUser.email, level).catch(() => {});
   },
 
   setUser: (user: User) => {
     set({ user });
     syncEddyXpWidgetFromUser(user);
+    useLeaderboardStore
+      .getState()
+      .syncCachedUser(user, { includeAllTimeXp: true });
   },
 
   fetchWalletBalance: async () => {
@@ -271,8 +293,8 @@ const useUserStore = create<UserState>((set, get) => ({
       set({
         walletBalance: { sol: balance.sol, tokenAccount: balance.tokenAccount },
       });
-    } catch (error) {
-      console.error("Failed to fetch wallet balance:", error);
+    } catch {
+      //console.error("Failed to fetch wallet balance:", error);
     } finally {
       set({ walletBalanceLoading: false });
     }
@@ -295,9 +317,11 @@ const useUserStore = create<UserState>((set, get) => ({
       useCommunityStore.getState().resetState();
       useRoadmapStore.getState().resetState();
       useActivityStore.getState().resetState();
+      useLeaderboardStore.getState().resetState();
       useNotificationsStore.getState().resetState();
-    } catch (error) {
-      console.error("Logout failed:", error);
+      useReferralStore.getState().resetState();
+    } catch {
+      //console.error("Logout failed:", error);
     }
   },
 
@@ -307,6 +331,8 @@ const useUserStore = create<UserState>((set, get) => ({
       await AsyncStorage.multiRemove([
         "isReviewer",
         "avatar",
+        STORE_REVIEW_LAST_PROMPT_KEY,
+        STORE_REVIEW_USER_COMPLETED_KEY,
         "lastReviewRequest",
         THEME_STORAGE_KEY,
       ]);
@@ -325,9 +351,11 @@ const useUserStore = create<UserState>((set, get) => ({
       useCommunityStore.getState().resetState();
       useRoadmapStore.getState().resetState();
       useActivityStore.getState().resetState();
+      useLeaderboardStore.getState().resetState();
       useNotificationsStore.getState().resetState();
+      useReferralStore.getState().resetState();
     } catch (error) {
-      console.error("Clear all user data failed:", error);
+      //console.error("Clear all user data failed:", error);
       throw error;
     }
   },
@@ -336,8 +364,8 @@ const useUserStore = create<UserState>((set, get) => ({
     try {
       await writeStoredTheme(theme);
       set({ theme });
-    } catch (error) {
-      console.error("Failed to set theme:", error);
+    } catch {
+      //console.error("Failed to set theme:", error);
     }
   },
 
@@ -347,8 +375,8 @@ const useUserStore = create<UserState>((set, get) => ({
       if (theme) {
         set({ theme });
       }
-    } catch (error) {
-      console.error("Failed to load theme:", error);
+    } catch {
+      //console.error("Failed to load theme:", error);
     }
   },
 
@@ -362,6 +390,7 @@ const useUserStore = create<UserState>((set, get) => ({
     const nextUser = { ...currentUser, profilePictureURL };
     set({ user: nextUser });
     syncEddyXpWidgetFromUser(nextUser);
+    useLeaderboardStore.getState().syncCachedUser(nextUser);
   },
 
   editProfileFields: async ({
@@ -393,6 +422,9 @@ const useUserStore = create<UserState>((set, get) => ({
     };
     set({ user: nextUser });
     syncEddyXpWidgetFromUser(nextUser);
+    useLeaderboardStore
+      .getState()
+      .syncCachedUser(nextUser, { includeAllTimeXp: true });
   },
 }));
 

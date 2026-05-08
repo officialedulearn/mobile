@@ -1,12 +1,12 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   Text,
   ViewStyle,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+} from "react-native";
+import { useRouter } from "expo-router";
 
 interface AppHeaderProps {
   title?: string;
@@ -37,10 +37,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     <View style={[styles.container, style]}>
       <View style={styles.left}>
         {showBackButton && (
-          <TouchableOpacity
-            onPress={handleBackPress}
-            style={styles.backButton}
-          >
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
             <Text style={styles.backText}>←</Text>
           </TouchableOpacity>
         )}
@@ -55,21 +52,21 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+    borderBottomColor: "#E8E8E8",
   },
   left: {
     flex: 1,
   },
   right: {
     flex: 1,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   backButton: {
     paddingHorizontal: 12,
@@ -77,15 +74,15 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 24,
-    color: '#000',
+    color: "#000",
   },
   title: {
     flex: 2,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 18,
-    fontFamily: 'Satoshi-Bold',
-    fontWeight: '700',
-    color: '#000',
+    fontFamily: "Satoshi-Bold",
+    fontWeight: "700",
+    color: "#000",
   },
 });
 

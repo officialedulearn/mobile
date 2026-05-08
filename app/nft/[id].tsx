@@ -5,7 +5,14 @@ import { format } from "date-fns";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 type Props = Record<string, never>;
 
 const NftPage = (_props: Props) => {
@@ -39,7 +46,7 @@ const NftPage = (_props: Props) => {
     };
 
     loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user?.id]);
 
   const formatDate = (dateString: string) => {
@@ -54,40 +61,80 @@ const NftPage = (_props: Props) => {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, styles.loadingContainer, theme === "dark" && {backgroundColor: "#0D0D0D"}]}>
-        <ActivityIndicator size="large" color={theme === "dark" ? "#00FF80" : "#000"} />
-        <Text style={[styles.loadingText, theme === "dark" && {color: "#E0E0E0"}]}>Loading NFT details...</Text>
+      <View
+        style={[
+          styles.container,
+          styles.loadingContainer,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
+      >
+        <ActivityIndicator
+          size="large"
+          color={theme === "dark" ? "#00FF80" : "#000"}
+        />
+        <Text
+          style={[styles.loadingText, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          Loading NFT details...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <View style={styles.topNav}>
         <BackButton />
       </View>
 
       <View style={styles.contentContainer}>
         <View style={styles.rewardContainer}>
-          <Image 
-            source={{ uri: reward?.imageUrl }} 
+          <Image
+            source={{ uri: reward?.imageUrl }}
             style={styles.image}
             resizeMode="contain"
           />
-          <Text style={[styles.rewardTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+          <Text
+            style={[
+              styles.rewardTitle,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
             {reward?.title}
           </Text>
-          <Text style={[styles.rewardSubtitle, theme === "dark" && { color: "#B3B3B3" }]}>
+          <Text
+            style={[
+              styles.rewardSubtitle,
+              theme === "dark" && { color: "#B3B3B3" },
+            ]}
+          >
             {reward?.description}
           </Text>
           {userReward?.earnedAt && (
             <View style={styles.claimedAt}>
               <Image
-                source={theme === "dark" ? require("@/assets/images/icons/dark/calendar.png") : require("@/assets/images/icons/calendar.png")}
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/dark/calendar.png")
+                    : require("@/assets/images/icons/calendar.png")
+                }
                 style={{ width: 16, height: 16, marginRight: 8 }}
               />
-              <Text style={[styles.claimedAtText, theme === "dark" && { color: "#B3B3B3" }]}>
-                Claimed at: <Text style={{ color: "#E0E0E0", fontWeight: "700" }}>{formatDate(userReward.earnedAt)}</Text>
+              <Text
+                style={[
+                  styles.claimedAtText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Claimed at:{" "}
+                <Text style={{ color: "#E0E0E0", fontWeight: "700" }}>
+                  {formatDate(userReward.earnedAt)}
+                </Text>
               </Text>
             </View>
           )}
@@ -96,29 +143,45 @@ const NftPage = (_props: Props) => {
 
       <View style={styles.bottomButtonContainer}>
         {userReward?.signature ? (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               const explorerUrl = `https://solscan.io/tx/${userReward.signature}`;
               Linking.openURL(explorerUrl);
-            }} 
-            style={[styles.viewOnExplorerButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
+            }}
+            style={[
+              styles.viewOnExplorerButton,
+              theme === "dark" && { backgroundColor: "#00FF80" },
+            ]}
           >
-            <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
+            <Text
+              style={[
+                styles.viewOnExplorerText,
+                theme === "dark" && { color: "#000" },
+              ]}
+            >
               View on Explorer
             </Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               if (reward?.signature) {
                 const explorerUrl = `https://solscan.io/tx/${reward.signature}`;
                 Linking.openURL(explorerUrl);
               }
-            }} 
-            style={[styles.viewOnExplorerButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
+            }}
+            style={[
+              styles.viewOnExplorerButton,
+              theme === "dark" && { backgroundColor: "#00FF80" },
+            ]}
             disabled={!reward?.signature}
           >
-            <Text style={[styles.viewOnExplorerText, theme === "dark" && { color: "#000" }]}>
+            <Text
+              style={[
+                styles.viewOnExplorerText,
+                theme === "dark" && { color: "#000" },
+              ]}
+            >
               View this user&apos;s badge on chain
             </Text>
           </TouchableOpacity>
@@ -149,7 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     width: 250,
     height: 250,
-    marginBottom: 10
+    marginBottom: 10,
   },
   rewardTitle: {
     color: "#2D3C52",
@@ -157,7 +220,7 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontWeight: "700",
     fontFamily: "Satoshi",
-    textAlign: "center"
+    textAlign: "center",
   },
   rewardSubtitle: {
     color: "#61728C",
@@ -166,13 +229,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
     fontFamily: "Satoshi",
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
   },
   rewardContainer: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 16
+    gap: 16,
   },
   claimedAt: {
     flexDirection: "row",
@@ -187,21 +250,21 @@ const styles = StyleSheet.create({
     fontFamily: "Satoshi",
   },
   viewOnExplorerButton: {
-     borderRadius: 16,
-     gap: 12,
-     display: "flex",
-     alignItems: "center",
-     paddingTop: 10,
-     paddingBottom: 16,
-     backgroundColor: "#000",
-     width: "100%"
+    borderRadius: 16,
+    gap: 12,
+    display: "flex",
+    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 16,
+    backgroundColor: "#000",
+    width: "100%",
   },
   viewOnExplorerText: {
     color: "#00FF80",
     fontSize: 14,
     fontWeight: "700",
     lineHeight: 24,
-    fontFamily: "Satoshi",  
+    fontFamily: "Satoshi",
   },
   loadingContainer: {
     justifyContent: "center",
@@ -218,7 +281,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     alignItems: "center",
-    width: "100%"
+    width: "100%",
   },
   notClaimedContainer: {
     alignItems: "center",

@@ -8,43 +8,53 @@ export default function ConnectXPage() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <StatusBar style="dark" />
-      
+
       <View style={styles.header}>
         <BackButton />
         <Text style={styles.headerText}>Connect X Account</Text>
       </View>
-      
+
       <View style={styles.content}>
         <Text style={styles.title}>Connect Your X Account</Text>
-        
+
         <Text style={styles.description}>
-          Link your X (Twitter) account to share achievements, participate in social challenges, and earn additional rewards.
+          Link your X (Twitter) account to share achievements, participate in
+          social challenges, and earn additional rewards.
         </Text>
-        
+
         <View style={styles.benefitsContainer}>
           <Text style={styles.benefitsTitle}>Benefits:</Text>
           <View style={styles.benefit}>
             <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.benefitText}>Share your achievements automatically</Text>
+            <Text style={styles.benefitText}>
+              Share your achievements automatically
+            </Text>
           </View>
           <View style={styles.benefit}>
             <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.benefitText}>Earn XP for social engagement</Text>
+            <Text style={styles.benefitText}>
+              Earn XP for social engagement
+            </Text>
           </View>
           <View style={styles.benefit}>
             <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.benefitText}>Participate in exclusive social challenges</Text>
+            <Text style={styles.benefitText}>
+              Participate in exclusive social challenges
+            </Text>
           </View>
           <View style={styles.benefit}>
             <Text style={styles.bulletPoint}>•</Text>
-            <Text style={styles.benefitText}>Get notified about special events</Text>
+            <Text style={styles.benefitText}>
+              Get notified about special events
+            </Text>
           </View>
         </View>
-        
+
         <ConnectX />
-        
+
         <Text style={styles.disclaimer}>
-          We will never post to your account without your permission. You can disconnect your account at any time.
+          We will never post to your account without your permission. You can
+          disconnect your account at any time.
         </Text>
       </View>
     </ScrollView>

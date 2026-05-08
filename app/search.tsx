@@ -36,18 +36,20 @@ const SearchResult = ({
 }: SearchResultProps) => {
   const theme = useUserStore((state) => state.theme);
 
-  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
-    if (!url || typeof url !== 'string') return undefined;
-  
+  const getHighQualityImageUrl = (
+    url: string | null | undefined,
+  ): string | undefined => {
+    if (!url || typeof url !== "string") return undefined;
+
     return url
-      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
-      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
-      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+      .replace(/_normal(\.[a-z]+)$/i, "_400x400$1")
+      .replace(/_mini(\.[a-z]+)$/i, "_400x400$1")
+      .replace(/_bigger(\.[a-z]+)$/i, "_400x400$1");
   };
 
   const profileImageUrl = getHighQualityImageUrl(imageSource);
-  const imageSourceProp = profileImageUrl 
-    ? { uri: profileImageUrl } 
+  const imageSourceProp = profileImageUrl
+    ? { uri: profileImageUrl }
     : require("@/assets/images/memoji.png");
 
   return (
@@ -164,12 +166,12 @@ const Search = (props: Props) => {
         setLoading(false);
       }
     }, 500),
-    []
+    [],
   );
 
   useEffect(() => {
     debouncedSearch(searchQuery);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const handleSearchInputChange = (text: string) => {
@@ -194,8 +196,17 @@ const Search = (props: Props) => {
         theme === "dark" && { backgroundColor: "#0D0D0D" },
       ]}
     >
-    {theme === "dark" ? <StatusBar style="light" /> : <StatusBar style="dark" />}
-      <View style={[styles.topNav, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
+      {theme === "dark" ? (
+        <StatusBar style="light" />
+      ) : (
+        <StatusBar style="dark" />
+      )}
+      <View
+        style={[
+          styles.topNav,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
+      >
         <BackButton />
         <Text
           style={[styles.topNavText, theme === "dark" && { color: "#E0E0E0" }]}
@@ -248,9 +259,24 @@ const Search = (props: Props) => {
             ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
         ) : searchQuery.trim() ? (
-          <View style={{alignItems: "center", justifyContent: "center", gap: 10}}>
-            <Image source={require("@/assets/images/eddie/notfound.png")} style={{width: 150, height: 150}}/>
-            <Text style={{fontFamily: "Satoshi-Regular", fontSize: 16, color: theme === "dark" ? "#E0E0E0" : "#2D3C52", fontWeight: "500", lineHeight: 26}}>No users found</Text>
+          <View
+            style={{ alignItems: "center", justifyContent: "center", gap: 10 }}
+          >
+            <Image
+              source={require("@/assets/images/eddie/notfound.png")}
+              style={{ width: 150, height: 150 }}
+            />
+            <Text
+              style={{
+                fontFamily: "Satoshi-Regular",
+                fontSize: 16,
+                color: theme === "dark" ? "#E0E0E0" : "#2D3C52",
+                fontWeight: "500",
+                lineHeight: 26,
+              }}
+            >
+              No users found
+            </Text>
           </View>
         ) : (
           <SearchResult

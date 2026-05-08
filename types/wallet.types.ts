@@ -1,4 +1,4 @@
-import type { IsoDateString, NumericString } from './common.types';
+import type { IsoDateString, NumericString } from "./common.types";
 
 export type DeviceInfo = {
   uuid: string;
@@ -28,7 +28,7 @@ export type SwapResponse = {
 };
 
 export type ClaimEarningsTransaction = {
-  type: 'sol' | 'edln';
+  type: "sol" | "edln";
   amount: number;
   tx: string;
 };

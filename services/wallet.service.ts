@@ -21,11 +21,11 @@ interface SwapResponse {
 interface ClaimEarningsResponse {
   success: boolean;
   message: string;
-  transactions?: Array<{
+  transactions?: {
     type: "sol" | "edln";
     amount: number;
     tx: string;
-  }>;
+  }[];
 }
 
 interface UserEarningsResponse {
@@ -69,7 +69,7 @@ interface OnrampOrderResponse {
 }
 
 interface PendingWebhookEventsResponse {
-  events: Array<{
+  events: {
     id: string;
     address?: string;
     signature?: string;
@@ -87,7 +87,7 @@ interface PendingWebhookEventsResponse {
     accountName?: string;
     bank?: string;
     createdAt?: string;
-  }>;
+  }[];
   hasUpdates: boolean;
 }
 
@@ -96,10 +96,25 @@ interface PriceResponse {
   EDLN: number;
 }
 
+export interface AndroidSubscriptionStatus {
+  isTrialActive: boolean;
+  trialStart?: string;
+  trialEnd?: string;
+  nextBillingDate?: string;
+  planType?: "monthly" | "annual";
+}
+
+export interface AndroidSubscriptionResponse {
+  success: boolean;
+  message: string;
+  subscription?: AndroidSubscriptionStatus;
+  signature?: string;
+}
+
 export class WalletService extends BaseService {
   async getBalance(publicKey: string): Promise<BalanceResponse> {
     const response = await this.executeRequest(
-      this.getClient().get(`/wallet/balance/${publicKey}`)
+      this.getClient().get(`/wallet/balance/${publicKey}`),
     );
     if (response.error) throw response.error;
     return response.data?.balance ?? { sol: 0, tokenAccount: 0 };
@@ -110,7 +125,7 @@ export class WalletService extends BaseService {
     const EDLN_ADDRESS = "CFw2KxMpWuxivoowkF8vRCrnMuDeg5VMHRR7zjE7pBLV";
 
     const response = await axios.get(
-      `https://lite-api.jup.ag/price/v3?ids=${SOL_ADDRESS},${EDLN_ADDRESS}`
+      `https://lite-api.jup.ag/price/v3?ids=${SOL_ADDRESS},${EDLN_ADDRESS}`,
     );
 
     return {
@@ -121,23 +136,42 @@ export class WalletService extends BaseService {
 
   async upgradeToPremium(userId: string, planAmount: number): Promise<any> {
     const response = await this.executeRequest(
-      this.getClient().post(`/wallet/upgrade/${userId}`, { amount: planAmount })
+      this.getClient().post(`/wallet/upgrade/${userId}`, {
+        amount: planAmount,
+      }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async purchaseStreakShield(userId: string): Promise<{ success: boolean; expiresAt: Date }> {
+  async purchaseStreakShield(
+    userId: string,
+  ): Promise<{ success: boolean; expiresAt: Date }> {
     const response = await this.executeRequest(
-      this.getClient().post(`/subscription/purchase/streak-shield/${userId}`)
+      this.getClient().post(`/subscription/purchase/streak-shield/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async purchaseQuizRefresh(userId: string): Promise<{ success: boolean; newLimit: number }> {
+  async purchaseQuizRefresh(
+    userId: string,
+  ): Promise<{ success: boolean; newLimit: number }> {
     const response = await this.executeRequest(
-      this.getClient().post(`/subscription/purchase/quiz-refresh/${userId}`)
+      this.getClient().post(`/subscription/purchase/quiz-refresh/${userId}`),
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
+
+  async startAndroidSubscriptionTrial(
+    userId: string,
+    planType: "monthly" | "annual",
+  ): Promise<AndroidSubscriptionResponse> {
+    const response = await this.executeRequest(
+      this.getClient().post(`/subscription/android/trial/${userId}`, {
+        planType,
+      }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -145,7 +179,7 @@ export class WalletService extends BaseService {
 
   async getUserEarnings(userId: string): Promise<UserEarningsResponse> {
     const response = await this.executeRequest(
-      this.getClient().get(`/wallet/earnings/${userId}`)
+      this.getClient().get(`/wallet/earnings/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data?.earnings ?? { sol: 0, edln: 0, hasEarnings: false };
@@ -153,7 +187,7 @@ export class WalletService extends BaseService {
 
   async swapSolToEDLN(userId: string, amount: number): Promise<SwapResponse> {
     const response = await this.executeRequest(
-      this.getClient().post("/wallet/swap", { userId, amount })
+      this.getClient().post("/wallet/swap", { userId, amount }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -161,15 +195,18 @@ export class WalletService extends BaseService {
 
   async burnEDLN(userId: string, amount: number): Promise<BurnResponse> {
     const response = await this.executeRequest(
-      this.getClient().post("/wallet/burn", { userId, amount })
+      this.getClient().post("/wallet/burn", { userId, amount }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async claimEarnings(userId: string, type: "sol" | "edln" | "all"): Promise<ClaimEarningsResponse> {
+  async claimEarnings(
+    userId: string,
+    type: "sol" | "edln" | "all",
+  ): Promise<ClaimEarningsResponse> {
     const response = await this.executeRequest(
-      this.getClient().post("/wallet/earnings/claim", { userId, type })
+      this.getClient().post("/wallet/earnings/claim", { userId, type }),
     );
     if (response.error) throw response.error;
     return response.data;
@@ -177,7 +214,7 @@ export class WalletService extends BaseService {
 
   async decryptPrivateKey(userId: string): Promise<DecryptPrivateKeyResponse> {
     const response = await this.executeRequest(
-      this.getClient().post("/wallet/decrypt-private-key", { userId })
+      this.getClient().post("/wallet/decrypt-private-key", { userId }),
     );
     if (response.error) {
       return {
@@ -213,39 +250,63 @@ export class WalletService extends BaseService {
 
   async initiateOnramp(userId: string): Promise<InitiateOnrampResponse> {
     const response = await this.executeRequest(
-      this.getClient().post(`/wallet/onramp/initiate/${userId}`)
+      this.getClient().post(`/wallet/onramp/initiate/${userId}`),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async verifyOnramp(email: string, otp: string, deviceInfo: DeviceInfo): Promise<VerifyOnrampResponse> {
+  async verifyOnramp(
+    email: string,
+    otp: string,
+    deviceInfo: DeviceInfo,
+  ): Promise<VerifyOnrampResponse> {
     const response = await this.executeRequest(
-      this.getClient().post("/wallet/onramp/verify", { email, otp, deviceInfo })
+      this.getClient().post("/wallet/onramp/verify", {
+        email,
+        otp,
+        deviceInfo,
+      }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async onrampFiatToEdln(userId: string, amount: number, verifiedResponse: any): Promise<OnrampOrderResponse> {
+  async onrampFiatToEdln(
+    userId: string,
+    amount: number,
+    verifiedResponse: any,
+  ): Promise<OnrampOrderResponse> {
     const response = await this.executeRequest(
-      this.getClient().post(`/wallet/onramp/create-order/${userId}`, { amount, verifiedResponse })
+      this.getClient().post(`/wallet/onramp/create-order/${userId}`, {
+        amount,
+        verifiedResponse,
+      }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async onrampFiatToSol(userId: string, amount: number, verifiedResponse: any): Promise<OnrampOrderResponse> {
+  async onrampFiatToSol(
+    userId: string,
+    amount: number,
+    verifiedResponse: any,
+  ): Promise<OnrampOrderResponse> {
     const response = await this.executeRequest(
-      this.getClient().post(`/wallet/onramp/create-order-sol/${userId}`, { amount, verifiedResponse })
+      this.getClient().post(`/wallet/onramp/create-order-sol/${userId}`, {
+        amount,
+        verifiedResponse,
+      }),
     );
     if (response.error) throw response.error;
     return response.data;
   }
 
-  async getPendingWebhookEvents(address: string): Promise<PendingWebhookEventsResponse> {
+  async getPendingWebhookEvents(
+    address: string,
+  ): Promise<PendingWebhookEventsResponse> {
     const response = await this.executeRequest(
-      this.getClient().get(`/wallet/onramp-webhook/pending/${address}`)
+      this.getClient().get(`/wallet/onramp-webhook/pending/${address}`),
     );
     if (response.error) return { events: [], hasUpdates: false };
     return response.data ?? { events: [], hasUpdates: false };
@@ -253,7 +314,9 @@ export class WalletService extends BaseService {
 
   async clearWebhookEvent(address: string, eventId: string): Promise<void> {
     await this.executeRequest(
-      this.getClient().post(`/wallet/onramp-webhook/clear/${address}`, { eventId })
+      this.getClient().post(`/wallet/onramp-webhook/clear/${address}`, {
+        eventId,
+      }),
     );
   }
 }
