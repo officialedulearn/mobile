@@ -3,28 +3,35 @@ import Design from "@/utils/design";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import React from "react";
+import { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Confetti } from "react-native-fast-confetti";
 import { Presets } from "react-native-pulsar";
+
 type Props = Record<string, never>;
 
 const Welcome = (_props: Props) => {
   const { user, theme } = useUserStore();
 
-  Presets.applause()
+  useEffect(() => {
+    Presets.applause();
+  }, []);
 
   const handleStartChatting = async () => {
-    if(user?.isPremium) {
+    if (user?.isPremium) {
       router.push("/(tabs)");
     } else {
       const lastTrialPrompt = await AsyncStorage.getItem("lastTrialPrompt");
       const now = Date.now();
       const oneDayInMs = 24 * 60 * 60 * 1000;
-      
+
       if (!lastTrialPrompt || now - parseInt(lastTrialPrompt) >= oneDayInMs) {
         await AsyncStorage.setItem("lastTrialPrompt", now.toString());
         await AsyncStorage.setItem("previousScreen", "welcome");
-        router.push("/freeTrialIntro");
+        router.push({
+          pathname: "/freeTrialIntro",
+          params: { source: "welcome" },
+        });
       } else {
         router.push("/(tabs)");
       }
@@ -32,7 +39,26 @@ const Welcome = (_props: Props) => {
   };
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
+      <View pointerEvents="none" style={styles.confettiLayer}>
+        <Confetti
+          count={120}
+          isInfinite={false}
+          fallDuration={5000}
+          blastDuration={260}
+          colors={
+            theme === "dark"
+              ? ["#00FF80", "#8FEEFF", "#FFE066", "#B794F6", "#FF8FAB"]
+              : ["#00C96A", "#5EC4FF", "#FFD166", "#9B7BFF", "#FF6FA3"]
+          }
+          fadeOutOnEnd
+        />
+      </View>
       <View style={styles.spacer} />
       <View style={styles.topSection}>
         <Image
@@ -40,27 +66,51 @@ const Welcome = (_props: Props) => {
           style={styles.checkImage}
         />
         <View style={styles.welcomeContainer}>
-          <Text style={[styles.welcomeText, theme === "dark" && { color: "#E0E0E0" }]}>Welcome, {user?.name || "User"}</Text>
-          <Text style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}>Your account is all set.</Text>
+          <Text
+            style={[
+              styles.welcomeText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Welcome, {user?.name || "User"}
+          </Text>
+          <Text
+            style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}
+          >
+            Your account is all set.
+          </Text>
         </View>
       </View>
       <View style={styles.infoContainer}>
         <View style={styles.infoRow}>
           <Image
-            source={theme === "dark" ? require("@/assets/images/icons/dark/information-circle.png") : require("@/assets/images/icons/information-circle.png")}
+            source={
+              theme === "dark"
+                ? require("@/assets/images/icons/dark/information-circle.png")
+                : require("@/assets/images/icons/information-circle.png")
+            }
             style={styles.infoImage}
           />
-          <Text style={[styles.infoText, theme === "dark" && { color: "#B3B3B3" }]}>
+          <Text
+            style={[styles.infoText, theme === "dark" && { color: "#B3B3B3" }]}
+          >
             Start chatting with your AI tutor, earn XP, and grow your skills.
           </Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.startButton, theme === "dark" && { backgroundColor: "#00FF80" }]}
+          style={[
+            styles.startButton,
+            theme === "dark" && { backgroundColor: "#00FF80" },
+          ]}
           onPress={handleStartChatting}
         >
-          <Text style={[styles.buttonText, theme === "dark" && { color: "#000" }]}>Start Chatting</Text>
-        </TouchableOpacity> 
+          <Text
+            style={[styles.buttonText, theme === "dark" && { color: "#000" }]}
+          >
+            Start Chatting
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -73,6 +123,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     backgroundColor: "#F9FBFC",
+  },
+  confettiLayer: {
+    ...StyleSheet.absoluteFillObject,
   },
   spacer: {
     flex: 1,

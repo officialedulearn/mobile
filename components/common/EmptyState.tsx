@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
 
 interface EmptyStateProps {
   icon?: string;
@@ -28,8 +28,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 40,
     paddingHorizontal: 16,
   },
@@ -39,18 +39,18 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontFamily: 'Satoshi-Bold',
-    fontWeight: '700',
-    color: '#333',
+    fontFamily: "Satoshi-Bold",
+    fontWeight: "700",
+    color: "#333",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   description: {
     fontSize: 14,
-    fontFamily: 'Satoshi-Regular',
-    color: '#666',
+    fontFamily: "Satoshi-Regular",
+    color: "#666",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   action: {
     marginTop: 8,

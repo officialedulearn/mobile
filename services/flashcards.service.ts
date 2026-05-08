@@ -1,8 +1,8 @@
 import {
-    Flashcard,
-    FlashcardDeck,
-    FlashcardDeckResponse,
-    FlashcardDeckWithFlashcards,
+  Flashcard,
+  FlashcardDeck,
+  FlashcardDeckResponse,
+  FlashcardDeckWithFlashcards,
 } from "@/types/flashcards.types";
 import { BaseService } from "./base.service";
 

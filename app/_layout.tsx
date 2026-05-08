@@ -1,20 +1,26 @@
 import { ChatProvider } from "@/contexts/ChatContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import useUserStore from "@/core/userState";
+import { useNotifications } from "@/hooks/useNotifications";
+import {
+  isAuthCallbackUrl,
+  parseDeepLinkIntent,
+  popPendingDeepLinkIntent,
+  setPendingDeepLinkIntent,
+  type DeepLinkIntent,
+} from "@/utils/deepLinks";
 import { supabase } from "@/utils/supabase";
-import { extractPublicQuizIdFromUrl } from "@/utils/quizLinks";
 import { syncEddyXpWidgetFromUser } from "@/utils/syncEddyXpWidget";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AppState, Linking, Platform, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import Purchases from "react-native-purchases";
-import { useNotifications } from "@/hooks/useNotifications";
 
 if (Platform.OS === "ios") {
   require("@/widgets/EddyXpWidget");
@@ -29,6 +35,7 @@ export default function RootLayout() {
   });
 
   const { theme, loadTheme, user } = useUserStore();
+  const revenueCatUserIdRef = useRef<string | null>(null);
   useNotifications();
 
   const getTheme = async () => {
@@ -53,12 +60,20 @@ export default function RootLayout() {
     if (Platform.OS !== "ios") return;
     const identifyUser = async () => {
       if (user?.id) {
+        if (revenueCatUserIdRef.current === user.id) {
+          return;
+        }
         try {
           await Purchases.logIn(user.id);
+          revenueCatUserIdRef.current = user.id;
         } catch (error) {}
       } else {
+        if (!revenueCatUserIdRef.current) {
+          return;
+        }
         try {
           await Purchases.logOut();
+          revenueCatUserIdRef.current = null;
         } catch (error) {}
       }
     };
@@ -71,7 +86,7 @@ export default function RootLayout() {
       const theme = await getTheme();
     }
     fetchTheme();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -91,8 +106,55 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        (event === "INITIAL_SESSION" || event === "SIGNED_IN") &&
+        session?.access_token
+      ) {
+        void useUserStore.getState().setUserAsync();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const navigateFromIntent = (intent: DeepLinkIntent) => {
+      if (intent.type === "publicQuiz") {
+        router.push({
+          pathname: "/(tabs)/quizzes/[id]",
+          params: { id: intent.quizId },
+        } as any);
+        return;
+      }
+
+      if (intent.type === "communityInvite") {
+        router.push({
+          pathname: "/joinCommunity",
+          params: { inviteCode: intent.inviteCode, autoJoin: "1" },
+        } as any);
+        return;
+      }
+
+      if (intent.type === "referral") {
+        router.push({
+          pathname: "/auth",
+          params: { signUp: "1", referralCode: intent.referralCode },
+        } as any);
+        return;
+      }
+
+      if (intent.type === "chatQuiz") {
+        router.push({
+          pathname: "/quiz",
+          params: { chatId: intent.chatId },
+        } as any);
+      }
+    };
+
     const handleDeepLink = async (url: string) => {
-      if (url.includes("auth/callback")) {
+      if (isAuthCallbackUrl(url)) {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         const {
@@ -131,31 +193,29 @@ export default function RootLayout() {
             } else {
               router.push("/(tabs)");
             }
-          } catch (err) {
-           
-          }
+          } catch (err) {}
         }
-      } else {
-        const publicQuizId = extractPublicQuizIdFromUrl(url);
-        if (publicQuizId) {
-          router.push({
-            pathname: "/(tabs)/quizzes/[id]",
-            params: { id: publicQuizId },
-          } as any);
-          return;
-        }
+        return;
       }
 
-      if (url.includes("quiz/")) {
-        const quizIdMatch = url.match(/quiz\/([^/?]+)/);
-        if (quizIdMatch && quizIdMatch[1]) {
-          const quizId = quizIdMatch[1];
+      const intent = parseDeepLinkIntent(url);
+      if (!intent) return;
+
+      const activeUserId = useUserStore.getState().user?.id;
+      if (!activeUserId) {
+        await setPendingDeepLinkIntent(intent);
+        if (intent.type === "referral") {
           router.push({
-            pathname: "/quiz",
-            params: { chatId: quizId },
+            pathname: "/auth",
+            params: { signUp: "1", referralCode: intent.referralCode },
           } as any);
+        } else {
+          router.push({ pathname: "/auth", params: { signUp: "1" } } as any);
         }
+        return;
       }
+
+      navigateFromIntent(intent);
     };
 
     const subscription = Linking.addEventListener("url", ({ url }) => {
@@ -172,6 +232,45 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+
+    const resumePendingIntent = async () => {
+      const intent = await popPendingDeepLinkIntent();
+      if (!intent || cancelled) return;
+
+      if (intent.type === "publicQuiz") {
+        router.push({
+          pathname: "/(tabs)/quizzes/[id]",
+          params: { id: intent.quizId },
+        } as any);
+        return;
+      }
+
+      if (intent.type === "communityInvite") {
+        router.push({
+          pathname: "/joinCommunity",
+          params: { inviteCode: intent.inviteCode, autoJoin: "1" },
+        } as any);
+        return;
+      }
+
+      if (intent.type === "chatQuiz") {
+        router.push({
+          pathname: "/quiz",
+          params: { chatId: intent.chatId },
+        } as any);
+      }
+    };
+
+    void resumePendingIntent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   if (!fontsLoaded) {
     return null;
@@ -354,6 +453,15 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen
+                  name="referral"
+                  options={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                    gestureEnabled: true,
+                    gestureDirection: "horizontal",
+                  }}
+                />
+                <Stack.Screen
                   name="quiz"
                   options={{
                     headerShown: false,
@@ -382,7 +490,7 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen
-                  name="nft/[id]"
+                  name="nft"
                   options={{
                     headerShown: false,
                     animation: "slide_from_right",

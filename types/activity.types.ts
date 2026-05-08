@@ -1,6 +1,6 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
-export type XpActivityType = 'quiz' | 'chat' | 'streak';
+export type XpActivityType = "quiz" | "chat" | "streak";
 
 export type XpActivity = {
   id: string;
@@ -9,6 +9,25 @@ export type XpActivity = {
   title: string | null;
   xpEarned: number;
   createdAt: IsoDateString | Date;
+};
+
+export type ListActivitiesQuery = {
+  limit?: number;
+  page?: number;
+};
+
+export type ActivityPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+};
+
+export type PaginatedActivitiesResponse = {
+  data: XpActivity[];
+  pagination: ActivityPagination;
 };
 
 export type CreateActivityRequest = {

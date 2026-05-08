@@ -1,8 +1,8 @@
-import { useTheme } from '@/hooks/useTheme';
-import { Message } from '@/interface/Chat';
-import { Design } from '@/utils/design';
-import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from "@/hooks/useTheme";
+import { Message } from "@/interface/Chat";
+import { Design } from "@/utils/design";
+import React from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 interface ChatMessageProps {
   message: Message;
@@ -11,30 +11,48 @@ interface ChatMessageProps {
 
 export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
   const { isDark } = useTheme();
-  const isUserMessage = message.role === 'user';
+  const isUserMessage = message.role === "user";
 
   return (
-    <View style={[
-      styles.container,
-      isUserMessage ? styles.userMessageContainer : styles.aiMessageContainer,
-    ]}>
+    <View
+      style={[
+        styles.container,
+        isUserMessage ? styles.userMessageContainer : styles.aiMessageContainer,
+      ]}
+    >
       {!isUserMessage && (
         <Image
-          source={require('@/assets/images/eddie/head.png')}
+          source={require("@/assets/images/eddie/head.png")}
           style={styles.avatar}
         />
       )}
 
-      <View style={[
-        styles.messageBubble,
-        isUserMessage
-          ? { backgroundColor: isDark ? Design.colors.dark.surfaceInput : Design.colors.background.white }
-          : { backgroundColor: isDark ? Design.colors.dark.surface : Design.colors.background.messageTint },
-      ]}>
-        <Text style={[
-          styles.messageText,
-          { color: isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary }
-        ]}>
+      <View
+        style={[
+          styles.messageBubble,
+          isUserMessage
+            ? {
+                backgroundColor: isDark
+                  ? Design.colors.dark.surfaceInput
+                  : Design.colors.background.white,
+              }
+            : {
+                backgroundColor: isDark
+                  ? Design.colors.dark.surface
+                  : Design.colors.background.messageTint,
+              },
+        ]}
+      >
+        <Text
+          style={[
+            styles.messageText,
+            {
+              color: isDark
+                ? Design.colors.text.darkPrimary
+                : Design.colors.text.primary,
+            },
+          ]}
+        >
           {message.content}
         </Text>
       </View>
@@ -44,16 +62,16 @@ export function ChatMessage({ message, isLastMessage }: ChatMessageProps) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: Design.spacing.md,
     marginVertical: Design.spacing.sm,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   userMessageContainer: {
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   aiMessageContainer: {
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   avatar: {
     width: 32,
@@ -62,7 +80,7 @@ const styles = StyleSheet.create({
     marginRight: Design.spacing.sm,
   },
   messageBubble: {
-    maxWidth: '85%',
+    maxWidth: "85%",
     borderRadius: 12,
     paddingHorizontal: Design.spacing.md,
     paddingVertical: Design.spacing.sm,

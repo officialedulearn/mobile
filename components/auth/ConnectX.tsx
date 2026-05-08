@@ -1,20 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import * as WebBrowser from "expo-web-browser";
-import { makeRedirectUri, useAuthRequest, CodeChallengeMethod } from "expo-auth-session";
-import httpClient from "../../utils/httpClient";
-import useUserStore from "../../core/userState";
+import {
+  CodeChallengeMethod,
+  makeRedirectUri,
+  useAuthRequest,
+} from "expo-auth-session";
 import Constants from "expo-constants";
+import * as WebBrowser from "expo-web-browser";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import useUserStore from "../../core/userState";
+import httpClient from "../../utils/httpClient";
 
 WebBrowser.maybeCompleteAuthSession();
 
 const REDIRECT_URI = makeRedirectUri({
   useProxy: true,
 });
-console.log("Twitter OAuth Redirect URI:", REDIRECT_URI);
-
 const CLIENT_ID = Constants.expoConfig?.extra?.twitterClientId || "";
-console.log("Twitter Client ID available:", CLIENT_ID ? "Yes" : "No (empty)");
 
 const discovery = {
   authorizationEndpoint: "https://twitter.com/i/oauth2/authorize",
@@ -22,7 +29,11 @@ const discovery = {
 };
 
 export default function ConnectX() {
-  const [user, setUser] = useState<{id: string, name: string, username: string}>();
+  const [user, setUser] = useState<{
+    id: string;
+    name: string;
+    username: string;
+  }>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user: currentUser } = useUserStore();
@@ -35,33 +46,37 @@ export default function ConnectX() {
       usePKCE: true,
       codeChallengeMethod: CodeChallengeMethod.S256,
     },
-    discovery
+    discovery,
   );
 
   useEffect(() => {
     if (request) {
-      console.log("Auth request ready");
+      //console.log("Auth request ready");
     } else {
-      console.log("Auth request not ready or failed to initialize");
+      //console.log("Auth request not ready or failed to initialize");
     }
   }, [request]);
 
   useEffect(() => {
     if (response) {
-      console.log("Auth response received:", response.type);
-      
+      //console.log("Auth response received:", response.type);
+
       if (response.type === "error") {
-        console.error("Auth response error:", response.error);
+        //console.error("Auth response error:", response.error);
       }
     }
   }, [response]);
 
   useEffect(() => {
     const handleResponse = async () => {
-      if (response?.type === "success" && response.params.code && currentUser?.email) {
+      if (
+        response?.type === "success" &&
+        response.params.code &&
+        currentUser?.email
+      ) {
         setIsLoading(true);
-        console.log("Received authorization code, sending to backend...");
-        
+        //console.log("Received authorization code, sending to backend...");
+
         try {
           const result = await httpClient.post("/twitter/callback", {
             data: {
@@ -69,59 +84,69 @@ export default function ConnectX() {
               userEmail: currentUser.email,
               redirectUri: REDIRECT_URI,
               codeVerifier: request?.codeVerifier,
-            }
+            },
           });
 
-          console.log("Backend response successful");
+          //console.log("Backend response successful");
           setUser(result.data);
           setError(null);
         } catch (err: any) {
-          console.error("Twitter API error:", err);
+          //console.error("Twitter API error:", err);
           // More detailed error reporting
-          const errorMessage = err.response?.data?.message || 
-                              err.message || 
-                              "Failed to connect X account. Please try again.";
-          
-          console.error("Error details:", errorMessage);
+          const errorMessage =
+            err.response?.data?.message ||
+            err.message ||
+            "Failed to connect X account. Please try again.";
+
+          //console.error("Error details:", errorMessage);
           setError(errorMessage);
         } finally {
           setIsLoading(false);
         }
       } else if (response?.type === "error") {
-        console.error("OAuth error response:", response.error);
-        setError(`Authorization failed: ${response.error?.message || "Unknown error"}`);
+        //console.error("OAuth error response:", response.error);
+        setError(
+          `Authorization failed: ${response.error?.message || "Unknown error"}`,
+        );
       } else if (response?.type === "cancel") {
-        console.log("User canceled the authentication");
+        //console.log("User canceled the authentication");
         setError("Authentication was canceled");
       }
     };
 
     handleResponse();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [response, currentUser]);
 
   const connectTwitter = async () => {
     setError(null);
-    
+
     if (!CLIENT_ID) {
-      setError("Twitter integration is not properly configured. Please contact support.");
+      setError(
+        "Twitter integration is not properly configured. Please contact support.",
+      );
       return;
     }
-    
+
     try {
-      console.log("Starting Twitter authentication...");
+      //console.log("Starting Twitter authentication...");
       const result = await promptAsync();
-      console.log("Auth prompt result:", result.type);
+      //console.log("Auth prompt result:", result.type);
     } catch (err: any) {
-      console.error("Twitter auth error:", err);
-      setError(err.message || "Failed to start authentication. Please try again.");
+      //console.error("Twitter auth error:", err);
+      setError(
+        err.message || "Failed to start authentication. Please try again.",
+      );
     }
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={[styles.connectButton, isLoading || !request ? styles.disabledButton : null]} 
+      <TouchableOpacity
+        style={[
+          styles.connectButton,
+          isLoading || !request ? styles.disabledButton : null,
+        ]}
         onPress={connectTwitter}
         disabled={isLoading || !request}
       >
@@ -131,7 +156,7 @@ export default function ConnectX() {
           <Text style={styles.connectButtonText}>Connect X Account</Text>
         )}
       </TouchableOpacity>
-      
+
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
@@ -140,7 +165,7 @@ export default function ConnectX() {
           </TouchableOpacity>
         </View>
       )}
-      
+
       {user && (
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{user.name}</Text>
@@ -215,5 +240,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#61728C",
     fontFamily: "Satoshi-Regular",
-  }
+  },
 });

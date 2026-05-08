@@ -3,13 +3,13 @@ export interface Community {
   title: string;
   createdAt: Date | string;
   inviteCode: string;
-  visibility: 'public' | 'private';
+  visibility: "public" | "private";
   imageUrl?: string | null;
 }
 
 export interface CommunityMember {
   id: string;
-  role: 'mod' | 'member';
+  role: "mod" | "member";
   user: {
     id: string;
     username: string;
@@ -23,15 +23,15 @@ export interface UserCommunity {
   id: string;
   title: string;
   imageUrl?: string | null;
-  visibility: 'public' | 'private';
+  visibility: "public" | "private";
   createdAt: Date | string;
-  role: 'mod' | 'member';
+  role: "mod" | "member";
 }
 
 export interface CommunityJoinRequest {
   id: string;
   createdAt: Date | string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   user: {
     id: string;
     username: string;
@@ -123,7 +123,7 @@ export interface CommunityMod {
 export interface UserStatusEvent {
   userId: string;
   username: string;
-  status: 'online' | 'offline';
+  status: "online" | "offline";
   timestamp: string;
 }
 
@@ -159,4 +159,3 @@ export interface ReactionEvent {
   reactionCounts: ReactionCount[];
   timestamp: string;
 }
-

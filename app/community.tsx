@@ -3,7 +3,14 @@ import useUserStore from "@/core/userState";
 import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type Props = Record<string, never>;
 
@@ -16,7 +23,10 @@ const Community = (props: Props) => {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert("Error", `Cannot open ${platform}. Please make sure you have the app installed.`);
+        Alert.alert(
+          "Error",
+          `Cannot open ${platform}. Please make sure you have the app installed.`,
+        );
       }
     } catch (error) {
       Alert.alert("Error", `Failed to open ${platform}. Please try again.`);
@@ -26,43 +36,64 @@ const Community = (props: Props) => {
   const communityLinks = [
     {
       title: "Join our Discord",
-      description: "Connect with other learners, get help, and participate in discussions",
-      url: "https://discord.gg/7ErYsnc5ty", 
-      platform: "Discord"
+      description:
+        "Connect with other learners, get help, and participate in discussions",
+      url: "https://discord.gg/7ErYsnc5ty",
+      platform: "Discord",
     },
     {
       title: "Follow us on Telegram",
       description: "Get updates, announcements, and quick support",
       url: "https://t.me/verificationedu",
-      platform: "Telegram"
+      platform: "Telegram",
     },
     {
       title: "Email Support",
       description: "Contact us directly for personalized assistance",
       url: "mailto:dave@edulearn.fun",
-      platform: "Email"
-    }
+      platform: "Email",
+    },
   ];
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.headerNav}>
         <BackButton />
-        <Text style={[styles.headerTitle, theme === "dark" && { color: "#E0E0E0" }]}>Community</Text>
+        <Text
+          style={[styles.headerTitle, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          Community
+        </Text>
       </View>
-      
+
       <View style={styles.content}>
         <View style={styles.introSection}>
           <Image
-            source={require("@/assets/images/mainlogo.png") }
+            source={require("@/assets/images/mainlogo.png")}
             style={styles.logo}
           />
-          <Text style={[styles.introTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+          <Text
+            style={[
+              styles.introTitle,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
             Join Our Community
           </Text>
-          <Text style={[styles.introDescription, theme === "dark" && { color: "#B3B3B3" }]}>
-            Connect with fellow learners, get support, and stay updated with the latest news and features.
+          <Text
+            style={[
+              styles.introDescription,
+              theme === "dark" && { color: "#B3B3B3" },
+            ]}
+          >
+            Connect with fellow learners, get support, and stay updated with the
+            latest news and features.
           </Text>
         </View>
 
@@ -70,22 +101,42 @@ const Community = (props: Props) => {
           {communityLinks.map((link, index) => (
             <TouchableOpacity
               key={index}
-              style={[styles.communityItem, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}
+              style={[
+                styles.communityItem,
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                  borderColor: "#2E3033",
+                },
+              ]}
               onPress={() => openLink(link.url, link.platform)}
               activeOpacity={0.7}
             >
               <View style={styles.communityItemLeft}>
                 <View style={styles.communityTextContainer}>
-                  <Text style={[styles.communityTitle, theme === "dark" && { color: "#E0E0E0" }]}>
+                  <Text
+                    style={[
+                      styles.communityTitle,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
                     {link.title}
                   </Text>
-                  <Text style={[styles.communityDescription, theme === "dark" && { color: "#B3B3B3" }]}>
+                  <Text
+                    style={[
+                      styles.communityDescription,
+                      theme === "dark" && { color: "#B3B3B3" },
+                    ]}
+                  >
                     {link.description}
                   </Text>
                 </View>
               </View>
-              <Image 
-                source={theme === "dark" ? require("@/assets/images/icons/dark/CaretRight.png") : require("@/assets/images/icons/CaretRight.png")}
+              <Image
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/dark/CaretRight.png")
+                    : require("@/assets/images/icons/CaretRight.png")
+                }
                 style={styles.arrowIcon}
               />
             </TouchableOpacity>

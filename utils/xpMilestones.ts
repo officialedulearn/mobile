@@ -26,8 +26,7 @@ export function getMilestoneProgress(currentXP: number) {
   }
   if (currentXP >= m.advanced) {
     return {
-      progress:
-        (currentXP - m.advanced) / (m.expert - m.advanced),
+      progress: (currentXP - m.advanced) / (m.expert - m.advanced),
       xpNeeded: m.expert - currentXP,
       currentLevel: m.advanced,
       nextLevel: m.expert,
@@ -36,9 +35,7 @@ export function getMilestoneProgress(currentXP: number) {
   }
   if (currentXP >= m.intermediate) {
     return {
-      progress:
-        (currentXP - m.intermediate) /
-        (m.advanced - m.intermediate),
+      progress: (currentXP - m.intermediate) / (m.advanced - m.intermediate),
       xpNeeded: m.advanced - currentXP,
       currentLevel: m.intermediate,
       nextLevel: m.advanced,
@@ -47,9 +44,7 @@ export function getMilestoneProgress(currentXP: number) {
   }
   if (currentXP >= m.beginner) {
     return {
-      progress:
-        (currentXP - m.beginner) /
-        (m.intermediate - m.beginner),
+      progress: (currentXP - m.beginner) / (m.intermediate - m.beginner),
       xpNeeded: m.intermediate - currentXP,
       currentLevel: m.beginner,
       nextLevel: m.intermediate,

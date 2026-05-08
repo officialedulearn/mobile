@@ -9,7 +9,7 @@ export class CardSharingService {
     cardType: string,
     userId: string,
     queryParams: Record<string, string> = {},
-    dialogTitle: string
+    dialogTitle: string,
   ): Promise<void> {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -28,13 +28,14 @@ export class CardSharingService {
         fileUri,
         {},
         (downloadProgress) => {
-          downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-        }
+          downloadProgress.totalBytesWritten /
+            downloadProgress.totalBytesExpectedToWrite;
+        },
       );
 
       const downloadPromise = downloadResumable.downloadAsync();
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Download timeout")), 30000)
+        setTimeout(() => reject(new Error("Download timeout")), 30000),
       );
 
       const result = await Promise.race([downloadPromise, timeoutPromise]);
@@ -69,27 +70,49 @@ export class CardSharingService {
   }
 
   async shareStreakCard(userId: string, streak: number): Promise<void> {
-    return this.shareCard("streak", userId, {}, `I'm on a ${streak} day learning streak on EduLearn! 🔥`);
+    return this.shareCard(
+      "streak",
+      userId,
+      {},
+      `I'm on a ${streak} day learning streak on EduLearn! 🔥`,
+    );
   }
 
-  async shareEarningsCard(userId: string, totalEarnings: number): Promise<void> {
+  async shareEarningsCard(
+    userId: string,
+    totalEarnings: number,
+  ): Promise<void> {
     return this.shareCard(
       "earnings",
       userId,
       {},
-      `I've earned $${totalEarnings.toFixed(2)} on EduLearn! 💰`
+      `I've earned $${totalEarnings.toFixed(2)} on EduLearn! 💰`,
     );
   }
 
   async shareLevelCard(userId: string, level: string): Promise<void> {
-    return this.shareCard("level", userId, {}, `I just reached ${level} level on EduLearn! 🏆`);
+    return this.shareCard(
+      "level",
+      userId,
+      {},
+      `I just reached ${level} level on EduLearn! 🏆`,
+    );
   }
 
   async shareProfileCard(userId: string, username: string): Promise<void> {
-    return this.shareCard("profile", userId, {}, `Check out my EduLearn progress! 🚀 @${username}`);
+    return this.shareCard(
+      "profile",
+      userId,
+      {},
+      `Check out my EduLearn progress! 🚀 @${username}`,
+    );
   }
 
-  async shareNFTMintCard(userId: string, nftTitle: string, nftImageUrl?: string): Promise<void> {
+  async shareNFTMintCard(
+    userId: string,
+    nftTitle: string,
+    nftImageUrl?: string,
+  ): Promise<void> {
     const queryParams: Record<string, string> = {};
 
     if (nftTitle) {
@@ -100,15 +123,23 @@ export class CardSharingService {
       queryParams.nftImageUrl = nftImageUrl;
     }
 
-    return this.shareCard("nft-mint", userId, queryParams, `I just minted ${nftTitle} NFT on EduLearn! 🎉`);
+    return this.shareCard(
+      "nft-mint",
+      userId,
+      queryParams,
+      `I just minted ${nftTitle} NFT on EduLearn! 🎉`,
+    );
   }
 
-  async shareRoadmapProgressCard(roadmapId: string, roadmapTitle: string): Promise<void> {
+  async shareRoadmapProgressCard(
+    roadmapId: string,
+    roadmapTitle: string,
+  ): Promise<void> {
     return this.shareCard(
       "roadmap-progress",
       roadmapId,
       {},
-      `Check out my progress on "${roadmapTitle}" roadmap on EduLearn! 🚀`
+      `Check out my progress on "${roadmapTitle}" roadmap on EduLearn! 🚀`,
     );
   }
 }

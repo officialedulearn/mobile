@@ -45,7 +45,11 @@ const Theme = (_props: Props) => {
           onPress={() => changeTheme("light")}
         >
           <Image
-            source={currentTheme === "light" ? require("@/assets/images/icons/sun.png") : require("@/assets/images/icons/dark/sun.png")}
+            source={
+              currentTheme === "light"
+                ? require("@/assets/images/icons/sun.png")
+                : require("@/assets/images/icons/dark/sun.png")
+            }
             style={styles.themeIcon}
           />
           <Text
@@ -82,7 +86,11 @@ const Theme = (_props: Props) => {
           onPress={() => changeTheme("dark")}
         >
           <Image
-            source={currentTheme === "dark" ? require("@/assets/images/icons/dark/moon.png") : require("@/assets/images/icons/moon.png")}
+            source={
+              currentTheme === "dark"
+                ? require("@/assets/images/icons/dark/moon.png")
+                : require("@/assets/images/icons/moon.png")
+            }
             style={styles.themeIcon}
           />
           <Text

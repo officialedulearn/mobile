@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  LayoutChangeEvent,
-  StyleSheet,
-  TextInput,
-  View,
-} from "react-native";
+import { LayoutChangeEvent, StyleSheet, TextInput, View } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,

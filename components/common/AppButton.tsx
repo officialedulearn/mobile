@@ -1,7 +1,13 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  TextStyle,
+} from "react-native";
 
-type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost';
+type ButtonVariant = "primary" | "secondary" | "tertiary" | "ghost";
 
 interface AppButtonProps {
   label: string;
@@ -15,7 +21,7 @@ interface AppButtonProps {
 const AppButton: React.FC<AppButtonProps> = ({
   label,
   onPress,
-  variant = 'primary',
+  variant = "primary",
   disabled = false,
   style,
   textStyle,
@@ -42,42 +48,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   primary: {
-    backgroundColor: '#00FF80',
+    backgroundColor: "#00FF80",
   },
   secondary: {
-    backgroundColor: '#E8E8E8',
+    backgroundColor: "#E8E8E8",
   },
   tertiary: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: '#00FF80',
+    borderColor: "#00FF80",
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   disabled: {
     opacity: 0.5,
   },
   text: {
     fontSize: 14,
-    fontFamily: 'Satoshi-Bold',
-    fontWeight: '700',
+    fontFamily: "Satoshi-Bold",
+    fontWeight: "700",
   },
   primaryText: {
-    color: '#000',
+    color: "#000",
   },
   secondaryText: {
-    color: '#000',
+    color: "#000",
   },
   tertiaryText: {
-    color: '#00FF80',
+    color: "#00FF80",
   },
   ghostText: {
-    color: '#666',
+    color: "#666",
   },
 });
 

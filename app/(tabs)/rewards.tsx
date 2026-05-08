@@ -1,61 +1,75 @@
-import useActivityStore from '@/core/activityState';
-import useRewardsStore from '@/core/rewardsState';
-import useUserStore from '@/core/userState';
-import { useTheme } from '@/hooks/useTheme';
-import { WalletService } from '@/services/wallet.service';
-import { levels } from '@/utils/constants';
+import { ActivityPaginationBar } from "@/components/rewards/ActivityPaginationBar";
+import useActivityStore from "@/core/activityState";
+import useRewardsStore from "@/core/rewardsState";
+import useUserStore from "@/core/userState";
+import { useTheme } from "@/hooks/useTheme";
+import { WalletService } from "@/services/wallet.service";
+import { levels } from "@/utils/constants";
 import {
   iconCalendar,
   iconCaretRight,
   iconLevel,
   iconMedalXp,
   iconSealCheck,
-} from '@/utils/design';
+} from "@/utils/design";
+import { createReferralDeepLink } from "@/utils/deepLinks";
 import { Image } from "expo-image";
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  ActivityIndicator,
   Dimensions,
   ImageBackground,
   Modal,
-  ScrollView,
   Share,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { DataTable, ProgressBar } from 'react-native-paper';
+} from "react-native";
+import { ProgressBar } from "react-native-paper";
+import { LegendList } from "@legendapp/list";
 
 type Props = Record<string, never>;
 
 const Rewards = (props: Props) => {
+  const ACTIVITY_PAGE_SIZE = 10;
   const user = useUserStore((s) => s.user);
   const fetchWalletBalance = useUserStore((s) => s.fetchWalletBalance);
   const { colors, theme, statusBarStyle } = useTheme();
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [claimingEDLN, setClaimingEDLN] = useState(false);
   const [claimingSOL, setClaimingSOL] = useState(false);
-    const [userEarnings, setUserEarnings] = useState<{ sol: number; edln: number; hasEarnings: boolean }>({
+  const [userEarnings, setUserEarnings] = useState<{
+    sol: number;
+    edln: number;
+    hasEarnings: boolean;
+  }>({
     sol: 0,
     edln: 0,
     hasEarnings: false,
   });
-        const [successModalVisible, setSuccessModalVisible] = useState(false);
-  const [claimedAsset, setClaimedAsset] = useState<{type: 'edln' | 'USDC', amount: string} | null>(null);
-  
-  const [page, setPage] = useState<number>(0);
-  const [numberOfItemsPerPageList] = useState([10, 15, 20]);
-  const [itemsPerPage, onItemsPerPageChange] = useState(numberOfItemsPerPageList[0]);
-  
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [claimedAsset, setClaimedAsset] = useState<{
+    type: "edln" | "USDC";
+    amount: string;
+  } | null>(null);
+
   const { userRewardsByUserId, fetchUserRewards } = useRewardsStore();
   const rewards = userRewardsByUserId[user?.id as string] ?? [];
   const walletService = new WalletService();
   const screenWidth = Dimensions.get("window").width;
   const itemWidth = (screenWidth - 48) / 2;
-  const { activities, fetchActivities } = useActivityStore();
+  const {
+    activities,
+    activityPagination,
+    fetchActivities,
+    isLoading,
+    isLoadingMore,
+  } = useActivityStore();
 
   const milestones = {
     novice: 0,
@@ -114,13 +128,6 @@ const Rewards = (props: Props) => {
 
   const { progress, xpNeeded } = getMilestoneProgress();
 
-  const from = page * itemsPerPage;
-  const to = Math.min((page + 1) * itemsPerPage, activities.length);
-
-  useEffect(() => {
-    setPage(0);
-  }, [itemsPerPage]);
-
   useEffect(() => {
     const fetchEarnings = async () => {
       if (!user?.id) return;
@@ -137,11 +144,11 @@ const Rewards = (props: Props) => {
 
     if (user?.id) {
       fetchUserRewards(user.id as unknown as string);
-      fetchActivities(user.id);
+      fetchActivities(user.id, { page: 1, limit: ACTIVITY_PAGE_SIZE });
       fetchEarnings();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, fetchUserRewards, fetchActivities]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, fetchUserRewards, fetchActivities, ACTIVITY_PAGE_SIZE]);
 
   const handleClaimEDLN = async () => {
     if (!user?.id) return;
@@ -152,11 +159,11 @@ const Rewards = (props: Props) => {
 
       if (result.success) {
         setClaimedAsset({
-          type: 'edln',
-          amount: String(userEarnings.edln) 
+          type: "edln",
+          amount: String(userEarnings.edln),
         });
         setSuccessModalVisible(true);
-        
+
         fetchWalletBalance();
         const earnings = await walletService.getUserEarnings(user.id);
         setUserEarnings(earnings);
@@ -179,11 +186,11 @@ const Rewards = (props: Props) => {
 
       if (result.success) {
         setClaimedAsset({
-          type: 'USDC',
-          amount: String(userEarnings.sol)
+          type: "USDC",
+          amount: String(userEarnings.sol),
         });
         setSuccessModalVisible(true);
-        
+
         fetchWalletBalance();
         const earnings = await walletService.getUserEarnings(user.id);
         setUserEarnings(earnings);
@@ -199,17 +206,30 @@ const Rewards = (props: Props) => {
 
   const handleShare = async () => {
     if (!claimedAsset || !user?.referralCode) return;
-    
+
     try {
-      const message = `I just claimed ${claimedAsset.amount} $${claimedAsset.type.toUpperCase()} tokens on EduLearn! Get in now with my referral code: ${user.referralCode} to claim yours also on edulearn.fun`;
-      
+      const referralLink = createReferralDeepLink(user.referralCode);
+      const message = `I just claimed ${claimedAsset.amount} $${claimedAsset.type.toUpperCase()} tokens on EduLearn! Join with my link: ${referralLink}`;
+
       await Share.share({
         message,
-        title: 'Share your EduLearn success!'
+        title: "Share your EduLearn success!",
       });
     } catch (error) {
       Alert.alert("Error", "Failed to share");
     }
+  };
+
+  const handleActivityPage = async (page: number) => {
+    if (!user?.id || isLoading || isLoadingMore || page < 1) {
+      return;
+    }
+
+    await fetchActivities(user.id, {
+      page,
+      limit: ACTIVITY_PAGE_SIZE,
+      append: false,
+    });
   };
 
   return (
@@ -217,14 +237,21 @@ const Rewards = (props: Props) => {
       style={[styles.container, { backgroundColor: colors.canvas }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 30 }}
+      stickyHeaderIndices={[0]}
     >
+      <View style={[styles.stickyHeader, { backgroundColor: colors.canvas }]}>
+        <Text style={[styles.headerText, { color: colors.slate }]}>
+          Your Rewards
+        </Text>
+        <Text style={[styles.subText, { color: colors.textSecondary }]}>
+          Track your XP, unlock badges, and collect badges as you learn!
+        </Text>
+      </View>
       <StatusBar style={statusBarStyle} />
-      <Text style={[styles.headerText, { color: colors.slate }]}>Your Rewards</Text>
-      <Text style={[styles.subText, { color: colors.textSecondary }]}>
-        Track your XP, unlock badges, and collect badges as you learn!
-      </Text>
 
-      <View style={[styles.userCard, { backgroundColor: colors.heroBackground }]}>
+      <View
+        style={[styles.userCard, { backgroundColor: colors.heroBackground }]}
+      >
         <View style={styles.levelContainer}>
           <View style={styles.levelIconContainer}>
             <Image
@@ -235,7 +262,9 @@ const Rewards = (props: Props) => {
               {levels.indexOf(user?.level?.toLowerCase() || "") + 1}
             </Text>
           </View>
-          <Text style={[styles.levelText, { color: colors.heroText }]}>{user?.level}</Text>
+          <Text style={[styles.levelText, { color: colors.heroText }]}>
+            {user?.level}
+          </Text>
         </View>
 
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
@@ -243,7 +272,9 @@ const Rewards = (props: Props) => {
             source={iconMedalXp(theme)}
             style={{ width: 24, height: 24 }}
           />
-          <Text style={[styles.xpText, { color: colors.heroText }]}>{user?.xp} XP</Text>
+          <Text style={[styles.xpText, { color: colors.heroText }]}>
+            {user?.xp} XP
+          </Text>
         </View>
 
         <ProgressBar
@@ -262,15 +293,25 @@ const Rewards = (props: Props) => {
             : "Congratulations! You&apos;ve reached the highest level! 🏆"}
         </Text>
       </View>
-      
+
       <View style={styles.yourNfts}>
         <View style={styles.yourNftsHeader}>
-          <Text style={[styles.nftHeaderText, { color: colors.slate }]}>Your Badges</Text>
+          <Text style={[styles.nftHeaderText, { color: colors.slate }]}>
+            Your Badges
+          </Text>
           <TouchableOpacity
-            style={[styles.seeMoreButton, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]}
+            style={[
+              styles.seeMoreButton,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.borderMuted,
+              },
+            ]}
             onPress={() => router.push("/nft")}
           >
-            <Text style={[styles.subText, { color: colors.slate }]}>See All</Text>
+            <Text style={[styles.subText, { color: colors.slate }]}>
+              See All
+            </Text>
             <Image
               source={iconCaretRight(theme)}
               style={{ width: 24, height: 24 }}
@@ -310,17 +351,26 @@ const Rewards = (props: Props) => {
             ))}
           </View>
         ) : (
-          <View style={[styles.emptyStateContainer, { backgroundColor: colors.surface }]}>
+          <View
+            style={[
+              styles.emptyStateContainer,
+              { backgroundColor: colors.surface },
+            ]}
+          >
             <Text style={[styles.emptyStateText, { color: colors.slate }]}>
               You haven&apos;t earned any badges yet.
             </Text>
-            <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                styles.emptyStateSubtext,
+                { color: colors.textSecondary },
+              ]}
+            >
               Complete quizzes and lessons to collect them!
             </Text>
           </View>
         )}
       </View>
-     
 
       {/* Web Version Notice for NFTs
       <View style={[styles.webNoticeContainer, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" }]}>
@@ -434,102 +484,141 @@ const Rewards = (props: Props) => {
       </View> */}
 
       <View style={styles.xpHistory}>
-        <Text style={[styles.sectionHeader, { color: colors.slate }]}>XP Earning History</Text>
+        <Text style={[styles.sectionHeader, { color: colors.slate }]}>
+          XP Earning History
+        </Text>
 
         <View style={[styles.historyList, { marginTop: 10 }]}>
-          {activities.length > 0 ? (
+          {isLoading && activities.length === 0 ? (
+            <View
+              style={[
+                styles.activitiesLoadingContainer,
+                { backgroundColor: colors.surface },
+              ]}
+            >
+              <ActivityIndicator size="small" color={colors.brand} />
+              <Text style={[styles.subText, { color: colors.textSecondary }]}>
+                Loading activity...
+              </Text>
+            </View>
+          ) : activities.length > 0 ? (
             <>
-              {activities.slice(from, to).map((activity, index) => (
-                <View key={index} style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]}>
-                  <View style={styles.activityContainer}>
-                    <View style={styles.activityLeftColumn}>
-                      <View style={styles.chatItemHeader}>
-                        {activity.type === "quiz" ? (
-                          <Image
-                            source={require("@/assets/images/icons/brain3.png")}
-                            style={styles.chatIcon}
-                          />
-                        ) : activity.type === "chat" ? (
-                          <Image
-                            source={require("@/assets/images/icons/aichat.png")}
-                            style={styles.chatIcon}
-                          />
-                        ) : (
-                          <Image
-                            source={require("@/assets/images/icons/streak.png")}
-                            style={styles.chatIcon}
-                          />
-                        )}
-                        <Text style={[styles.chatText, { color: colors.slate }]} numberOfLines={1}>
-                          {activity.title ||
-                            activity.type.charAt(0).toUpperCase() +
-                              activity.type.slice(1)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.metadataItem}>
-                        <Image
-                          source={require("@/assets/images/icons/medal-05.png")}
-                          style={styles.metadataIcon}
-                        />
-                        <Text style={[styles.xpHistoryText, { color: colors.textSecondary }]}>
-                          +{activity.xpEarned} XP
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.activityRightColumn}>
-                      <View style={styles.metadataItem}>
-                        <Image
-                          source={iconCalendar(theme)}
-                          style={styles.metadataIcon}
-                        />
-                        <Text style={[styles.dateText, { color: colors.slate }]}>
-                          {new Date(activity.createdAt).toLocaleDateString()}
-                        </Text>
-                      </View>
-
-                      <View style={styles.metadataItem}>
-                        <Text style={[styles.activityTypeText, { color: colors.brand }]}>
-                          {activity.type.charAt(0).toUpperCase() +
-                            activity.type.slice(1)}{" "}
-                          Activity
-                        </Text>
-                      </View>
-
-                      {activity.type === "streak" && (
-                        <View style={styles.streakBadge}>
-                          <Text style={styles.streakText}>Streak</Text>
+              <LegendList
+                data={activities}
+                estimatedItemSize={104}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={styles.activityListContent}
+                renderItem={({ item: activity }) => (
+                  <View
+                    style={[
+                      styles.activityCard,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.borderMuted,
+                      },
+                    ]}
+                  >
+                    <View style={styles.activityContainer}>
+                      <View style={styles.activityLeftColumn}>
+                        <View style={styles.chatItemHeader}>
+                          {activity.type === "quiz" ? (
+                            <Image
+                              source={require("@/assets/images/icons/brain3.png")}
+                              style={styles.chatIcon}
+                            />
+                          ) : activity.type === "chat" ? (
+                            <Image
+                              source={require("@/assets/images/icons/aichat.png")}
+                              style={styles.chatIcon}
+                            />
+                          ) : (
+                            <Image
+                              source={require("@/assets/images/icons/streak.png")}
+                              style={styles.chatIcon}
+                            />
+                          )}
+                          <Text
+                            style={[styles.chatText, { color: colors.slate }]}
+                            numberOfLines={1}
+                          >
+                            {activity.title ||
+                              activity.type.charAt(0).toUpperCase() +
+                                activity.type.slice(1)}
+                          </Text>
                         </View>
-                      )}
+
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={require("@/assets/images/icons/medal-05.png")}
+                            style={styles.metadataIcon}
+                          />
+                          <Text
+                            style={[
+                              styles.xpHistoryText,
+                              { color: colors.textSecondary },
+                            ]}
+                          >
+                            +{activity.xpEarned} XP
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.activityRightColumn}>
+                        <View style={styles.metadataItem}>
+                          <Image
+                            source={iconCalendar(theme)}
+                            style={styles.metadataIcon}
+                          />
+                          <Text
+                            style={[styles.dateText, { color: colors.slate }]}
+                          >
+                            {new Date(activity.createdAt).toLocaleDateString()}
+                          </Text>
+                        </View>
+
+                        <View style={styles.metadataItem}>
+                          <Text
+                            style={[
+                              styles.activityTypeText,
+                              { color: colors.brand },
+                            ]}
+                          >
+                            {activity.type.charAt(0).toUpperCase() +
+                              activity.type.slice(1)}{" "}
+                            Activity
+                          </Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))}
+                )}
+              />
 
-              {activities.length > itemsPerPage && (
-                <View style={[styles.tableContainer, { backgroundColor: colors.surface }]}>
-                  <DataTable style={[styles.table, { backgroundColor: colors.surface }]}>
-                    <View style={styles.paginationContainer}>
-                      <DataTable.Pagination
-                        page={page}
-                        numberOfPages={Math.ceil(activities.length / itemsPerPage)}
-                        onPageChange={(page) => setPage(page)}
-                        onItemsPerPageChange={onItemsPerPageChange}
-                        showFastPaginationControls
-                        style={styles.pagination}
-                      />
-                    </View>
-                  </DataTable>
-                </View>
-              )}
+              {activityPagination && activityPagination.totalPages > 1 ? (
+                <ActivityPaginationBar
+                  isLoading={isLoading || isLoadingMore}
+                  pagination={activityPagination}
+                  onGoToPage={handleActivityPage}
+                />
+              ) : null}
             </>
           ) : (
-            <View style={[styles.emptyStateContainer, { backgroundColor: colors.surface }]}>
+            <View
+              style={[
+                styles.emptyStateContainer,
+                { backgroundColor: colors.surface },
+              ]}
+            >
               <Text style={[styles.emptyStateText, { color: colors.slate }]}>
                 No activity history available.
               </Text>
-              <Text style={[styles.emptyStateSubtext, { color: colors.textSecondary }]}>
+              <Text
+                style={[
+                  styles.emptyStateSubtext,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 Complete quizzes and chat with the AI to earn XP!
               </Text>
             </View>
@@ -539,11 +628,16 @@ const Rewards = (props: Props) => {
 
       <View style={{ height: 30 }} />
 
-      <View style={[styles.quizzes, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]}>
+      <View
+        style={[
+          styles.quizzes,
+          { backgroundColor: colors.surface, borderColor: colors.borderMuted },
+        ]}
+      >
         <View style={{ alignItems: "center", justifyContent: "center" }}>
           <Image
             source={require("@/assets/images/icons/medal-07.png")}
-            style={{ width: 62, height: 62 }}
+            style={{ width: 62, height: 62, tintColor: colors.brand }}
           />
         </View>
         <Text
@@ -560,11 +654,19 @@ const Rewards = (props: Props) => {
         >
           Boost Your XP, Unlock New Rewards
         </Text>
-        <Text style={[styles.subText, { textAlign: "center", color: colors.textSecondary }]}>
+        <Text
+          style={[
+            styles.subText,
+            { textAlign: "center", color: colors.textSecondary },
+          ]}
+        >
           Complete quick actions daily to level up faster, earn badges, and stay
           on top of the leaderboard.
         </Text>
-        <TouchableOpacity style={[styles.quizButton, { backgroundColor: colors.brand }]} onPress={() => router.push("/quizzes")}>  
+        <TouchableOpacity
+          style={[styles.quizButton, { backgroundColor: colors.brand }]}
+          onPress={() => router.push("/quizzes")}
+        >
           <Text
             style={[
               {
@@ -581,37 +683,55 @@ const Rewards = (props: Props) => {
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       <Modal
         visible={successModalVisible}
         transparent={true}
         animationType="fade"
       >
         <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { backgroundColor: colors.modalBackground }]}>
-            <Image 
-              source={iconSealCheck(theme)} 
-              style={styles.successIcon}
-            />
-            <Text style={[styles.modalTitle, { color: colors.slate }]}>Asset Claimed Successfully!</Text>
-            
-            <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.modalBackground },
+            ]}
+          >
+            <Image source={iconSealCheck(theme)} style={styles.successIcon} />
+            <Text style={[styles.modalTitle, { color: colors.slate }]}>
+              Asset Claimed Successfully!
+            </Text>
+
+            <Text
+              style={[styles.modalDescription, { color: colors.textSecondary }]}
+            >
               Your tokens have been successfully transferred to your wallet.
             </Text>
-            
+
             <View style={styles.modalButtonsContainer}>
-              <TouchableOpacity 
-                style={[styles.closeButton, { backgroundColor: colors.brand }]} 
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: colors.brand }]}
                 onPress={() => setSuccessModalVisible(false)}
               >
-                <Text style={[styles.closeButtonText, { color: colors.onBrand }]}>Close</Text>
+                <Text
+                  style={[styles.closeButtonText, { color: colors.onBrand }]}
+                >
+                  Close
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.shareButton, { backgroundColor: colors.surface, borderColor: colors.borderMuted }]} 
+
+              <TouchableOpacity
+                style={[
+                  styles.shareButton,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.borderMuted,
+                  },
+                ]}
                 onPress={() => handleShare()}
               >
-                <Text style={[styles.shareButtonText, { color: colors.slate }]}>Share</Text>
+                <Text style={[styles.shareButtonText, { color: colors.slate }]}>
+                  Share
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -628,7 +748,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     backgroundColor: "#F9FBFC",
+    paddingHorizontal: 16,
+  },
+  stickyHeader: {
     paddingTop: 50,
+    paddingBottom: 8,
+    marginHorizontal: -16,
     paddingHorizontal: 16,
   },
   headerText: {
@@ -776,7 +901,7 @@ const styles = StyleSheet.create({
   earningsSimpleContainer: {
     flexDirection: "column",
     gap: 16,
-    marginTop: 10
+    marginTop: 10,
   },
   earningCard: {
     borderRadius: 16,
@@ -859,14 +984,25 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     gap: 10,
   },
+  activityListContent: {
+    gap: 10,
+  },
+  activitiesLoadingContainer: {
+    minHeight: 120,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 16,
+  },
   activityCard: {
     borderWidth: 1,
     borderColor: "#E0E7FF",
     borderRadius: 16,
     backgroundColor: "#fff",
     overflow: "hidden",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   activityContainer: {
     flexDirection: "row",
@@ -1062,25 +1198,5 @@ const styles = StyleSheet.create({
     color: "#61728C",
     textAlign: "center",
     lineHeight: 20,
-  },
-  tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 10,
-    marginTop: 20,
-  },
-  table: {
-    backgroundColor: '#fff',
-  },
-  paginationContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  pagination: {
-    paddingHorizontal: 0,
   },
 });

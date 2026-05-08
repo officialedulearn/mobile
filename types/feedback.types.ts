@@ -1,12 +1,8 @@
-import type { IsoDateString } from './common.types';
+import type { IsoDateString } from "./common.types";
 
-export type FeedbackCategory =
-  | 'bug'
-  | 'feature'
-  | 'improvement'
-  | 'other';
+export type FeedbackCategory = "bug" | "feature" | "improvement" | "other";
 
-export type FeedbackStatus = 'pending' | 'reviewed' | 'resolved';
+export type FeedbackStatus = "pending" | "reviewed" | "resolved";
 
 export type Feedback = {
   id: string;

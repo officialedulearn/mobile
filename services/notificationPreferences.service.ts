@@ -22,7 +22,7 @@ export class NotificationPreferencesService {
         },
       });
     } catch (error) {
-      console.error("Error scheduling daily reminder:", error);
+      //console.error("Error scheduling daily reminder:", error);
       throw error;
     }
   }
@@ -41,7 +41,7 @@ export class NotificationPreferencesService {
         );
       }
     } catch (error) {
-      console.error("Error cancelling daily reminder:", error);
+      //console.error("Error cancelling daily reminder:", error);
     }
   }
 

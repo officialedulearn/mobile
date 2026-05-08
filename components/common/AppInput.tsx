@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   TextInput,
   View,
@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ViewStyle,
   TextInputProps,
-} from 'react-native';
+} from "react-native";
 
 interface AppInputProps extends TextInputProps {
   label?: string;
@@ -60,32 +60,32 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontFamily: 'Satoshi-Bold',
-    color: '#333',
+    fontFamily: "Satoshi-Bold",
+    color: "#333",
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E8E8E8',
+    borderColor: "#E8E8E8",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    fontFamily: 'Satoshi-Regular',
-    color: '#000',
-    backgroundColor: '#FFF',
+    fontFamily: "Satoshi-Regular",
+    color: "#000",
+    backgroundColor: "#FFF",
   },
   inputFocused: {
-    borderColor: '#00FF80',
+    borderColor: "#00FF80",
   },
   inputError: {
-    borderColor: '#FF6B6B',
+    borderColor: "#FF6B6B",
   },
   error: {
     fontSize: 12,
-    color: '#FF6B6B',
+    color: "#FF6B6B",
     marginTop: 4,
-    fontFamily: 'Satoshi-Regular',
+    fontFamily: "Satoshi-Regular",
   },
 });
 

@@ -1,6 +1,6 @@
-import type { ChatMessageContentPart } from './chat.types';
+import type { ChatMessageContentPart } from "./chat.types";
 
-export type AiMessageRole = 'user' | 'assistant';
+export type AiMessageRole = "user" | "assistant";
 
 export type AiConversationMessage = {
   role: AiMessageRole | string;

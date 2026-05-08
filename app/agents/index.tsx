@@ -28,13 +28,28 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const EDDY = require("@/assets/images/eddie/Mischievous.png");
 
-const PURPOSE_SNIPPETS = ["Short, clear answers. ", "Walk me through step by step. "] as const;
+const PURPOSE_SNIPPETS = [
+  "Short, clear answers. ",
+  "Walk me through step by step. ",
+] as const;
 
 const AVATAR_PRESETS: { id: string; url: string }[] = [
-  { id: "1", url: "https://api.dicebear.com/7.x/avataaars/png?seed=elara&size=256" },
-  { id: "2", url: "https://api.dicebear.com/7.x/avataaars/png?seed=nova&size=256" },
-  { id: "3", url: "https://api.dicebear.com/7.x/bottts/png?seed=sage&size=256" },
-  { id: "4", url: "https://api.dicebear.com/7.x/notionists/png?seed=mentor&size=256" },
+  {
+    id: "1",
+    url: "https://api.dicebear.com/7.x/avataaars/png?seed=elara&size=256",
+  },
+  {
+    id: "2",
+    url: "https://api.dicebear.com/7.x/avataaars/png?seed=nova&size=256",
+  },
+  {
+    id: "3",
+    url: "https://api.dicebear.com/7.x/bottts/png?seed=sage&size=256",
+  },
+  {
+    id: "4",
+    url: "https://api.dicebear.com/7.x/notionists/png?seed=mentor&size=256",
+  },
 ];
 
 function isHttpUrl(s: string) {
@@ -76,7 +91,9 @@ const CreateAgent = () => {
   const trimmedUrl = profilePictureUrl.trim();
   const avatarPreviewUri =
     localImageUri ??
-    (trimmedUrl.length > 0 && isHttpUrl(trimmedUrl) && !avatarLoadFailed ? trimmedUrl : null);
+    (trimmedUrl.length > 0 && isHttpUrl(trimmedUrl) && !avatarLoadFailed
+      ? trimmedUrl
+      : null);
   const showAvatarPreview = avatarPreviewUri != null;
   const initial = useMemo(() => (name.trim()[0] || "A").toUpperCase(), [name]);
   const displayName = name.trim() || "Your agent";
@@ -199,17 +216,30 @@ const CreateAgent = () => {
 
   if (userHasAgent && existingAgent) {
     return (
-      <View style={[styles.fill, { backgroundColor: colors.canvas, paddingTop: topPad }]}>
+      <View
+        style={[
+          styles.fill,
+          { backgroundColor: colors.canvas, paddingTop: topPad },
+        ]}
+      >
         <StatusBar style={isDark ? "light" : "dark"} />
         <View style={styles.introHeader}>
           <BackButton />
         </View>
         <View style={styles.agentDetailsContent}>
-          <View style={[styles.agentDetailsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.agentDetailsCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             {existingAgent.profile_picture_url ? (
               <ExpoImage
                 source={{ uri: existingAgent.profile_picture_url }}
-                style={[styles.detailsAvatar, { borderColor: colors.borderMuted }]}
+                style={[
+                  styles.detailsAvatar,
+                  { borderColor: colors.borderMuted },
+                ]}
                 contentFit="cover"
               />
             ) : (
@@ -217,18 +247,34 @@ const CreateAgent = () => {
                 style={[
                   styles.detailsAvatar,
                   styles.smallAvatarPlaceholder,
-                  { backgroundColor: colors.modalIconBg, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.modalIconBg,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <Text style={{ fontFamily: "Satoshi-Bold", fontSize: 28, color: colors.brand }}>
+                <Text
+                  style={{
+                    fontFamily: "Satoshi-Bold",
+                    fontSize: 28,
+                    color: colors.brand,
+                  }}
+                >
                   {(existingAgent.name?.[0] || "A").toUpperCase()}
                 </Text>
               </View>
             )}
-            <Text style={[typography.styles.sectionTitle, { color: colors.textPrimary, marginTop: 14 }]}>
+            <Text
+              style={[
+                typography.styles.sectionTitle,
+                { color: colors.textPrimary, marginTop: 14 },
+              ]}
+            >
               {existingAgent.name}
             </Text>
-            <Text style={[styles.detailsPurpose, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.detailsPurpose, { color: colors.textSecondary }]}
+            >
               {existingAgent.purpose}
             </Text>
           </View>
@@ -239,38 +285,94 @@ const CreateAgent = () => {
 
   if (phase === "intro") {
     return (
-      <View style={[styles.fill, { backgroundColor: colors.canvas, paddingTop: topPad }]}>
+      <View
+        style={[
+          styles.fill,
+          { backgroundColor: colors.canvas, paddingTop: topPad },
+        ]}
+      >
         <StatusBar style={isDark ? "light" : "dark"} />
         <View style={styles.introHeader}>
           <BackButton />
         </View>
         <View style={styles.introContent}>
-          <View style={[styles.mintHalo, { backgroundColor: isDark ? "rgba(0, 255, 128, 0.12)" : "rgba(0, 255, 128, 0.18)" }]}>
+          <View
+            style={[
+              styles.mintHalo,
+              {
+                backgroundColor: isDark
+                  ? "rgba(0, 255, 128, 0.12)"
+                  : "rgba(0, 255, 128, 0.18)",
+              },
+            ]}
+          >
             <Image source={EDDY} style={styles.eddy} resizeMode="contain" />
           </View>
-          <Text style={[typography.styles.sectionTitle, styles.introTitle, { color: colors.textPrimary }]}>
+          <Text
+            style={[
+              typography.styles.sectionTitle,
+              styles.introTitle,
+              { color: colors.textPrimary },
+            ]}
+          >
             A partner that fits how you learn
           </Text>
           <Text style={[styles.introBody, { color: colors.textSecondary }]}>
-            Next, you’ll add a name, a short purpose, and a face. Nothing fancy — just who they are for you.
+            Next, you’ll add a name, a short purpose, and a face. Nothing fancy
+            — just who they are for you.
           </Text>
           <View style={styles.pillRow}>
-            <View style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View
+              style={[
+                styles.pill,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
               <Ionicons name="sparkles" size={14} color={colors.brand} />
-              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 12, color: colors.textSecondary, marginLeft: 6 }}>One quick step</Text>
+              <Text
+                style={{
+                  fontFamily: "Satoshi-Medium",
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  marginLeft: 6,
+                }}
+              >
+                One quick step
+              </Text>
             </View>
           </View>
         </View>
-        <View style={[styles.introFooter, { paddingBottom: Math.max(insets.bottom, 20) + 8 }]}>
+        <View
+          style={[
+            styles.introFooter,
+            { paddingBottom: Math.max(insets.bottom, 20) + 8 },
+          ]}
+        >
           <Pressable
             onPress={goToForm}
             style={({ pressed }) => [
               styles.introCta,
-              { backgroundColor: colors.ctaPrimaryBg, opacity: pressed ? 0.92 : 1 },
+              {
+                backgroundColor: colors.ctaPrimaryBg,
+                opacity: pressed ? 0.92 : 1,
+              },
             ]}
           >
-            <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 16, color: colors.ctaPrimaryFg }}>Continue</Text>
-            <Ionicons name="arrow-forward" size={18} color={colors.ctaPrimaryFg} style={{ marginLeft: 8 }} />
+            <Text
+              style={{
+                fontFamily: "Satoshi-Medium",
+                fontSize: 16,
+                color: colors.ctaPrimaryFg,
+              }}
+            >
+              Continue
+            </Text>
+            <Ionicons
+              name="arrow-forward"
+              size={18}
+              color={colors.ctaPrimaryFg}
+              style={{ marginLeft: 8 }}
+            />
           </Pressable>
         </View>
       </View>
@@ -288,15 +390,31 @@ const CreateAgent = () => {
         <View style={styles.formTop}>
           <Pressable
             onPress={goToIntro}
-            style={({ pressed }) => [styles.ghostBack, { opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [
+              styles.ghostBack,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             hitSlop={12}
             accessibilityLabel="Back to intro"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            <Ionicons
+              name="chevron-back"
+              size={22}
+              color={colors.textPrimary}
+            />
           </Pressable>
         </View>
 
-        <Text style={[typography.styles.screenTitle, { color: colors.textPrimary, paddingHorizontal: Design.spacing.md, marginBottom: 4 }]}>
+        <Text
+          style={[
+            typography.styles.screenTitle,
+            {
+              color: colors.textPrimary,
+              paddingHorizontal: Design.spacing.md,
+              marginBottom: 4,
+            },
+          ]}
+        >
           Your agent
         </Text>
         <Text
@@ -315,16 +433,28 @@ const CreateAgent = () => {
           style={styles.fill}
           contentContainerStyle={[
             screen.scrollContent,
-            { paddingTop: 0, paddingBottom: insets.bottom + 100, gap: spacing.md },
+            {
+              paddingTop: 0,
+              paddingBottom: insets.bottom + 100,
+              gap: spacing.md,
+            },
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.softCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.softCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             {showAvatarPreview && avatarPreviewUri ? (
               <ExpoImage
                 source={{ uri: avatarPreviewUri }}
-                style={[styles.smallAvatar, { borderColor: colors.borderMuted }]}
+                style={[
+                  styles.smallAvatar,
+                  { borderColor: colors.borderMuted },
+                ]}
                 contentFit="cover"
                 transition={150}
                 onError={() => {
@@ -338,35 +468,86 @@ const CreateAgent = () => {
                 style={[
                   styles.smallAvatar,
                   styles.smallAvatarPlaceholder,
-                  { backgroundColor: colors.modalIconBg, borderColor: colors.border },
+                  {
+                    backgroundColor: colors.modalIconBg,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                <Text style={{ fontFamily: "Satoshi-Bold", fontSize: 22, color: colors.brand }}>{initial}</Text>
+                <Text
+                  style={{
+                    fontFamily: "Satoshi-Bold",
+                    fontSize: 22,
+                    color: colors.brand,
+                  }}
+                >
+                  {initial}
+                </Text>
               </View>
             )}
             <View style={styles.softCardText}>
-              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 16, color: colors.textPrimary }} numberOfLines={1}>
+              <Text
+                style={{
+                  fontFamily: "Satoshi-Medium",
+                  fontSize: 16,
+                  color: colors.textPrimary,
+                }}
+                numberOfLines={1}
+              >
                 {displayName}
               </Text>
-              <Text style={{ fontFamily: "Satoshi-Regular", fontSize: 13, color: colors.textTertiary, marginTop: 4 }} numberOfLines={2}>
+              <Text
+                style={{
+                  fontFamily: "Satoshi-Regular",
+                  fontSize: 13,
+                  color: colors.textTertiary,
+                  marginTop: 4,
+                }}
+                numberOfLines={2}
+              >
                 {purpose.trim() || "Purpose shows here as you type"}
               </Text>
             </View>
           </View>
 
           <View style={styles.fieldBlock}>
-            <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 13, color: colors.textTertiary, marginBottom: 6 }}>Name</Text>
+            <Text
+              style={{
+                fontFamily: "Satoshi-Medium",
+                fontSize: 13,
+                color: colors.textTertiary,
+                marginBottom: 6,
+              }}
+            >
+              Name
+            </Text>
             <TextInput
               value={name}
               onChangeText={setName}
               placeholder="e.g. Nova, Exam buddy"
               placeholderTextColor={colors.placeholder}
-              style={[styles.inputSoft, { color: colors.textPrimary, backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder }]}
+              style={[
+                styles.inputSoft,
+                {
+                  color: colors.textPrimary,
+                  backgroundColor: colors.modalInputBg,
+                  borderColor: colors.modalInputBorder,
+                },
+              ]}
             />
           </View>
 
           <View style={styles.fieldBlock}>
-            <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 13, color: colors.textTertiary, marginBottom: 6 }}>Purpose</Text>
+            <Text
+              style={{
+                fontFamily: "Satoshi-Medium",
+                fontSize: 13,
+                color: colors.textTertiary,
+                marginBottom: 6,
+              }}
+            >
+              Purpose
+            </Text>
             <TextInput
               value={purpose}
               onChangeText={setPurpose}
@@ -377,7 +558,11 @@ const CreateAgent = () => {
               style={[
                 styles.inputSoft,
                 styles.purposeBox,
-                { color: colors.textPrimary, backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder },
+                {
+                  color: colors.textPrimary,
+                  backgroundColor: colors.modalInputBg,
+                  borderColor: colors.modalInputBorder,
+                },
               ]}
             />
             <View style={styles.chipRow}>
@@ -387,30 +572,59 @@ const CreateAgent = () => {
                   onPress={() => appendSnippet(s)}
                   style={({ pressed }) => [
                     styles.miniChip,
-                    { borderColor: colors.border, backgroundColor: colors.canvas, opacity: pressed ? 0.85 : 1 },
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.canvas,
+                      opacity: pressed ? 0.85 : 1,
+                    },
                   ]}
                 >
-                  <Text style={{ fontFamily: "Satoshi-Regular", fontSize: 12, color: colors.textSecondary }}>+ {s.trim()}</Text>
+                  <Text
+                    style={{
+                      fontFamily: "Satoshi-Regular",
+                      fontSize: 12,
+                      color: colors.textSecondary,
+                    }}
+                  >
+                    + {s.trim()}
+                  </Text>
                 </Pressable>
               ))}
             </View>
           </View>
 
           <View style={styles.fieldBlock}>
-            <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 13, color: colors.textTertiary, marginBottom: 6 }}>Photo</Text>
+            <Text
+              style={{
+                fontFamily: "Satoshi-Medium",
+                fontSize: 13,
+                color: colors.textTertiary,
+                marginBottom: 6,
+              }}
+            >
+              Photo
+            </Text>
             <View style={styles.presetRow}>
               {AVATAR_PRESETS.map((p) => {
-                const active = localImageUri == null && profilePictureUrl.trim() === p.url;
+                const active =
+                  localImageUri == null && profilePictureUrl.trim() === p.url;
                 return (
                   <Pressable
                     key={p.id}
                     onPress={() => pickPreset(p.url)}
                     style={({ pressed }) => [
                       styles.preset,
-                      { borderColor: active ? colors.brand : colors.border, opacity: pressed ? 0.9 : 1 },
+                      {
+                        borderColor: active ? colors.brand : colors.border,
+                        opacity: pressed ? 0.9 : 1,
+                      },
                     ]}
                   >
-                    <ExpoImage source={{ uri: p.url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                    <ExpoImage
+                      source={{ uri: p.url }}
+                      style={StyleSheet.absoluteFill}
+                      contentFit="cover"
+                    />
                   </Pressable>
                 );
               })}
@@ -427,17 +641,32 @@ const CreateAgent = () => {
               ]}
             >
               <Ionicons name="images-outline" size={18} color={colors.brand} />
-              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 14, color: colors.textPrimary, marginLeft: 8 }}>
+              <Text
+                style={{
+                  fontFamily: "Satoshi-Medium",
+                  fontSize: 14,
+                  color: colors.textPrimary,
+                  marginLeft: 8,
+                }}
+              >
                 Choose from library
               </Text>
             </Pressable>
             <View
               style={[
                 styles.urlRow,
-                { backgroundColor: colors.modalInputBg, borderColor: colors.modalInputBorder },
+                {
+                  backgroundColor: colors.modalInputBg,
+                  borderColor: colors.modalInputBorder,
+                },
               ]}
             >
-              <Ionicons name="link-outline" size={16} color={colors.textTertiary} style={{ marginLeft: 12 }} />
+              <Ionicons
+                name="link-outline"
+                size={16}
+                color={colors.textTertiary}
+                style={{ marginLeft: 12 }}
+              />
               <TextInput
                 value={profilePictureUrl}
                 onChangeText={onUrlChange}
@@ -450,7 +679,11 @@ const CreateAgent = () => {
               />
               {profilePictureUrl.length > 0 || localImageUri ? (
                 <Pressable onPress={clearPhotoUrl} hitSlop={8}>
-                  <Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={colors.textTertiary}
+                  />
                 </Pressable>
               ) : null}
             </View>
@@ -460,7 +693,11 @@ const CreateAgent = () => {
         <View
           style={[
             styles.footer,
-            { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.canvas, borderTopColor: colors.border },
+            {
+              paddingBottom: Math.max(insets.bottom, 12),
+              backgroundColor: colors.canvas,
+              borderTopColor: colors.border,
+            },
           ]}
         >
           <Pressable
@@ -470,15 +707,22 @@ const CreateAgent = () => {
               styles.cta,
               {
                 backgroundColor: colors.ctaPrimaryBg,
-                opacity:
-                  pressed || createBusy || !authUser?.id ? 0.72 : 1,
+                opacity: pressed || createBusy || !authUser?.id ? 0.72 : 1,
               },
             ]}
           >
             {createBusy ? (
               <ActivityIndicator color={colors.ctaPrimaryFg} />
             ) : (
-              <Text style={{ fontFamily: "Satoshi-Medium", fontSize: 16, color: colors.ctaPrimaryFg }}>Create agent</Text>
+              <Text
+                style={{
+                  fontFamily: "Satoshi-Medium",
+                  fontSize: 16,
+                  color: colors.ctaPrimaryFg,
+                }}
+              >
+                Create agent
+              </Text>
             )}
           </Pressable>
         </View>
@@ -589,7 +833,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  presetRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 10 },
+  presetRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 10,
+  },
   uploadPhotoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -606,10 +855,30 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     overflow: "hidden",
   },
-  urlRow: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 16, paddingRight: 10 },
-  urlField: { flex: 1, fontSize: 15, paddingVertical: 12, fontFamily: "Satoshi-Regular" },
-  footer: { borderTopWidth: 1, paddingHorizontal: Design.spacing.md, paddingTop: 10 },
-  cta: { borderRadius: 999, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
+  urlRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingRight: 10,
+  },
+  urlField: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: 12,
+    fontFamily: "Satoshi-Regular",
+  },
+  footer: {
+    borderTopWidth: 1,
+    paddingHorizontal: Design.spacing.md,
+    paddingTop: 10,
+  },
+  cta: {
+    borderRadius: 999,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   agentDetailsContent: {
     flex: 1,
     paddingHorizontal: Design.spacing.md,

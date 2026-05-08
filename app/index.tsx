@@ -8,24 +8,27 @@ import { useEffect } from "react";
 import { View, useColorScheme } from "react-native";
 
 export default function Index() {
-  const { setTheme, setUserAsync} = useUserStore();
+  const { setTheme, setUserAsync } = useUserStore();
   const colorScheme = useColorScheme();
-  
-  
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
         const theme = await AsyncStorage.getItem("theme");
-        theme ? await setTheme(theme as "light" | "dark") : await setTheme(colorScheme === 'dark' ? 'dark' : 'light');
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        theme
+          ? await setTheme(theme as "light" | "dark")
+          : await setTheme(colorScheme === "dark" ? "dark" : "light");
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.access_token) {
           await setUserAsync();
           setTimeout(() => {
             router.replace("/(tabs)");
           }, 100);
-        } else {  
+        } else {
           router.replace("/onboarding");
         }
       } catch (error) {
@@ -39,13 +42,13 @@ export default function Index() {
 
     const initTimer = setTimeout(() => {
       initializeApp();
-    }, 1500); 
-  
+    }, 1500);
+
     return () => {
       // clearTimeout(minSplashTimer);
       clearTimeout(initTimer);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -65,7 +68,7 @@ export default function Index() {
         style={{ width: 280, height: 280 }}
         speed={2}
       />
-      
+
       {/* {(showMinSplash || isLoading) && (
         <View style={{ marginTop: 40, alignItems: "center" }}>
           <ActivityIndicator size="large" color="#fff" />

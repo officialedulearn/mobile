@@ -22,7 +22,10 @@ export const QuizErrorScreen = ({
       <TouchableOpacity
         style={[
           styles.errorButton,
-          theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033" },
+          theme === "dark" && {
+            backgroundColor: "#131313",
+            borderColor: "#2E3033",
+          },
         ]}
         onPress={onRetry}
       >

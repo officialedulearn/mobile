@@ -1,11 +1,11 @@
-import type { IsoDateString, NumericString } from './common.types';
+import type { IsoDateString, NumericString } from "./common.types";
 
 export type UserLevel =
-  | 'novice'
-  | 'beginner'
-  | 'intermediate'
-  | 'advanced'
-  | 'expert';
+  | "novice"
+  | "beginner"
+  | "intermediate"
+  | "advanced"
+  | "expert";
 
 /** Mirrors api `user` row; omit server-only fields for client/API responses. */
 export type UserPublic = {

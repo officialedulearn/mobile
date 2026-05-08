@@ -26,7 +26,7 @@ const initializeDailyReminderSafely = async () => {
   try {
     await NotificationPreferencesService.initializeDailyReminder();
   } catch (error) {
-    console.error("Failed to initialize daily notification reminder:", error);
+    //console.error("Failed to initialize daily notification reminder:", error);
   }
 };
 
@@ -53,8 +53,9 @@ export function useNotifications() {
       });
 
     Notifications.getLastNotificationResponseAsync().then((response) => {
-      const data = response?.notification.request.content
-        .data as NotificationData | undefined;
+      const data = response?.notification.request.content.data as
+        | NotificationData
+        | undefined;
       if (data) handleNotificationNavigation(data);
     });
 
@@ -78,10 +79,10 @@ export function useNotifications() {
           await userService.updateUserExpoPushToken(token, userId);
           return true;
         } catch (error) {
-          console.error(
-            `Failed to update Expo push token (attempt ${attempt}/${retries}):`,
-            error,
-          );
+          //console.error(
+          //  `Failed to update Expo push token (attempt ${attempt}/${retries}):`,
+          //  error,
+          //);
 
           if (attempt < retries) {
             await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
@@ -89,7 +90,7 @@ export function useNotifications() {
         }
       }
 
-      console.error("Failed to update Expo push token after all retries");
+      //console.error("Failed to update Expo push token after all retries");
       return false;
     };
 
@@ -123,7 +124,7 @@ export function useNotifications() {
         await AsyncStorage.setItem(syncKey, token);
         await initializeDailyReminderSafely();
       } catch (error) {
-        console.error("Error syncing Expo push token:", error);
+        //console.error("Error syncing Expo push token:", error);
       }
     };
 
@@ -135,7 +136,9 @@ export function useNotifications() {
   }, [userId]);
 
   const handleNotificationNavigation = (data: NotificationData) => {
-    const quizIdFromUrl = data.url ? extractPublicQuizIdFromUrl(data.url) : null;
+    const quizIdFromUrl = data.url
+      ? extractPublicQuizIdFromUrl(data.url)
+      : null;
     if (quizIdFromUrl) {
       router.push({
         pathname: "/(tabs)/quizzes/[id]",
@@ -197,7 +200,7 @@ export function useNotifications() {
       await AsyncStorage.setItem(getPushTokenSyncKey(userId), expoPushToken);
     } catch (error) {
       await AsyncStorage.removeItem(getPushTokenSyncKey(userId));
-      console.error("Failed to manually update Expo push token:", error);
+      //console.error("Failed to manually update Expo push token:", error);
       throw error;
     }
   };

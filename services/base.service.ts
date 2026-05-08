@@ -19,7 +19,8 @@ export class BaseService {
     if (error instanceof AxiosError) {
       return {
         status: error.response?.status || 500,
-        message: error.response?.data?.message || error.message || "Unknown error",
+        message:
+          error.response?.data?.message || error.message || "Unknown error",
         code: error.code,
         originalError: error,
       };
@@ -33,7 +34,7 @@ export class BaseService {
   }
 
   protected async executeRequest<T>(
-    request: Promise<AxiosResponse<T>>
+    request: Promise<AxiosResponse<T>>,
   ): Promise<ApiResponse<T>> {
     try {
       const response = await request;

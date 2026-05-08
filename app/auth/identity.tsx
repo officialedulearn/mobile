@@ -1,11 +1,18 @@
-import { StyleSheet, Text, TextInput, View, TouchableOpacity, Alert } from "react-native";
-import React, { useState } from "react";
 import BackButton from "@/components/common/backButton";
-import { router } from "expo-router";
-import useUserStore from "@/core/userState";
-import { UserService } from "@/services/auth.service";
-import { useNotifications } from "@/hooks/useNotifications";
 import useRoadmapStore from "@/core/roadmapState";
+import useUserStore from "@/core/userState";
+import { useNotifications } from "@/hooks/useNotifications";
+import { UserService } from "@/services/auth.service";
+import { router } from "expo-router";
+import React, { useState } from "react";
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type Props = Record<string, never>;
 
@@ -19,7 +26,10 @@ const Identity = (_props: Props) => {
 
   const handleFinishSetup = async () => {
     if (!learningGoal.trim()) {
-      Alert.alert("Please enter your learning goal", "Tell us what you want to learn");
+      Alert.alert(
+        "Please enter your learning goal",
+        "Tell us what you want to learn",
+      );
       return;
     }
 
@@ -35,12 +45,12 @@ const Identity = (_props: Props) => {
         name: user.name,
         email: user.email,
         username: user.username,
-        learning: learningGoal.trim()
+        learning: learningGoal.trim(),
       });
 
       setUser({
         ...user,
-        learning: learningGoal.trim()
+        learning: learningGoal.trim(),
       });
 
       try {
@@ -48,44 +58,77 @@ const Identity = (_props: Props) => {
         const { roadmaps } = useRoadmapStore.getState();
 
         if (roadmaps.length > 0) {
-          await scheduleNotification("Your roadmap has been generated", "You are now ready to start your learning journey", {
-            screen: `roadmaps/${roadmaps[0].id}`
-          });
+          await scheduleNotification(
+            "Your roadmap has been generated",
+            "You are now ready to start your learning journey",
+            {
+              screen: `roadmaps/${roadmaps[0].id}`,
+            },
+          );
         }
-      } catch (roadmapError) {
-        console.error("Error fetching roadmap:", roadmapError);
-      }
+      } catch (roadmapError) {}
 
       router.push("/auth/welcome");
     } catch (error) {
-      console.error("Error updating learning preference:", error);
-      Alert.alert("Error", "Failed to save your preferences. Please try again.");
+      Alert.alert(
+        "Error",
+        "Failed to save your preferences. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <View style={styles.topNav}>
         <BackButton />
       </View>
 
       <View style={styles.content}>
         <View style={{ gap: 8 }}>
-          <Text style={[styles.headerText, theme === "dark" && { color: "#E0E0E0" }]}>What do you want to learn?</Text>
-          <Text style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}>
-            Tell us your learning goal so we can create a personalized roadmap for you.
+          <Text
+            style={[
+              styles.headerText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            What do you want to learn?
+          </Text>
+          <Text
+            style={[styles.subText, theme === "dark" && { color: "#B3B3B3" }]}
+          >
+            Tell us your learning goal so we can create a personalized roadmap
+            for you.
           </Text>
         </View>
 
         <View style={styles.inputs}>
           <View>
-            <Text style={[styles.displayNameText, theme === "dark" && { color: "#B3B3B3" }]}>Your learning goal</Text>
-            <TextInput 
-              placeholder="blockchain basics, web3 design, smart contracts..." 
+            <Text
+              style={[
+                styles.displayNameText,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
+            >
+              Your learning goal
+            </Text>
+            <TextInput
+              placeholder="blockchain basics, web3 design, smart contracts..."
               placeholderTextColor={theme === "dark" ? "#B3B3B3" : "#61728C"}
-              style={[styles.bioInput, theme === "dark" && { backgroundColor: "#131313", borderColor: "#2E3033", color: "#E0E0E0" }]}
+              style={[
+                styles.bioInput,
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                  borderColor: "#2E3033",
+                  color: "#E0E0E0",
+                },
+              ]}
               value={learningGoal}
               onChangeText={setLearningGoal}
               maxLength={100}
@@ -93,26 +136,36 @@ const Identity = (_props: Props) => {
           </View>
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             {
               marginTop: 32,
-              backgroundColor: learningGoal.trim() ? "#00FF80" : (theme === "dark" ? "#2E3033" : "#EDF3FC"),
+              backgroundColor: learningGoal.trim()
+                ? "#00FF80"
+                : theme === "dark"
+                  ? "#2E3033"
+                  : "#EDF3FC",
               paddingVertical: 16,
               borderRadius: 32,
               alignItems: "center",
             },
-            (!learningGoal.trim() || isLoading) && { opacity: 0.5 }
+            (!learningGoal.trim() || isLoading) && { opacity: 0.5 },
           ]}
           disabled={!learningGoal.trim() || isLoading}
           onPress={handleFinishSetup}
         >
-          <Text style={{ 
-            color: learningGoal.trim() ? "#2D3C52" : (theme === "dark" ? "#B3B3B3" : "#61728C"),
-            fontWeight: "600",
-            fontSize: 16,
-            fontFamily: "Satoshi-Regular",
-          }}>
+          <Text
+            style={{
+              color: learningGoal.trim()
+                ? "#2D3C52"
+                : theme === "dark"
+                  ? "#B3B3B3"
+                  : "#61728C",
+              fontWeight: "600",
+              fontSize: 16,
+              fontFamily: "Satoshi-Regular",
+            }}
+          >
             {isLoading ? "Setting up..." : "Finish Setup"}
           </Text>
         </TouchableOpacity>
@@ -134,7 +187,7 @@ const styles = StyleSheet.create({
   },
   content: {
     marginTop: 20,
-    gap: 24
+    gap: 24,
   },
   headerText: {
     color: "#2D3C52",
@@ -159,11 +212,11 @@ const styles = StyleSheet.create({
   },
   inputs: {
     marginTop: 32,
-    gap: 24
+    gap: 24,
   },
   bioInput: {
     gap: 8,
-    paddingVertical: 14,    
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 32,
     borderWidth: 1,

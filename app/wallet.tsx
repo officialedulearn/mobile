@@ -1,20 +1,20 @@
-import BackButton from '@/components/common/backButton';
-import Toast, { ToastType } from '@/components/common/Toast';
-import SolanaQR from '@/components/wallet/SolanaQR';
-import useUserStore from '@/core/userState';
-import { UserService } from '@/services/auth.service';
-import { CardSharingService } from '@/services/cardSharing.service';
-import { DeviceInfo, WalletService } from '@/services/wallet.service';
-import { generateUUID } from '@/utils/constants';
-import { getScreenTopPadding } from '@/utils/design';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Clipboard from 'expo-clipboard';
-import * as Device from 'expo-device';
-import * as Haptics from 'expo-haptics';
-import { Image } from 'expo-image';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import BackButton from "@/components/common/backButton";
+import Toast, { ToastType } from "@/components/common/Toast";
+import SolanaQR from "@/components/wallet/SolanaQR";
+import useUserStore from "@/core/userState";
+import { UserService } from "@/services/auth.service";
+import { CardSharingService } from "@/services/cardSharing.service";
+import { DeviceInfo, WalletService } from "@/services/wallet.service";
+import { generateUUID } from "@/utils/constants";
+import { getScreenTopPadding } from "@/utils/design";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Clipboard from "expo-clipboard";
+import * as Device from "expo-device";
+import * as Haptics from "expo-haptics";
+import { Image } from "expo-image";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Platform,
@@ -26,16 +26,18 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
-} from 'react-native';
-import Modal from 'react-native-modal';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import Modal from "react-native-modal";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
-  if (!url || typeof url !== 'string') return undefined;
+const getHighQualityImageUrl = (
+  url: string | null | undefined,
+): string | undefined => {
+  if (!url || typeof url !== "string") return undefined;
   return url
-    .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
-    .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
-    .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+    .replace(/_normal(\.[a-z]+)$/i, "_400x400$1")
+    .replace(/_mini(\.[a-z]+)$/i, "_400x400$1")
+    .replace(/_bigger(\.[a-z]+)$/i, "_400x400$1");
 };
 
 const walletService = new WalletService();
@@ -47,7 +49,7 @@ function Wallet() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
-  
+
   const [solBalance, setSolBalance] = useState(0);
   const [edlnBalance, setEdlnBalance] = useState(0);
   const [prices, setPrices] = useState({ SOL: 0, EDLN: 0 });
@@ -56,16 +58,18 @@ function Wallet() {
   const [copied, setCopied] = useState(false);
   const [receiveModalVisible, setReceiveModalVisible] = useState(false);
   const [isBuyModalVisible, setBuyModalVisible] = useState(false);
-  const [buyAmount, setBuyAmount] = useState('');
-    const [transactionLink, setTransactionLink] = useState<string>('');
+  const [buyAmount, setBuyAmount] = useState("");
+  const [transactionLink, setTransactionLink] = useState<string>("");
   const [isBuying, setIsBuying] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  const [buyMethod, setBuyMethod] = useState<'sol' | 'cash' | null>(null);
-  const [purchaseType, setPurchaseType] = useState<'edln' | 'sol' | null>(null);
-  const [onrampStep, setOnrampStep] = useState<'method' | 'otp' | 'payment'>('method');
-  const [otp, setOtp] = useState('');
-  const [cashAmount, setCashAmount] = useState('');
+
+  const [buyMethod, setBuyMethod] = useState<"sol" | "cash" | null>(null);
+  const [purchaseType, setPurchaseType] = useState<"edln" | "sol" | null>(null);
+  const [onrampStep, setOnrampStep] = useState<"method" | "otp" | "payment">(
+    "method",
+  );
+  const [otp, setOtp] = useState("");
+  const [cashAmount, setCashAmount] = useState("");
   const [isProcessingOnramp, setIsProcessingOnramp] = useState(false);
   const [verifiedToken, setVerifiedToken] = useState<string | null>(null);
   const [paymentDetails, setPaymentDetails] = useState<{
@@ -75,39 +79,40 @@ function Wallet() {
     fiatAmount: number;
     bank: string;
   } | null>(null);
-    const completedEventIdsRef = useRef<Set<string>>(new Set());
-  const [completedTransactionDetails, setCompletedTransactionDetails] = useState<{
-    amount: number;
-    fiatAmount: number;
-    currency: string;
-    signature?: string;
-  } | null>(null);
-  
+  const completedEventIdsRef = useRef<Set<string>>(new Set());
+  const [completedTransactionDetails, setCompletedTransactionDetails] =
+    useState<{
+      amount: number;
+      fiatAmount: number;
+      currency: string;
+      signature?: string;
+    } | null>(null);
+
   const [toastVisible, setToastVisible] = useState(false);
-  const [toastType, setToastType] = useState<ToastType>('error');
-  const [toastMessage, setToastMessage] = useState('');
-  
+  const [toastType, setToastType] = useState<ToastType>("error");
+  const [toastMessage, setToastMessage] = useState("");
+
   const [isBurning, setIsBurning] = useState(false);
   const [burningAmount, setBurningAmount] = useState<number | null>(null);
-    const [activeTokenUtilIndex, setActiveTokenUtilIndex] = useState(0);
+  const [activeTokenUtilIndex, setActiveTokenUtilIndex] = useState(0);
   const [isSharingCard, setIsSharingCard] = useState(false);
 
   useEffect(() => {
     const loadStoredToken = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('onramp_verified_token');
+        const storedToken = await AsyncStorage.getItem("onramp_verified_token");
         if (storedToken) {
           setVerifiedToken(JSON.parse(storedToken));
         }
       } catch (e) {
-        await AsyncStorage.removeItem('onramp_verified_token');
+        await AsyncStorage.removeItem("onramp_verified_token");
       }
     };
     loadStoredToken();
   }, []);
 
   const netWorth = useMemo(() => {
-    return (edlnBalance * prices.EDLN) + (solBalance * prices.SOL);
+    return edlnBalance * prices.EDLN + solBalance * prices.SOL;
   }, [edlnBalance, prices.EDLN, solBalance, prices.SOL]);
 
   const solValue = useMemo(() => {
@@ -137,21 +142,27 @@ function Wallet() {
 
         const [balance, priceData] = await Promise.all([
           walletService.getBalance(user.address),
-          walletService.getPrices()
+          walletService.getPrices(),
         ]);
 
         setSolBalance(balance.sol);
         setEdlnBalance(balance.tokenAccount || 0);
-        setPrices(prevPrices => {
-          if (prevPrices.SOL === priceData.SOL && prevPrices.EDLN === priceData.EDLN) {
+        setPrices((prevPrices) => {
+          if (
+            prevPrices.SOL === priceData.SOL &&
+            prevPrices.EDLN === priceData.EDLN
+          ) {
             return prevPrices;
           }
           return priceData;
         });
       } catch (err: any) {
-        const errorMsg = err?.response?.data?.message || err?.message || 'Failed to fetch wallet data';
+        const errorMsg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to fetch wallet data";
         setError(errorMsg);
-        showToast('error', errorMsg);
+        showToast("error", errorMsg);
       } finally {
         setLoading(false);
       }
@@ -168,58 +179,64 @@ function Wallet() {
 
     const checkWebhookUpdates = async () => {
       if (!address || !isMounted) return;
-      
+
       try {
         const result = await walletService.getPendingWebhookEvents(address);
-        
+
         if (!isMounted) return;
-        
+
         if (result.hasUpdates && result.events.length > 0) {
           const completedEvents = result.events.filter(
-            event => (event.status === 'COMPLETED' || event.status === 'PAID') && 
-                     !completedEventIdsRef.current.has(event.id)
+            (event) =>
+              (event.status === "COMPLETED" || event.status === "PAID") &&
+              !completedEventIdsRef.current.has(event.id),
           );
-          
+
           if (completedEvents.length > 0 && isMounted) {
-            
             const [balance, priceData] = await Promise.all([
               walletService.getBalance(address),
-              walletService.getPrices()
+              walletService.getPrices(),
             ]);
 
             if (!isMounted) return;
 
-            setSolBalance(prev => {
+            setSolBalance((prev) => {
               const newBalance = balance.sol;
               return Math.abs(prev - newBalance) > 0.0001 ? newBalance : prev;
             });
-            setEdlnBalance(prev => {
+            setEdlnBalance((prev) => {
               const newBalance = balance.tokenAccount || 0;
               return Math.abs(prev - newBalance) > 0.0001 ? newBalance : prev;
             });
-            setPrices(prevPrices => {
-              if (prevPrices.SOL === priceData.SOL && prevPrices.EDLN === priceData.EDLN) {
+            setPrices((prevPrices) => {
+              if (
+                prevPrices.SOL === priceData.SOL &&
+                prevPrices.EDLN === priceData.EDLN
+              ) {
                 return prevPrices;
               }
               return priceData;
             });
-            
+
             const firstCompletedEvent = completedEvents[0];
-            
+
             setCompletedTransactionDetails({
               amount: firstCompletedEvent.amount,
               fiatAmount: firstCompletedEvent.fiatAmount,
               currency: firstCompletedEvent.currency,
-              signature: firstCompletedEvent.signature
+              signature: firstCompletedEvent.signature,
             });
-            
-            completedEvents.forEach(event => {
+
+            completedEvents.forEach((event) => {
               completedEventIdsRef.current.add(event.id);
             });
             setBuyModalVisible(false);
-            showToast('success', `Transaction completed! Your ${firstCompletedEvent.currency} has been credited.`);
+            showToast(
+              "success",
+              `Transaction completed! Your ${firstCompletedEvent.currency} has been credited.`,
+            );
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            
+
             for (const event of completedEvents) {
               await walletService.clearWebhookEvent(address, event.id);
             }
@@ -232,7 +249,7 @@ function Wallet() {
     };
 
     const interval = setInterval(checkWebhookUpdates, 5000);
-    
+
     checkWebhookUpdates();
 
     return () => {
@@ -248,19 +265,19 @@ function Wallet() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      showToast('error', 'Failed to copy to clipboard');
+      showToast("error", "Failed to copy to clipboard");
     }
   };
 
   const toggleBuyModal = () => {
     setBuyModalVisible(!isBuyModalVisible);
     if (!isBuyModalVisible) {
-      setBuyAmount('');
+      setBuyAmount("");
       setBuyMethod(null);
       setPurchaseType(null);
-      setOnrampStep('method');
-      setOtp('');
-      setCashAmount('');
+      setOnrampStep("method");
+      setOtp("");
+      setCashAmount("");
       setPaymentDetails(null);
     }
   };
@@ -268,29 +285,32 @@ function Wallet() {
   const getDeviceInfo = (): DeviceInfo => {
     return {
       uuid: generateUUID(),
-      device: Device.modelName || Device.deviceName || 'Unknown',
+      device: Device.modelName || Device.deviceName || "Unknown",
       os: Platform.OS,
-      browser: Platform.OS === 'ios' ? 'Safari' : 'Chrome',
-      ip: '0.0.0.0'
+      browser: Platform.OS === "ios" ? "Safari" : "Chrome",
+      ip: "0.0.0.0",
     };
   };
 
   const handleInitiateOnramp = async () => {
     try {
       setIsProcessingOnramp(true);
-      
+
       if (verifiedToken) {
-        setOnrampStep('otp');
+        setOnrampStep("otp");
         setIsProcessingOnramp(false);
         return;
       }
-      
-      await walletService.initiateOnramp(user?.id || '');
-      setOnrampStep('otp');
+
+      await walletService.initiateOnramp(user?.id || "");
+      setOnrampStep("otp");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to initiate purchase';
-      showToast('error', errorMsg);
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to initiate purchase";
+      showToast("error", errorMsg);
     } finally {
       setIsProcessingOnramp(false);
     }
@@ -302,7 +322,7 @@ function Wallet() {
 
       const amount = parseFloat(cashAmount);
       if (isNaN(amount) || amount <= 0) {
-        showToast('error', 'Please enter a valid amount');
+        showToast("error", "Please enter a valid amount");
         setIsProcessingOnramp(false);
         return;
       }
@@ -311,47 +331,58 @@ function Wallet() {
 
       if (!verifiedToken) {
         if (!otp || otp.length < 4) {
-          showToast('error', 'Please enter a valid OTP');
+          showToast("error", "Please enter a valid OTP");
           setIsProcessingOnramp(false);
           return;
         }
 
         const deviceInfo = getDeviceInfo();
-        const verifiedResponse = await walletService.verifyOnramp(user?.email || '', otp, deviceInfo);
-        
+        const verifiedResponse = await walletService.verifyOnramp(
+          user?.email || "",
+          otp,
+          deviceInfo,
+        );
+
         tokenToUse = verifiedResponse.verifiedResponse as string;
         setVerifiedToken(tokenToUse);
-        await AsyncStorage.setItem('onramp_verified_token', JSON.stringify(tokenToUse));
+        await AsyncStorage.setItem(
+          "onramp_verified_token",
+          JSON.stringify(tokenToUse),
+        );
       }
-      
-      const order = purchaseType === 'sol' 
-        ? await walletService.onrampFiatToSol(
-            user?.id || '',
-            amount,
-            tokenToUse
-          )
-        : await walletService.onrampFiatToEdln(
-            user?.id || '',
-            amount,
-            tokenToUse
-          );
+
+      const order =
+        purchaseType === "sol"
+          ? await walletService.onrampFiatToSol(
+              user?.id || "",
+              amount,
+              tokenToUse,
+            )
+          : await walletService.onrampFiatToEdln(
+              user?.id || "",
+              amount,
+              tokenToUse,
+            );
 
       if (order?.order) {
         setPaymentDetails({
-          id: order.order.id || '',
-          accountNumber: order.order.accountNumber || '',
-          accountName: order.order.accountName || '',
+          id: order.order.id || "",
+          accountNumber: order.order.accountNumber || "",
+          accountName: order.order.accountName || "",
           fiatAmount: order.order.fiatAmount || 0,
-          bank: order.order.bank || ''
+          bank: order.order.bank || "",
         });
-        setOnrampStep('payment');
+        setOnrampStep("payment");
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } else {
-        throw new Error('Invalid order response');
+        throw new Error("Invalid order response");
       }
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to verify OTP';
-      showToast('error', errorMsg);
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to verify OTP";
+      showToast("error", errorMsg);
     } finally {
       setIsProcessingOnramp(false);
     }
@@ -359,12 +390,12 @@ function Wallet() {
 
   const refreshBalance = async () => {
     if (!user?.address) return;
-    
+
     try {
       setIsRefreshing(true);
       const [balance, priceData] = await Promise.all([
         walletService.getBalance(user.address),
-        walletService.getPrices()
+        walletService.getPrices(),
       ]);
 
       setSolBalance(balance.sol);
@@ -372,8 +403,11 @@ function Wallet() {
       setPrices(priceData);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.message || err?.message || 'Failed to refresh balance';
-      showToast('error', errorMsg);
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to refresh balance";
+      showToast("error", errorMsg);
     } finally {
       setIsRefreshing(false);
     }
@@ -384,42 +418,45 @@ function Wallet() {
       setIsBuying(true);
       const amount = parseFloat(buyAmount);
       if (isNaN(amount) || amount <= 0) {
-        showToast('error', 'Please enter a valid amount');
+        showToast("error", "Please enter a valid amount");
         setIsBuying(false);
         return;
       }
 
       if (amount > solBalance) {
-        showToast('error', 'Insufficient SOL balance');
+        showToast("error", "Insufficient SOL balance");
         setIsBuying(false);
         return;
       }
 
-      const result = await walletService.swapSolToEDLN(user?.id || '', amount);
-      
-      setTransactionLink(result.response || '');
-      
+      const result = await walletService.swapSolToEDLN(user?.id || "", amount);
+
+      setTransactionLink(result.response || "");
+
       setIsBuying(false);
       toggleBuyModal();
-      
-      showToast('success', 'EDLN purchased successfully!');
+
+      showToast("success", "EDLN purchased successfully!");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       await refreshBalance();
-      
+
       setTimeout(async () => {
         await refreshBalance();
       }, 5000);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to complete purchase';
-      showToast('error', errorMsg);
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to complete purchase";
+      showToast("error", errorMsg);
       setIsBuying(false);
     }
   };
 
   const getCreditsFromBurnAmount = (amount: number): number => {
-    switch(amount) {
+    switch (amount) {
       case 1000:
         return 3;
       case 5000:
@@ -435,28 +472,34 @@ function Wallet() {
     try {
       setIsBurning(true);
       setBurningAmount(burnAmount);
-            const response = await walletService.burnEDLN(user?.id || '', burnAmount);
-      
+      const response = await walletService.burnEDLN(user?.id || "", burnAmount);
+
       if (!response || !response.signature) {
-        throw new Error('Burn transaction failed');
+        throw new Error("Burn transaction failed");
       }
-      
+
       const credits = getCreditsFromBurnAmount(burnAmount);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       await refreshBalance();
-      
+
       setTimeout(async () => {
         await refreshBalance();
       }, 2000);
-      
+
       setIsBurning(false);
       setBurningAmount(null);
-      showToast('success', `Successfully burned ${burnAmount.toLocaleString()} EDLN!`);
+      showToast(
+        "success",
+        `Successfully burned ${burnAmount.toLocaleString()} EDLN!`,
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      const errorMsg = error?.response?.data?.message || error?.message || 'Failed to burn tokens';
-      showToast('error', errorMsg);
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to burn tokens";
+      showToast("error", errorMsg);
       setIsBurning(false);
       setBurningAmount(null);
     }
@@ -465,53 +508,69 @@ function Wallet() {
   const formatCurrency = (value: number) => {
     return value.toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
   };
 
   const formatTokenAmount = (value: number, decimals: number = 4) => {
     return value.toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: decimals
+      maximumFractionDigits: decimals,
     });
   };
 
   const handleShareEarningsCard = async () => {
     if (!user?.id) return;
-    
+
     try {
       setIsSharingCard(true);
       await cardSharingService.shareEarningsCard(user.id, netWorth);
-      showToast('success', 'Earnings card shared successfully!');
+      showToast("success", "Earnings card shared successfully!");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      const errorMsg = error?.message || 'Failed to share earnings card';
-      showToast('error', errorMsg);
+      const errorMsg = error?.message || "Failed to share earnings card";
+      showToast("error", errorMsg);
     } finally {
       setIsSharingCard(false);
     }
   };
 
   const getModalTitle = () => {
-    if (buyMethod === null && purchaseType === null) return 'Buy Tokens';
+    if (buyMethod === null && purchaseType === null) return "Buy Tokens";
     if (buyMethod === null && purchaseType !== null) {
-      return purchaseType === 'sol' ? 'Buy SOL' : 'Buy EDLN';
+      return purchaseType === "sol" ? "Buy SOL" : "Buy EDLN";
     }
-    if (buyMethod === 'sol') {
-      return purchaseType === 'sol' ? 'Buy SOL with SOL' : 'Buy with SOL';
+    if (buyMethod === "sol") {
+      return purchaseType === "sol" ? "Buy SOL with SOL" : "Buy with SOL";
     }
-    return purchaseType === 'sol' ? 'Buy SOL with Cash' : 'Buy with Cash';
+    return purchaseType === "sol" ? "Buy SOL with Cash" : "Buy with Cash";
   };
 
-  const profileImageUrl = getHighQualityImageUrl(user?.profilePictureURL as string);
+  const profileImageUrl = getHighQualityImageUrl(
+    user?.profilePictureURL as string,
+  );
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
-        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+          { paddingTop: topPadding },
+        ]}
+      >
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme === 'dark' ? '#00FF80' : '#000'} />
-          <Text style={[styles.loadingText, theme === 'dark' && { color: '#E0E0E0' }]}>
+          <ActivityIndicator
+            size="large"
+            color={theme === "dark" ? "#00FF80" : "#000"}
+          />
+          <Text
+            style={[
+              styles.loadingText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
             Loading wallet data...
           </Text>
         </View>
@@ -521,13 +580,38 @@ function Wallet() {
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
-        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+      <SafeAreaView
+        style={[
+          styles.safeArea,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+          { paddingTop: topPadding },
+        ]}
+      >
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
         <View style={styles.container}>
           <BackButton />
-          <View style={[styles.errorContainer, theme === 'dark' && { backgroundColor: '#131313' }]}>
-            <Text style={[styles.errorTitle, theme === 'dark' && { color: '#E0E0E0' }]}>Error</Text>
-            <Text style={[styles.errorText, theme === 'dark' && { color: '#B3B3B3' }]}>{error}</Text>
+          <View
+            style={[
+              styles.errorContainer,
+              theme === "dark" && { backgroundColor: "#131313" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.errorTitle,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              Error
+            </Text>
+            <Text
+              style={[
+                styles.errorText,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
+            >
+              {error}
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -535,61 +619,119 @@ function Wallet() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === 'dark' && { backgroundColor: '#0D0D0D' }, { paddingTop: topPadding }]}>
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+        { paddingTop: topPadding },
+      ]}
+    >
+      <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <Toast
         visible={toastVisible}
         type={toastType}
         message={toastMessage}
         onDismiss={() => setToastVisible(false)}
       />
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <BackButton />
-            <Text style={[styles.headerText, theme === 'dark' && { color: '#E0E0E0' }]}>Wallet</Text>
+            <Text
+              style={[
+                styles.headerText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              Wallet
+            </Text>
             <View style={{ width: 40 }} />
           </View>
 
-          <View style={[styles.walletAddressCard, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
+          <View
+            style={[
+              styles.walletAddressCard,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
+          >
             <View style={styles.walletAddressHeader}>
-              <Image 
-                source={theme === 'dark' ? require('@/assets/images/icons/wallet.png') : require('@/assets/images/icons/dark/wallet.png')} 
+              <Image
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/wallet.png")
+                    : require("@/assets/images/icons/dark/wallet.png")
+                }
                 style={styles.walletIconSmall}
               />
-              <Text style={[styles.walletAddressLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.walletAddressLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 Wallet Address
               </Text>
             </View>
             <View style={styles.walletAddressRow}>
-              <Text 
-                style={[styles.walletAddressText, theme === 'dark' && { color: '#E0E0E0' }]} 
-                numberOfLines={1} 
+              <Text
+                style={[
+                  styles.walletAddressText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+                numberOfLines={1}
                 ellipsizeMode="middle"
               >
                 {user?.address}
               </Text>
               <TouchableOpacity
-                onPress={() => copyToClipboard(user?.address || '')}
+                onPress={() => copyToClipboard(user?.address || "")}
                 style={styles.copyButtonInline}
               >
                 <Image
-                  source={theme === 'dark' ? require('@/assets/images/icons/dark/copy.png') : require('@/assets/images/icons/copy.png')}
+                  source={
+                    theme === "dark"
+                      ? require("@/assets/images/icons/dark/copy.png")
+                      : require("@/assets/images/icons/copy.png")
+                  }
                   style={styles.copyIconSmall}
                 />
               </TouchableOpacity>
             </View>
             {copied && (
-              <Text style={[styles.copiedTextSmall, theme === 'dark' && { color: '#00FF80' }]}>
+              <Text
+                style={[
+                  styles.copiedTextSmall,
+                  theme === "dark" && { color: "#00FF80" },
+                ]}
+              >
                 Address copied!
               </Text>
             )}
           </View>
 
-          <View style={[styles.balanceMainCard, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
+          <View
+            style={[
+              styles.balanceMainCard,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
+          >
             <View style={styles.balanceHeaderRow}>
-              <Text style={[styles.balanceLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.balanceLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 Total Balance
               </Text>
               <TouchableOpacity
@@ -598,13 +740,25 @@ function Wallet() {
                 style={styles.refreshButtonSmall}
               >
                 {isRefreshing ? (
-                  <ActivityIndicator size="small" color={theme === 'dark' ? '#00FF80' : '#000'} />
+                  <ActivityIndicator
+                    size="small"
+                    color={theme === "dark" ? "#00FF80" : "#000"}
+                  />
                 ) : (
-                  <FontAwesome5 name="sync-alt" size={14} color={theme === 'dark' ? '#00FF80' : '#000'} />
+                  <FontAwesome5
+                    name="sync-alt"
+                    size={14}
+                    color={theme === "dark" ? "#00FF80" : "#000"}
+                  />
                 )}
               </TouchableOpacity>
             </View>
-            <Text style={[styles.netWorthLarge, theme === 'dark' && { color: '#E0E0E0' }]}>
+            <Text
+              style={[
+                styles.netWorthLarge,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
               ${formatCurrency(netWorth)}
             </Text>
 
@@ -614,9 +768,17 @@ function Wallet() {
                   setReceiveModalVisible(true);
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                style={[styles.actionButtonPrimary, theme === 'dark' && { backgroundColor: '#00FF80' }]}
+                style={[
+                  styles.actionButtonPrimary,
+                  theme === "dark" && { backgroundColor: "#00FF80" },
+                ]}
               >
-                <Text style={[styles.actionButtonPrimaryText, theme === 'dark' && { color: '#000' }]}>
+                <Text
+                  style={[
+                    styles.actionButtonPrimaryText,
+                    theme === "dark" && { color: "#000" },
+                  ]}
+                >
                   Receive SOL
                 </Text>
               </TouchableOpacity>
@@ -625,9 +787,17 @@ function Wallet() {
                   toggleBuyModal();
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                style={[styles.actionButtonPrimary, theme === 'dark' && { backgroundColor: '#00FF80' }]}
+                style={[
+                  styles.actionButtonPrimary,
+                  theme === "dark" && { backgroundColor: "#00FF80" },
+                ]}
               >
-                <Text style={[styles.actionButtonPrimaryText, theme === 'dark' && { color: '#000' }]}>
+                <Text
+                  style={[
+                    styles.actionButtonPrimaryText,
+                    theme === "dark" && { color: "#000" },
+                  ]}
+                >
                   Buy Tokens
                 </Text>
               </TouchableOpacity>
@@ -638,16 +808,31 @@ function Wallet() {
               disabled={isSharingCard}
               style={[
                 styles.shareButton,
-                theme === 'dark' && { backgroundColor: '#131313', borderColor: '#00FF80' },
-                isSharingCard && styles.disabledButton
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                  borderColor: "#00FF80",
+                },
+                isSharingCard && styles.disabledButton,
               ]}
             >
               {isSharingCard ? (
-                <ActivityIndicator size="small" color={theme === 'dark' ? '#00FF80' : '#000'} />
+                <ActivityIndicator
+                  size="small"
+                  color={theme === "dark" ? "#00FF80" : "#000"}
+                />
               ) : (
                 <>
-                  <FontAwesome5 name="share-alt" size={16} color={theme === 'dark' ? '#00FF80' : '#000'} />
-                  <Text style={[styles.shareButtonText, theme === 'dark' && { color: '#00FF80' }]}>
+                  <FontAwesome5
+                    name="share-alt"
+                    size={16}
+                    color={theme === "dark" ? "#00FF80" : "#000"}
+                  />
+                  <Text
+                    style={[
+                      styles.shareButtonText,
+                      theme === "dark" && { color: "#00FF80" },
+                    ]}
+                  >
                     Share Earnings Card
                   </Text>
                 </>
@@ -655,29 +840,95 @@ function Wallet() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.tokenBalancesSection, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
-            <View style={[styles.tokenBalanceCard, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
+          <View
+            style={[
+              styles.tokenBalancesSection,
+              theme === "dark" && {
+                backgroundColor: "#131313",
+                borderColor: "#2E3033",
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.tokenBalanceCard,
+                theme === "dark" && { backgroundColor: "#0D0D0D" },
+              ]}
+            >
               <View style={styles.tokenBalanceHeader}>
-                <Text style={[styles.tokenName, theme === 'dark' && { color: '#E0E0E0' }]}>Solana</Text>
-                <Text style={[styles.tokenTick, theme === 'dark' && { color: '#B3B3B3' }]}>SOL</Text>
+                <Text
+                  style={[
+                    styles.tokenName,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
+                  Solana
+                </Text>
+                <Text
+                  style={[
+                    styles.tokenTick,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
+                  SOL
+                </Text>
               </View>
-              <Text style={[styles.tokenBalanceAmount, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <Text
+                style={[
+                  styles.tokenBalanceAmount,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
                 {formatTokenAmount(solBalance, 4)}
               </Text>
-              <Text style={[styles.tokenBalanceUSD, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.tokenBalanceUSD,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 ${formatCurrency(solValue)}
               </Text>
             </View>
 
-            <View style={[styles.tokenBalanceCard, theme === 'dark' && { backgroundColor: '#0D0D0D' }]}>
+            <View
+              style={[
+                styles.tokenBalanceCard,
+                theme === "dark" && { backgroundColor: "#0D0D0D" },
+              ]}
+            >
               <View style={styles.tokenBalanceHeader}>
-                <Text style={[styles.tokenName, theme === 'dark' && { color: '#E0E0E0' }]}>EduLearn</Text>
-                <Text style={[styles.tokenTick, theme === 'dark' && { color: '#B3B3B3' }]}>EDLN</Text>
+                <Text
+                  style={[
+                    styles.tokenName,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
+                  EduLearn
+                </Text>
+                <Text
+                  style={[
+                    styles.tokenTick,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
+                  EDLN
+                </Text>
               </View>
-              <Text style={[styles.tokenBalanceAmount, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <Text
+                style={[
+                  styles.tokenBalanceAmount,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
                 {formatTokenAmount(edlnBalance, 2)}
               </Text>
-              <Text style={[styles.tokenBalanceUSD, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.tokenBalanceUSD,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 ${formatCurrency(edlnValue)}
               </Text>
             </View>
@@ -697,15 +948,29 @@ function Wallet() {
               }}
               scrollEventThrottle={16}
             >
-              <View style={[styles.tokenUtility, { width: width - 40 }, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
-                <Text style={[styles.tokenUtilityText, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <View
+                style={[
+                  styles.tokenUtility,
+                  { width: width - 40 },
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tokenUtilityText,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Burn 1000 $EDLN and get 3 credits
                 </Text>
                 <TouchableOpacity
                   style={[
                     styles.tokenUtilityButton,
-                    theme === 'dark' && { backgroundColor: '#00FF80' },
-                    (isBurning || edlnBalance < 1000) && styles.disabledButton
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                    (isBurning || edlnBalance < 1000) && styles.disabledButton,
                   ]}
                   onPress={() => {
                     handleBurnTokens(1000);
@@ -714,22 +979,46 @@ function Wallet() {
                   disabled={isBurning || edlnBalance < 1000}
                 >
                   {isBurning && burningAmount === 1000 ? (
-                    <ActivityIndicator size="small" color={theme === 'dark' ? '#000' : '#00FF80'} />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === "dark" ? "#000" : "#00FF80"}
+                    />
                   ) : (
-                    <Text style={[styles.tokenUtilityButtonText, theme === 'dark' && { color: '#000' }]}>Burn</Text>
+                    <Text
+                      style={[
+                        styles.tokenUtilityButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Burn
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.tokenUtility, { width: width - 40 }, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
-                <Text style={[styles.tokenUtilityText, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <View
+                style={[
+                  styles.tokenUtility,
+                  { width: width - 40 },
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tokenUtilityText,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Burn 5000 $EDLN and get 10 credits
                 </Text>
                 <TouchableOpacity
                   style={[
                     styles.tokenUtilityButton,
-                    theme === 'dark' && { backgroundColor: '#00FF80' },
-                    (isBurning || edlnBalance < 5000) && styles.disabledButton
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                    (isBurning || edlnBalance < 5000) && styles.disabledButton,
                   ]}
                   onPress={() => {
                     handleBurnTokens(5000);
@@ -738,22 +1027,46 @@ function Wallet() {
                   disabled={isBurning || edlnBalance < 5000}
                 >
                   {isBurning && burningAmount === 5000 ? (
-                    <ActivityIndicator size="small" color={theme === 'dark' ? '#000' : '#00FF80'} />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === "dark" ? "#000" : "#00FF80"}
+                    />
                   ) : (
-                    <Text style={[styles.tokenUtilityButtonText, theme === 'dark' && { color: '#000' }]}>Burn</Text>
+                    <Text
+                      style={[
+                        styles.tokenUtilityButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Burn
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.tokenUtility, { width: width - 40 }, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
-                <Text style={[styles.tokenUtilityText, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <View
+                style={[
+                  styles.tokenUtility,
+                  { width: width - 40 },
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tokenUtilityText,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Burn 10000 $EDLN and get 20 credits
                 </Text>
                 <TouchableOpacity
                   style={[
                     styles.tokenUtilityButton,
-                    theme === 'dark' && { backgroundColor: '#00FF80' },
-                    (isBurning || edlnBalance < 10000) && styles.disabledButton
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                    (isBurning || edlnBalance < 10000) && styles.disabledButton,
                   ]}
                   onPress={() => {
                     handleBurnTokens(10000);
@@ -762,22 +1075,53 @@ function Wallet() {
                   disabled={isBurning || edlnBalance < 10000}
                 >
                   {isBurning && burningAmount === 10000 ? (
-                    <ActivityIndicator size="small" color={theme === 'dark' ? '#000' : '#00FF80'} />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === "dark" ? "#000" : "#00FF80"}
+                    />
                   ) : (
-                    <Text style={[styles.tokenUtilityButtonText, theme === 'dark' && { color: '#000' }]}>Burn</Text>
+                    <Text
+                      style={[
+                        styles.tokenUtilityButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Burn
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.tokenUtility, { width: width - 40 }, theme === 'dark' && { backgroundColor: '#131313', borderColor: '#2E3033' }]}>
-                <Text style={[styles.tokenUtilityText, theme === 'dark' && { color: '#E0E0E0' }]}>
+              <View
+                style={[
+                  styles.tokenUtility,
+                  { width: width - 40 },
+                  theme === "dark" && {
+                    backgroundColor: "#131313",
+                    borderColor: "#2E3033",
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tokenUtilityText,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Stake 5000 $EDLN for 30 days and earn 500 XP
                 </Text>
                 <TouchableOpacity
                   style={[styles.tokenUtilityButton, styles.disabledButton]}
                   disabled={true}
                 >
-                  <Text style={[styles.tokenUtilityButtonText, { color: '#61728C' }]}>Coming Soon</Text>
+                  <Text
+                    style={[
+                      styles.tokenUtilityButtonText,
+                      { color: "#61728C" },
+                    ]}
+                  >
+                    Coming Soon
+                  </Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -788,8 +1132,12 @@ function Wallet() {
                   key={index}
                   style={[
                     styles.paginationDot,
-                    activeTokenUtilIndex === index && styles.paginationDotActive,
-                    theme === 'dark' && { backgroundColor: activeTokenUtilIndex === index ? '#00FF80' : '#61728C' },
+                    activeTokenUtilIndex === index &&
+                      styles.paginationDotActive,
+                    theme === "dark" && {
+                      backgroundColor:
+                        activeTokenUtilIndex === index ? "#00FF80" : "#61728C",
+                    },
                   ]}
                 />
               ))}
@@ -807,34 +1155,69 @@ function Wallet() {
         animationIn="fadeIn"
         animationOut="fadeOut"
       >
-        <View style={[styles.modalContent, theme === 'dark' && { backgroundColor: '#131313' }]}>
-          <Text style={[styles.modalTitle, theme === 'dark' && { color: '#E0E0E0' }]}>Receive SOL</Text>
-          <Text style={[styles.modalDescription, theme === 'dark' && { color: '#B3B3B3' }]}>
+        <View
+          style={[
+            styles.modalContent,
+            theme === "dark" && { backgroundColor: "#131313" },
+          ]}
+        >
+          <Text
+            style={[
+              styles.modalTitle,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Receive SOL
+          </Text>
+          <Text
+            style={[
+              styles.modalDescription,
+              theme === "dark" && { color: "#B3B3B3" },
+            ]}
+          >
             Scan this QR code to receive SOL to your wallet
           </Text>
 
           <View style={styles.qrContainer}>
-            <SolanaQR 
-              address={user?.address || ''} 
-              amount="" 
-              label="EduLearn Wallet" 
+            <SolanaQR
+              address={user?.address || ""}
+              amount=""
+              label="EduLearn Wallet"
             />
           </View>
 
-          <View style={[styles.addressContainer, theme === 'dark' && { backgroundColor: 'rgba(0, 255, 128, 0.1)' }]}>
-            <Text style={[styles.addressLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
+          <View
+            style={[
+              styles.addressContainer,
+              theme === "dark" && { backgroundColor: "rgba(0, 255, 128, 0.1)" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.addressLabel,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
+            >
               Your Wallet Address
             </Text>
             <View style={styles.addressRow}>
-              <Text style={[styles.addressText, theme === 'dark' && { color: '#E0E0E0' }]} numberOfLines={1}>
-                {user?.address ? `${user.address.slice(0, 16)}...${user.address.slice(-16)}` : ''}
+              <Text
+                style={[
+                  styles.addressText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+                numberOfLines={1}
+              >
+                {user?.address
+                  ? `${user.address.slice(0, 16)}...${user.address.slice(-16)}`
+                  : ""}
               </Text>
               <TouchableOpacity
-                onPress={() => copyToClipboard(user?.address || '')}
+                onPress={() => copyToClipboard(user?.address || "")}
                 style={styles.copyButtonSmall}
               >
                 <Image
-                  source={require('@/assets/images/icons/copy.png')}
+                  source={require("@/assets/images/icons/copy.png")}
                   style={styles.copyIconSmall}
                 />
               </TouchableOpacity>
@@ -850,9 +1233,19 @@ function Wallet() {
               setReceiveModalVisible(false);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }}
-            style={[styles.modalButton, theme === 'dark' && { backgroundColor: '#00FF80' }]}
+            style={[
+              styles.modalButton,
+              theme === "dark" && { backgroundColor: "#00FF80" },
+            ]}
           >
-            <Text style={[styles.modalButtonText, theme === 'dark' && { color: '#000' }]}>Close</Text>
+            <Text
+              style={[
+                styles.modalButtonText,
+                theme === "dark" && { color: "#000" },
+              ]}
+            >
+              Close
+            </Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -864,41 +1257,88 @@ function Wallet() {
         animationIn="fadeIn"
         animationOut="fadeOut"
       >
-        <View style={[styles.modalContent, theme === 'dark' && { backgroundColor: '#131313' }]}>
-          <Text style={[styles.modalTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+        <View
+          style={[
+            styles.modalContent,
+            theme === "dark" && { backgroundColor: "#131313" },
+          ]}
+        >
+          <Text
+            style={[
+              styles.modalTitle,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
             {getModalTitle()}
           </Text>
 
           {buyMethod === null && purchaseType === null && (
             <View style={styles.modalBody}>
-              <Text style={[styles.modalLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.modalLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 What would you like to buy?
               </Text>
               <TouchableOpacity
                 onPress={() => {
-                  setPurchaseType('edln');
+                  setPurchaseType("edln");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                style={[styles.optionButton, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033' }]}
+                style={[
+                  styles.optionButton,
+                  theme === "dark" && {
+                    backgroundColor: "#2E3033",
+                    borderColor: "#2E3033",
+                  },
+                ]}
               >
-                <Text style={[styles.optionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+                <Text
+                  style={[
+                    styles.optionTitle,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Buy EDLN Tokens
                 </Text>
-                <Text style={[styles.optionSubtitle, theme === 'dark' && { color: '#B3B3B3' }]}>
+                <Text
+                  style={[
+                    styles.optionSubtitle,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
                   Purchase EDLN tokens
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
-                  setPurchaseType('sol');
+                  setPurchaseType("sol");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
-                style={[styles.optionButton, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033' }]}
+                style={[
+                  styles.optionButton,
+                  theme === "dark" && {
+                    backgroundColor: "#2E3033",
+                    borderColor: "#2E3033",
+                  },
+                ]}
               >
-                <Text style={[styles.optionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+                <Text
+                  style={[
+                    styles.optionTitle,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Buy SOL
                 </Text>
-                <Text style={[styles.optionSubtitle, theme === 'dark' && { color: '#B3B3B3' }]}>
+                <Text
+                  style={[
+                    styles.optionSubtitle,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
                   Purchase SOL tokens
                 </Text>
               </TouchableOpacity>
@@ -906,7 +1346,12 @@ function Wallet() {
                 onPress={toggleBuyModal}
                 style={styles.cancelButtonModal}
               >
-                <Text style={[styles.cancelButtonTextModal, theme === 'dark' && { color: '#B3B3B3' }]}>
+                <Text
+                  style={[
+                    styles.cancelButtonTextModal,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -915,42 +1360,78 @@ function Wallet() {
 
           {buyMethod === null && purchaseType !== null && (
             <View style={styles.modalBody}>
-              <Text style={[styles.modalLabel, theme === 'dark' && { color: '#B3B3B3' }]}>
+              <Text
+                style={[
+                  styles.modalLabel,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 How would you like to pay?
               </Text>
-              {purchaseType === 'edln' && (
+              {purchaseType === "edln" && (
                 <TouchableOpacity
                   onPress={() => {
-                    setBuyMethod('sol');
+                    setBuyMethod("sol");
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
-                  style={[styles.optionButton, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033' }]}
+                  style={[
+                    styles.optionButton,
+                    theme === "dark" && {
+                      backgroundColor: "#2E3033",
+                      borderColor: "#2E3033",
+                    },
+                  ]}
                 >
-                  <Text style={[styles.optionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+                  <Text
+                    style={[
+                      styles.optionTitle,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
                     Buy with SOL
                   </Text>
-                  <Text style={[styles.optionSubtitle, theme === 'dark' && { color: '#B3B3B3' }]}>
+                  <Text
+                    style={[
+                      styles.optionSubtitle,
+                      theme === "dark" && { color: "#B3B3B3" },
+                    ]}
+                  >
                     Swap your SOL for EDLN tokens
                   </Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 onPress={() => {
-                  setBuyMethod('cash');
+                  setBuyMethod("cash");
                   handleInitiateOnramp();
                 }}
                 disabled={isProcessingOnramp}
                 style={[
                   styles.optionButton,
-                  theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033' },
-                  isProcessingOnramp && styles.disabledButton
+                  theme === "dark" && {
+                    backgroundColor: "#2E3033",
+                    borderColor: "#2E3033",
+                  },
+                  isProcessingOnramp && styles.disabledButton,
                 ]}
               >
-                <Text style={[styles.optionTitle, theme === 'dark' && { color: '#E0E0E0' }]}>
+                <Text
+                  style={[
+                    styles.optionTitle,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
                   Buy with Cash
                 </Text>
-                <Text style={[styles.optionSubtitle, theme === 'dark' && { color: '#B3B3B3' }]}>
-                  {purchaseType === 'sol' ? 'Purchase SOL with bank transfer' : 'Purchase EDLN with bank transfer'}
+                <Text
+                  style={[
+                    styles.optionSubtitle,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
+                  {purchaseType === "sol"
+                    ? "Purchase SOL with bank transfer"
+                    : "Purchase EDLN with bank transfer"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -960,32 +1441,51 @@ function Wallet() {
                 }}
                 style={styles.cancelButtonModal}
               >
-                <Text style={[styles.cancelButtonTextModal, theme === 'dark' && { color: '#B3B3B3' }]}>
+                <Text
+                  style={[
+                    styles.cancelButtonTextModal,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
                   Back
                 </Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {buyMethod === 'sol' && (
+          {buyMethod === "sol" && (
             <View style={styles.modalBody}>
               <View style={styles.inputGroup}>
                 <TextInput
-                  style={[styles.input, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033', color: '#E0E0E0' }]}
+                  style={[
+                    styles.input,
+                    theme === "dark" && {
+                      backgroundColor: "#2E3033",
+                      borderColor: "#2E3033",
+                      color: "#E0E0E0",
+                    },
+                  ]}
                   placeholder="Amount in SOL"
-                  placeholderTextColor={theme === 'dark' ? '#B3B3B3' : '#61728C'}
+                  placeholderTextColor={
+                    theme === "dark" ? "#B3B3B3" : "#61728C"
+                  }
                   keyboardType="numeric"
                   value={buyAmount}
                   onChangeText={(text) => {
                     setBuyAmount(text);
                     const amount = parseFloat(text);
                     if (!isNaN(amount) && amount > solBalance) {
-                      showToast('error', 'Insufficient SOL balance');
+                      showToast("error", "Insufficient SOL balance");
                     }
                   }}
                   editable={!isBuying}
                 />
-                <Text style={[styles.balanceHint, theme === 'dark' && { color: '#B3B3B3' }]}>
+                <Text
+                  style={[
+                    styles.balanceHint,
+                    theme === "dark" && { color: "#B3B3B3" },
+                  ]}
+                >
                   Available: {formatTokenAmount(solBalance, 4)} SOL
                 </Text>
               </View>
@@ -998,54 +1498,127 @@ function Wallet() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={isBuying}
-                  style={[styles.backButton, theme === 'dark' && { backgroundColor: '#000', borderColor: '#00FF80' }]}
+                  style={[
+                    styles.backButton,
+                    theme === "dark" && {
+                      backgroundColor: "#000",
+                      borderColor: "#00FF80",
+                    },
+                  ]}
                 >
-                  <Text style={[styles.backButtonText, theme === 'dark' && { color: '#00FF80' }]}>Back</Text>
+                  <Text
+                    style={[
+                      styles.backButtonText,
+                      theme === "dark" && { color: "#00FF80" },
+                    ]}
+                  >
+                    Back
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleBuyEDLN}
-                  disabled={isBuying || !buyAmount || parseFloat(buyAmount) <= 0 || parseFloat(buyAmount) > solBalance}
+                  disabled={
+                    isBuying ||
+                    !buyAmount ||
+                    parseFloat(buyAmount) <= 0 ||
+                    parseFloat(buyAmount) > solBalance
+                  }
                   style={[
                     styles.buyButton,
-                    theme === 'dark' && { backgroundColor: '#00FF80' },
-                    (isBuying || !buyAmount || parseFloat(buyAmount) <= 0 || parseFloat(buyAmount) > solBalance) && styles.disabledButton
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                    (isBuying ||
+                      !buyAmount ||
+                      parseFloat(buyAmount) <= 0 ||
+                      parseFloat(buyAmount) > solBalance) &&
+                      styles.disabledButton,
                   ]}
                 >
                   {isBuying ? (
-                    <ActivityIndicator size="small" color={theme === 'dark' ? '#000' : '#00FF80'} />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === "dark" ? "#000" : "#00FF80"}
+                    />
                   ) : (
-                    <Text style={[styles.buyButtonText, theme === 'dark' && { color: '#000' }]}>Buy EDLN</Text>
+                    <Text
+                      style={[
+                        styles.buyButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      Buy EDLN
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
-          {buyMethod === 'cash' && onrampStep === 'otp' && (
+          {buyMethod === "cash" && onrampStep === "otp" && (
             <View style={styles.modalBody}>
               {!verifiedToken && (
-                <View style={[styles.infoBox, theme === 'dark' && { backgroundColor: 'rgba(0, 255, 128, 0.1)' }]}>
-                  <Text style={[styles.infoText, theme === 'dark' && { color: '#E0E0E0' }]}>
-                    An OTP has been sent to <Text style={styles.boldText}>{user?.email}</Text>
+                <View
+                  style={[
+                    styles.infoBox,
+                    theme === "dark" && {
+                      backgroundColor: "rgba(0, 255, 128, 0.1)",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.infoText,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    An OTP has been sent to{" "}
+                    <Text style={styles.boldText}>{user?.email}</Text>
                   </Text>
                 </View>
               )}
 
               {verifiedToken && (
-                <View style={[styles.infoBox, theme === 'dark' && { backgroundColor: 'rgba(0, 255, 128, 0.1)' }]}>
+                <View
+                  style={[
+                    styles.infoBox,
+                    theme === "dark" && {
+                      backgroundColor: "rgba(0, 255, 128, 0.1)",
+                    },
+                  ]}
+                >
                   <FontAwesome5 name="check-circle" size={20} color="#00FF80" />
-                  <Text style={[styles.infoText, theme === 'dark' && { color: '#E0E0E0' }]}>
+                  <Text
+                    style={[
+                      styles.infoText,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
                     Account verified! Enter amount to continue
                   </Text>
                 </View>
               )}
 
               <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, theme === 'dark' && { color: '#E0E0E0' }]}>Amount (NGN)</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    theme === "dark" && { color: "#E0E0E0" },
+                  ]}
+                >
+                  Amount (NGN)
+                </Text>
                 <TextInput
-                  style={[styles.input, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033', color: '#E0E0E0' }]}
+                  style={[
+                    styles.input,
+                    theme === "dark" && {
+                      backgroundColor: "#2E3033",
+                      borderColor: "#2E3033",
+                      color: "#E0E0E0",
+                    },
+                  ]}
                   placeholder="Enter amount"
-                  placeholderTextColor={theme === 'dark' ? '#B3B3B3' : '#61728C'}
+                  placeholderTextColor={
+                    theme === "dark" ? "#B3B3B3" : "#61728C"
+                  }
                   keyboardType="numeric"
                   value={cashAmount}
                   onChangeText={setCashAmount}
@@ -1055,13 +1628,32 @@ function Wallet() {
 
               {!verifiedToken && (
                 <View style={styles.inputGroup}>
-                  <Text style={[styles.inputLabel, theme === 'dark' && { color: '#E0E0E0' }]}>Enter OTP</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    Enter OTP
+                  </Text>
                   <TextInput
-                    style={[styles.input, styles.otpInput, theme === 'dark' && { backgroundColor: '#2E3033', borderColor: '#2E3033', color: '#E0E0E0' }]}
+                    style={[
+                      styles.input,
+                      styles.otpInput,
+                      theme === "dark" && {
+                        backgroundColor: "#2E3033",
+                        borderColor: "#2E3033",
+                        color: "#E0E0E0",
+                      },
+                    ]}
                     placeholder="Enter 6-digit code"
-                    placeholderTextColor={theme === 'dark' ? '#B3B3B3' : '#61728C'}
+                    placeholderTextColor={
+                      theme === "dark" ? "#B3B3B3" : "#61728C"
+                    }
                     value={otp}
-                    onChangeText={(text) => setOtp(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                    onChangeText={(text) =>
+                      setOtp(text.replace(/[^0-9]/g, "").slice(0, 6))
+                    }
                     maxLength={6}
                     editable={!isProcessingOnramp}
                     textAlign="center"
@@ -1074,30 +1666,58 @@ function Wallet() {
                   onPress={() => {
                     setBuyMethod(null);
                     setPurchaseType(null);
-                    setOnrampStep('method');
-                    setOtp('');
-                    setCashAmount('');
+                    setOnrampStep("method");
+                    setOtp("");
+                    setCashAmount("");
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                   disabled={isProcessingOnramp}
-                  style={[styles.backButton, theme === 'dark' && { backgroundColor: '#000', borderColor: '#00FF80' }]}
+                  style={[
+                    styles.backButton,
+                    theme === "dark" && {
+                      backgroundColor: "#000",
+                      borderColor: "#00FF80",
+                    },
+                  ]}
                 >
-                  <Text style={[styles.backButtonText, theme === 'dark' && { color: '#00FF80' }]}>Back</Text>
+                  <Text
+                    style={[
+                      styles.backButtonText,
+                      theme === "dark" && { color: "#00FF80" },
+                    ]}
+                  >
+                    Back
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleVerifyOtp}
-                  disabled={isProcessingOnramp || (!verifiedToken && !otp) || !cashAmount}
+                  disabled={
+                    isProcessingOnramp ||
+                    (!verifiedToken && !otp) ||
+                    !cashAmount
+                  }
                   style={[
                     styles.buyButton,
-                    theme === 'dark' && { backgroundColor: '#00FF80' },
-                    (isProcessingOnramp || (!verifiedToken && !otp) || !cashAmount) && styles.disabledButton
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                    (isProcessingOnramp ||
+                      (!verifiedToken && !otp) ||
+                      !cashAmount) &&
+                      styles.disabledButton,
                   ]}
                 >
                   {isProcessingOnramp ? (
-                    <ActivityIndicator size="small" color={theme === 'dark' ? '#000' : '#00FF80'} />
+                    <ActivityIndicator
+                      size="small"
+                      color={theme === "dark" ? "#000" : "#00FF80"}
+                    />
                   ) : (
-                    <Text style={[styles.buyButtonText, theme === 'dark' && { color: '#000' }]}>
-                      {verifiedToken ? 'Continue' : 'Verify & Continue'}
+                    <Text
+                      style={[
+                        styles.buyButtonText,
+                        theme === "dark" && { color: "#000" },
+                      ]}
+                    >
+                      {verifiedToken ? "Continue" : "Verify & Continue"}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -1105,70 +1725,181 @@ function Wallet() {
             </View>
           )}
 
-          {buyMethod === 'cash' && onrampStep === 'payment' && paymentDetails && (
-            <View style={styles.modalBody}>
-              <View style={[styles.infoBox, theme === 'dark' && { backgroundColor: 'rgba(0, 255, 128, 0.1)' }]}>
-                <Text style={[styles.infoText, theme === 'dark' && { color: '#E0E0E0' }]}>
-                  Transfer funds to complete your order
-                </Text>
-              </View>
-
-              <View style={[styles.paymentDetails, theme === 'dark' && { backgroundColor: '#2E3033' }]}>
-                <View style={styles.paymentRow}>
-                  <Text style={[styles.paymentLabel, theme === 'dark' && { color: '#B3B3B3' }]}>Order ID</Text>
-                  <Text style={[styles.paymentValue, theme === 'dark' && { color: '#E0E0E0' }]}>{paymentDetails.id}</Text>
-                </View>
-                <View style={styles.paymentRow}>
-                  <Text style={[styles.paymentLabel, theme === 'dark' && { color: '#B3B3B3' }]}>Bank</Text>
-                  <Text style={[styles.paymentValue, theme === 'dark' && { color: '#E0E0E0' }]}>{paymentDetails.bank}</Text>
-                </View>
-                <View style={styles.paymentRow}>
-                  <Text style={[styles.paymentLabel, theme === 'dark' && { color: '#B3B3B3' }]}>Account Name</Text>
-                  <Text style={[styles.paymentValue, theme === 'dark' && { color: '#E0E0E0' }]}>{paymentDetails.accountName}</Text>
-                </View>
-                <View style={styles.paymentRow}>
-                  <Text style={[styles.paymentLabel, theme === 'dark' && { color: '#B3B3B3' }]}>Account Number</Text>
-                  <View style={styles.accountNumberRow}>
-                    <Text style={[styles.paymentValue, theme === 'dark' && { color: '#E0E0E0' }]}>{paymentDetails.accountNumber}</Text>
-                    <TouchableOpacity
-                      onPress={() => copyToClipboard(paymentDetails.accountNumber)}
-                      style={styles.copyButtonSmall}
-                    >
-                      <Image
-                        source={require('@/assets/images/icons/copy.png')}
-                        style={styles.copyIconSmall}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <View style={styles.paymentRow}>
-                  <Text style={[styles.paymentLabel, theme === 'dark' && { color: '#B3B3B3' }]}>Amount</Text>
-                  <Text style={[styles.paymentAmount, theme === 'dark' && { color: '#00FF80' }]}>
-                    ₦{paymentDetails.fiatAmount.toLocaleString()}
+          {buyMethod === "cash" &&
+            onrampStep === "payment" &&
+            paymentDetails && (
+              <View style={styles.modalBody}>
+                <View
+                  style={[
+                    styles.infoBox,
+                    theme === "dark" && {
+                      backgroundColor: "rgba(0, 255, 128, 0.1)",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.infoText,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    Transfer funds to complete your order
                   </Text>
                 </View>
-              </View>
 
-              <View style={[styles.warningBox, theme === 'dark' && { backgroundColor: 'rgba(255, 193, 7, 0.1)' }]}>
-                <Text style={[styles.warningText, theme === 'dark' && { color: '#FFB300' }]}>
-                  Your {purchaseType === 'sol' ? 'SOL' : 'EDLN'} tokens will be credited after payment confirmation
-                </Text>
-              </View>
+                <View
+                  style={[
+                    styles.paymentDetails,
+                    theme === "dark" && { backgroundColor: "#2E3033" },
+                  ]}
+                >
+                  <View style={styles.paymentRow}>
+                    <Text
+                      style={[
+                        styles.paymentLabel,
+                        theme === "dark" && { color: "#B3B3B3" },
+                      ]}
+                    >
+                      Order ID
+                    </Text>
+                    <Text
+                      style={[
+                        styles.paymentValue,
+                        theme === "dark" && { color: "#E0E0E0" },
+                      ]}
+                    >
+                      {paymentDetails.id}
+                    </Text>
+                  </View>
+                  <View style={styles.paymentRow}>
+                    <Text
+                      style={[
+                        styles.paymentLabel,
+                        theme === "dark" && { color: "#B3B3B3" },
+                      ]}
+                    >
+                      Bank
+                    </Text>
+                    <Text
+                      style={[
+                        styles.paymentValue,
+                        theme === "dark" && { color: "#E0E0E0" },
+                      ]}
+                    >
+                      {paymentDetails.bank}
+                    </Text>
+                  </View>
+                  <View style={styles.paymentRow}>
+                    <Text
+                      style={[
+                        styles.paymentLabel,
+                        theme === "dark" && { color: "#B3B3B3" },
+                      ]}
+                    >
+                      Account Name
+                    </Text>
+                    <Text
+                      style={[
+                        styles.paymentValue,
+                        theme === "dark" && { color: "#E0E0E0" },
+                      ]}
+                    >
+                      {paymentDetails.accountName}
+                    </Text>
+                  </View>
+                  <View style={styles.paymentRow}>
+                    <Text
+                      style={[
+                        styles.paymentLabel,
+                        theme === "dark" && { color: "#B3B3B3" },
+                      ]}
+                    >
+                      Account Number
+                    </Text>
+                    <View style={styles.accountNumberRow}>
+                      <Text
+                        style={[
+                          styles.paymentValue,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                      >
+                        {paymentDetails.accountNumber}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          copyToClipboard(paymentDetails.accountNumber)
+                        }
+                        style={styles.copyButtonSmall}
+                      >
+                        <Image
+                          source={require("@/assets/images/icons/copy.png")}
+                          style={styles.copyIconSmall}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <View style={styles.paymentRow}>
+                    <Text
+                      style={[
+                        styles.paymentLabel,
+                        theme === "dark" && { color: "#B3B3B3" },
+                      ]}
+                    >
+                      Amount
+                    </Text>
+                    <Text
+                      style={[
+                        styles.paymentAmount,
+                        theme === "dark" && { color: "#00FF80" },
+                      ]}
+                    >
+                      ₦{paymentDetails.fiatAmount.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
 
-              <TouchableOpacity
-                onPress={() => {
-                  toggleBuyModal();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                style={[styles.modalButton, theme === 'dark' && { backgroundColor: '#00FF80' }]}
-              >
-                <Text style={[styles.modalButtonText, theme === 'dark' && { color: '#000' }]}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                <View
+                  style={[
+                    styles.warningBox,
+                    theme === "dark" && {
+                      backgroundColor: "rgba(255, 193, 7, 0.1)",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.warningText,
+                      theme === "dark" && { color: "#FFB300" },
+                    ]}
+                  >
+                    Your {purchaseType === "sol" ? "SOL" : "EDLN"} tokens will
+                    be credited after payment confirmation
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    toggleBuyModal();
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={[
+                    styles.modalButton,
+                    theme === "dark" && { backgroundColor: "#00FF80" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.modalButtonText,
+                      theme === "dark" && { color: "#000" },
+                    ]}
+                  >
+                    Done
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
@@ -1178,7 +1909,7 @@ export default Wallet;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
   },
   scrollView: {
     flex: 1,
@@ -1187,59 +1918,59 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   headerText: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: 16,
   },
   loadingText: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
   },
   errorContainer: {
-    backgroundColor: '#FF5555',
+    backgroundColor: "#FF5555",
     borderRadius: 24,
     padding: 20,
     marginTop: 20,
   },
   errorTitle: {
-    color: '#fff',
-    fontFamily: 'Satoshi-Regular',
+    color: "#fff",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
-    color: '#fff',
-    fontFamily: 'Satoshi-Regular',
+    color: "#fff",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   walletAddressCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
     borderRadius: 16,
     padding: 16,
     marginTop: 12,
   },
   walletAddressHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
   },
@@ -1248,21 +1979,21 @@ const styles = StyleSheet.create({
     height: 20,
   },
   walletAddressLabel: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   walletAddressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   walletAddressText: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
   },
   copyButtonInline: {
@@ -1276,108 +2007,108 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   copiedTextSmall: {
-    color: '#00FF80',
-    fontFamily: 'Satoshi-Regular',
+    color: "#00FF80",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   balanceMainCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
     borderRadius: 16,
     padding: 20,
     marginTop: 12,
   },
   balanceHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   balanceLabel: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   refreshButtonSmall: {
     padding: 4,
   },
   netWorthLarge: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 36,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 20,
   },
   actionButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   actionButtonPrimary: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionButtonPrimaryText: {
-    color: '#00FF80',
-    fontFamily: 'Satoshi-Regular',
+    color: "#00FF80",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tokenBalancesSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
     borderRadius: 16,
     padding: 4,
     marginTop: 12,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
   },
   tokenBalanceCard: {
     flex: 1,
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
     borderRadius: 12,
     padding: 16,
   },
   tokenBalanceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   tokenName: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tokenTick: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tokenBalanceAmount: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   tokenBalanceUSD: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   tokenUtilities: {
     marginTop: 20,
@@ -1386,54 +2117,54 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   tokenUtility: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
     marginRight: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
   },
   tokenUtilityText: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
     flex: 1,
     paddingRight: 15,
   },
   tokenUtilityButton: {
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minWidth: 80,
     minHeight: 40,
   },
   tokenUtilityButtonText: {
-    fontFamily: 'Satoshi-Regular',
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '500',
-    color: '#00FF80',
+    fontWeight: "500",
+    color: "#00FF80",
   },
   paginationContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 10,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#61728C',
+    backgroundColor: "#61728C",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: '#00FF80',
+    backgroundColor: "#00FF80",
   },
   bottomPadding: {
     height: 20,
@@ -1442,278 +2173,278 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   modal: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     margin: 0,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 24,
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalTitle: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: 8,
   },
   modalDescription: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 16,
   },
   modalBody: {
-    width: '100%',
+    width: "100%",
     gap: 16,
   },
   modalLabel: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 8,
   },
   qrContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 16,
   },
   addressContainer: {
-    backgroundColor: 'rgba(0, 255, 128, 0.1)',
+    backgroundColor: "rgba(0, 255, 128, 0.1)",
     borderRadius: 12,
     padding: 12,
-    width: '100%',
+    width: "100%",
     marginBottom: 16,
   },
   addressLabel: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
   addressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
   },
   addressText: {
-    color: '#000',
-    fontFamily: 'Satoshi-Regular',
+    color: "#000",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
-    textAlign: 'center',
+    textAlign: "center",
   },
   copiedToast: {
-    color: '#00FF80',
-    fontFamily: 'Satoshi-Regular',
+    color: "#00FF80",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center",
     marginBottom: 16,
   },
   optionButton: {
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
     borderWidth: 2,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
   },
   optionTitle: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   optionSubtitle: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: "400",
   },
   cancelButtonModal: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   cancelButtonTextModal: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   inputGroup: {
     marginBottom: 16,
   },
   inputLabel: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    fontFamily: 'Satoshi-Regular',
-    color: '#2D3C52',
+    fontFamily: "Satoshi-Regular",
+    color: "#2D3C52",
   },
   otpInput: {
     letterSpacing: 8,
     fontSize: 18,
   },
   balanceHint: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    textAlign: 'right',
+    textAlign: "right",
     marginTop: 8,
   },
   modalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 8,
   },
   backButton: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#000000',
+    borderColor: "#000000",
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   backButtonText: {
-    color: '#000000',
-    fontFamily: 'Satoshi-Regular',
+    color: "#000000",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   buyButton: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buyButtonText: {
-    color: '#00FF80',
-    fontFamily: 'Satoshi-Regular',
+    color: "#00FF80",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   infoBox: {
-    backgroundColor: '#F0FFF9',
+    backgroundColor: "#F0FFF9",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   infoText: {
-    color: '#000',
-    fontFamily: 'Satoshi-Regular',
+    color: "#000",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
   },
   boldText: {
-    fontWeight: '700',
+    fontWeight: "700",
   },
   paymentDetails: {
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     gap: 12,
   },
   paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDF3FC',
+    borderBottomColor: "#EDF3FC",
   },
   paymentLabel: {
-    color: '#61728C',
-    fontFamily: 'Satoshi-Regular',
+    color: "#61728C",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   paymentValue: {
-    color: '#2D3C52',
-    fontFamily: 'Satoshi-Regular',
+    color: "#2D3C52",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   accountNumberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   paymentAmount: {
-    color: '#000000',
-    fontFamily: 'Satoshi-Regular',
+    color: "#000000",
+    fontFamily: "Satoshi-Regular",
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   warningBox: {
-    backgroundColor: '#FFF3E0',
+    backgroundColor: "#FFF3E0",
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
   },
   warningText: {
-    color: '#F57C00',
-    fontFamily: 'Satoshi-Regular',
+    color: "#F57C00",
+    fontFamily: "Satoshi-Regular",
     fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: "500",
+    textAlign: "center",
   },
   modalButton: {
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
   },
   modalButtonText: {
-    color: '#00FF80',
-    fontFamily: 'Satoshi-Regular',
+    color: "#00FF80",
+    fontFamily: "Satoshi-Regular",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#000000',
+    borderColor: "#000000",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -1721,9 +2452,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareButtonText: {
-    color: '#000000',
-    fontFamily: 'Satoshi-Regular',
+    color: "#000000",
+    fontFamily: "Satoshi-Regular",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

@@ -38,7 +38,6 @@ const useAgentStore = create<AgentStore>((set) => ({
       const agent = await agentService.getUserAgent(userId);
       set({ agent, agentUserId: userId, userHasAgent: true, isLoading: false });
     } catch (error) {
-      console.error("Failed to fetch user agent:", error);
       set({
         agent: null,
         agentUserId: userId,
@@ -55,7 +54,6 @@ const useAgentStore = create<AgentStore>((set) => ({
       const agent = await agentService.getAgent(agentId);
       set({ agent, userHasAgent: true, isLoading: false });
     } catch (error) {
-      console.error("Failed to fetch agent:", error);
       set({ isLoading: false, error: "Failed to load agent" });
     }
   },
@@ -72,7 +70,6 @@ const useAgentStore = create<AgentStore>((set) => ({
       });
       return agent;
     } catch (error) {
-      console.error("Failed to create agent:", error);
       set({ isLoading: false, error: "Failed to create agent" });
       return undefined;
     }
@@ -98,7 +95,6 @@ const useAgentStore = create<AgentStore>((set) => ({
       }));
       return result;
     } catch (error) {
-      console.error("Failed to upload agent profile picture:", error);
       set({ error: "Failed to upload agent photo" });
       throw error;
     }
@@ -107,7 +103,7 @@ const useAgentStore = create<AgentStore>((set) => ({
   resetState: () => {
     set({
       agent: null,
-        agentUserId: null,
+      agentUserId: null,
       userHasAgent: false,
       isLoading: false,
       error: null,

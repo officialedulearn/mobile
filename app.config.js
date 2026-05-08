@@ -17,6 +17,30 @@ export default {
         foregroundImage: "./assets/images/mainlogo.png",
         backgroundColor: "#000",
       },
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [
+            {
+              scheme: "https",
+              host: "mobile.edulearn.fun",
+              pathPrefix: "/ref",
+            },
+            {
+              scheme: "https",
+              host: "mobile.edulearn.fun",
+              pathPrefix: "/quizzes",
+            },
+            {
+              scheme: "https",
+              host: "mobile.edulearn.fun",
+              pathPrefix: "/community",
+            },
+          ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
       permissions: [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.VIBRATE",
@@ -27,6 +51,7 @@ export default {
       bundleIdentifier: "com.edulearnv2.app",
       supportsTablet: true,
       usesAppleSignIn: true,
+      associatedDomains: ["applinks:mobile.edulearn.fun"],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSUserNotificationsUsageDescription:

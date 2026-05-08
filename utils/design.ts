@@ -101,7 +101,9 @@ export function getThemedColors(mode: ThemeMode): ThemedColors {
     heroText: dark ? C.mint.onMint : C.mint.DEFAULT,
     progressTrack: dark ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.10)",
     progressFill: dark ? C.mint.onMint : C.mint.DEFAULT,
-    walletGlass: dark ? "rgba(255, 255, 255, 0.60)" : "rgba(255, 255, 255, 0.10)",
+    walletGlass: dark
+      ? "rgba(255, 255, 255, 0.60)"
+      : "rgba(255, 255, 255, 0.10)",
     achievementSurface: dark ? C.dark.surface : C.background.white,
     achievementBorder: dark ? C.dark.border : C.border.hub,
     refCardSurface: dark ? C.dark.surface : C.background.white,
@@ -123,9 +125,7 @@ export function getThemedColors(mode: ThemeMode): ThemedColors {
   };
 }
 
-export function getStatusBarStyle(
-  mode: ThemeMode,
-): "light" | "dark" {
+export function getStatusBarStyle(mode: ThemeMode): "light" | "dark" {
   return mode === "dark" ? "light" : "dark";
 }
 

@@ -1,50 +1,37 @@
 import useAgentStore from "@/core/agentStore";
-import useUserStore from "@/core/userState";
 import { useTheme } from "@/hooks/useTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image as ExpoImage } from "expo-image";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import { router } from "expo-router";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Confetti } from "react-native-fast-confetti";
-import { Presets } from "react-native-pulsar";
+import Confetti from "react-native-confetti";
 
 const AgentSuccess = () => {
   const { colors, spacing, typography, isDark } = useTheme();
-  const { agentName, agentImage } = useLocalSearchParams<{
-    agentName?: string;
-    agentImage?: string;
-  }>();
   const storeAgent = useAgentStore((s) => s.agent);
-  const user = useUserStore((s) => s.user);
+  const confettiRef = useRef<Confetti | null>(null);
 
   const displayName = useMemo(() => {
-    if (typeof agentName === "string" && agentName.trim().length > 0) {
-      return agentName.trim();
-    }
     return storeAgent?.name || "Your agent";
-  }, [agentName, storeAgent?.name]);
+  }, [storeAgent?.name]);
 
   const imageUri = useMemo(() => {
-    if (typeof agentImage === "string" && agentImage.trim().length > 0) {
-      return agentImage.trim();
-    }
     return storeAgent?.profile_picture_url || "";
-  }, [agentImage, storeAgent?.profile_picture_url]);
+  }, [storeAgent?.profile_picture_url]);
 
   useEffect(() => {
-    Presets.triumph();
+    confettiRef.current?.startConfetti();
   }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.canvas }]}>
       <Confetti
-        count={220}
-        isInfinite={false}
-        fallDuration={3800}
-        blastDuration={260}
+        ref={confettiRef}
+        confettiCount={220}
+        timeout={10}
+        duration={3800}
         colors={["#00FF80", "#8FEEFF", "#FFE066", "#B794F6", "#FF8FAB"]}
-        fadeOutOnEnd
       />
 
       <View
@@ -67,7 +54,11 @@ const AgentSuccess = () => {
           ]}
         >
           {imageUri ? (
-            <ExpoImage source={{ uri: imageUri }} style={styles.avatar} contentFit="cover" />
+            <ExpoImage
+              source={{ uri: imageUri }}
+              style={styles.avatar}
+              contentFit="cover"
+            />
           ) : (
             <Text style={[styles.initial, { color: colors.brand }]}>
               {(displayName[0] || "A").toUpperCase()}
@@ -99,7 +90,10 @@ const AgentSuccess = () => {
           onPress={() => router.replace("/(tabs)")}
           style={({ pressed }) => [
             styles.cta,
-            { backgroundColor: colors.ctaPrimaryBg, opacity: pressed ? 0.9 : 1 },
+            {
+              backgroundColor: colors.ctaPrimaryBg,
+              opacity: pressed ? 0.9 : 1,
+            },
           ]}
         >
           <Text style={[styles.ctaText, { color: colors.ctaPrimaryFg }]}>

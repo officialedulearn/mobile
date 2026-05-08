@@ -4,7 +4,8 @@ import { BaseService } from "./base.service";
 function inferImageMultipartPart(uri: string): { type: string; name: string } {
   const lower = uri.toLowerCase();
   if (lower.includes(".png")) return { type: "image/png", name: "photo.png" };
-  if (lower.includes(".webp")) return { type: "image/webp", name: "photo.webp" };
+  if (lower.includes(".webp"))
+    return { type: "image/webp", name: "photo.webp" };
   return { type: "image/jpeg", name: "photo.jpg" };
 }
 
@@ -43,11 +44,15 @@ export class AgentService extends BaseService {
       name: part.name,
     } as any);
     const response = await this.executeRequest<{ profile_picture_url: string }>(
-      this.getClient().post(`/agent/${agentId}/profile-picture/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      this.getClient().post(
+        `/agent/${agentId}/profile-picture/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      }),
+      ),
     );
     if (response.error) throw response.error;
     return response.data!;

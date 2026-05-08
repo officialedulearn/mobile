@@ -5,9 +5,17 @@ import { RoadmapStep, RoadmapWithSteps } from "@/interface/Roadmap";
 import { CardSharingService } from "@/services/cardSharing.service";
 import { RoadmapService } from "@/services/roadmap.service";
 import { Image } from "expo-image";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 const Roadmap = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const theme = useUserStore((state) => state.theme);
@@ -34,7 +42,7 @@ const Roadmap = () => {
     try {
       const data = await fetchRoadmapById(id as string);
       setRoadmapData(data ?? null);
-    } catch (error: any) {  
+    } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to load roadmap");
     } finally {
       setIsLoading(false);
@@ -43,15 +51,8 @@ const Roadmap = () => {
 
   useEffect(() => {
     fetchRoadmap();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-       
-      fetchRoadmap();
-    }, [id])
-  );
 
   const handleStartStep = async (step: RoadmapStep) => {
     if (!user?.id) {
@@ -60,20 +61,23 @@ const Roadmap = () => {
     }
 
     setStartingStep(step.id);
-    
+
     try {
       await roadmapService.startRoadmapStep(step.id, {
         userId: user.id,
       });
-      
+
       if (roadmapData?.roadmap.chatId) {
         router.push({
-          pathname: '/(tabs)/chat',
-          params: { chatIdFromNav: roadmapData.roadmap.chatId }
+          pathname: "/(tabs)/chat",
+          params: { chatIdFromNav: roadmapData.roadmap.chatId },
         });
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to start step. Please try again.");
+      Alert.alert(
+        "Error",
+        error.message || "Failed to start step. Please try again.",
+      );
     } finally {
       setStartingStep(null);
     }
@@ -86,29 +90,42 @@ const Roadmap = () => {
 
   const calculateProgress = () => {
     if (!roadmapData?.steps || roadmapData.steps.length === 0) return 0;
-    const completedSteps = roadmapData.steps.filter(step => step.done).length;
+    const completedSteps = roadmapData.steps.filter((step) => step.done).length;
     return Math.round((completedSteps / roadmapData.steps.length) * 100);
   };
 
   const handleShareProgress = async () => {
     try {
-      
-      await cardSharingService.shareRoadmapProgressCard(id as string, roadmapData?.roadmap.title || "");
-    } catch (error: any) {
-    }
+      await cardSharingService.shareRoadmapProgressCard(
+        id as string,
+        roadmapData?.roadmap.title || "",
+      );
+    } catch (error: any) {}
   };
 
   if (isLoading || !roadmapData) {
     return (
-      <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
-        <View style={styles.topNav}> 
+      <View
+        style={[
+          styles.container,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
+      >
+        <View style={styles.topNav}>
           <BackButton />
-          <Text style={[styles.title, theme === "dark" && { color: "#E0E0E0" }]}>
+          <Text
+            style={[styles.title, theme === "dark" && { color: "#E0E0E0" }]}
+          >
             Learning Path
           </Text>
         </View>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={theme === "dark" ? "#00FF80" : "#000"} />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator
+            size="large"
+            color={theme === "dark" ? "#00FF80" : "#000"}
+          />
         </View>
       </View>
     );
@@ -128,7 +145,7 @@ const Roadmap = () => {
         </Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -142,135 +159,185 @@ const Roadmap = () => {
             },
           ]}
         >
-        <View style={styles.roadmapInfoHeader}>
-          <Image
-            source={require("@/assets/images/icons/roadmap.png")}
-            style={styles.roadmapInfoHeaderImage}
-          />
-          <Text
-            style={[
-              styles.roadmapInfoHeaderTitle,
-              theme === "dark" && { color: "#E0E0E0" },
-            ]}
-          >
-            Learning Path: {roadmapData.roadmap.title}
-          </Text>
-        </View>
-
-        <View style={styles.roadmapDetails}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={styles.roadmapInfoHeader}>
             <Image
-              source={theme === "dark" ? require("@/assets/images/icons/dark/clock.png") : require("@/assets/images/icons/clock.png")}
-              style={styles.roadmapDetailsImage}
+              source={require("@/assets/images/icons/roadmap.png")}
+              style={styles.roadmapInfoHeaderImage}
             />
             <Text
               style={[
-                styles.roadmapDetailsTitle,
+                styles.roadmapInfoHeaderTitle,
                 theme === "dark" && { color: "#E0E0E0" },
               ]}
             >
-              {calculateTotalTime()}min
+              Learning Path: {roadmapData.roadmap.title}
             </Text>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Image
-              source={theme === "dark" ? require("@/assets/images/icons/dark/notebook.png") : require("@/assets/images/icons/notebook.png")}
-              style={styles.roadmapDetailsImage}
-            />
-            <Text
-              style={[
-                styles.roadmapDetailsTitle,
-                theme === "dark" && { color: "#E0E0E0" },
-              ]}
-            >
-              {roadmapData.steps.length} steps
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Image
-              source={require("@/assets/images/icons/medal-05.png")}
-              style={styles.roadmapDetailsImage}
-            />
-            <Text
-              style={[
-                styles.roadmapDetailsTitle,
-                theme === "dark" && { color: "#E0E0E0" },
-              ]}
-            >
-              Earn up to {roadmapData.steps.length * 3}xp
-            </Text>
-          </View>
-        </View>
 
-        <TouchableOpacity 
-          style={[
-            styles.shareButton, 
-            theme === "dark" && { backgroundColor: "transparent", borderColor: "#00FF80" }
-          ]}
-          onPress={handleShareProgress}
-        >
-          <Text style={[styles.shareButtonText, theme === "dark" && { color: "#00FF80" }]}>
-            Share Progress ({calculateProgress()}%)
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.roadmapSteps}>
-        {roadmapData.steps.map((step, index) => (
-          <View key={step.id} style={styles.roadmapStep}>
-            <View style={styles.roadmapStepNumber}>
-              <Text style={{ color: "#fff" }}>{index + 1}</Text>
+          <View style={styles.roadmapDetails}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Image
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/dark/clock.png")
+                    : require("@/assets/images/icons/clock.png")
+                }
+                style={styles.roadmapDetailsImage}
+              />
+              <Text
+                style={[
+                  styles.roadmapDetailsTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {calculateTotalTime()}min
+              </Text>
             </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Image
+                source={
+                  theme === "dark"
+                    ? require("@/assets/images/icons/dark/notebook.png")
+                    : require("@/assets/images/icons/notebook.png")
+                }
+                style={styles.roadmapDetailsImage}
+              />
+              <Text
+                style={[
+                  styles.roadmapDetailsTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {roadmapData.steps.length} steps
+              </Text>
+            </View>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
+              <Image
+                source={require("@/assets/images/icons/medal-05.png")}
+                style={styles.roadmapDetailsImage}
+              />
+              <Text
+                style={[
+                  styles.roadmapDetailsTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                Earn up to {roadmapData.steps.length * 3}xp
+              </Text>
+            </View>
+          </View>
 
-            <View style={styles.roadmapStepContent}>
-              <Text style={[
-                styles.roadmapStepTitle, 
-                theme === "dark" && { color: "#E0E0E0" },
-                step.done && { textDecorationLine: 'line-through' }
-              ]}>
-                {step.title}
-              </Text>
-              <Text style={[
-                styles.roadmapStepDescription, 
-                theme === "dark" && { color: "#B3B3B3" },
-                step.done && { textDecorationLine: 'line-through' }
-              ]}>
-                {step.description}
-              </Text>
-              <View style={styles.roadmapStepFooter}>
-                <TouchableOpacity 
+          <TouchableOpacity
+            style={[
+              styles.shareButton,
+              theme === "dark" && {
+                backgroundColor: "transparent",
+                borderColor: "#00FF80",
+              },
+            ]}
+            onPress={handleShareProgress}
+          >
+            <Text
+              style={[
+                styles.shareButtonText,
+                theme === "dark" && { color: "#00FF80" },
+              ]}
+            >
+              Share Progress ({calculateProgress()}%)
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.roadmapSteps}>
+          {roadmapData.steps.map((step, index) => (
+            <View key={step.id} style={styles.roadmapStep}>
+              <View style={styles.roadmapStepNumber}>
+                <Text style={{ color: "#fff" }}>{index + 1}</Text>
+              </View>
+
+              <View style={styles.roadmapStepContent}>
+                <Text
                   style={[
-                    styles.roadmapStepButton, 
-                    theme === "dark" && { backgroundColor: "transparent", borderColor: "#00FF80" }
+                    styles.roadmapStepTitle,
+                    theme === "dark" && { color: "#E0E0E0" },
+                    step.done && { textDecorationLine: "line-through" },
                   ]}
-                  onPress={() => handleStartStep(step)}
-                  disabled={startingStep === step.id || step.done}
                 >
-                  {startingStep === step.id ? (
-                    <ActivityIndicator size="small" color={theme === "dark" ? "#00FF80" : "#000"} />
-                  ) : (
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <Image 
-                        source={theme === "dark" 
-                          ? require("@/assets/images/icons/dark/play.png") 
-                          : require("@/assets/images/icons/play.png")} 
-                        style={styles.roadmapStepButtonIcon} 
-                      />
-                      <Text style={[styles.roadmapStepButtonText, theme === "dark" && { color: "#00FF80" }]}>
-                        Start
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-                
-                <Text style={[styles.roadmapStepTimeText, theme === "dark" && { color: "#E0E0E0" }]}>
-                  {step.time}min
+                  {step.title}
                 </Text>
+                <Text
+                  style={[
+                    styles.roadmapStepDescription,
+                    theme === "dark" && { color: "#B3B3B3" },
+                    step.done && { textDecorationLine: "line-through" },
+                  ]}
+                >
+                  {step.description}
+                </Text>
+                <View style={styles.roadmapStepFooter}>
+                  <TouchableOpacity
+                    style={[
+                      styles.roadmapStepButton,
+                      theme === "dark" && {
+                        backgroundColor: "transparent",
+                        borderColor: "#00FF80",
+                      },
+                    ]}
+                    onPress={() => handleStartStep(step)}
+                    disabled={startingStep === step.id || step.done}
+                  >
+                    {startingStep === step.id ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={theme === "dark" ? "#00FF80" : "#000"}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <Image
+                          source={
+                            theme === "dark"
+                              ? require("@/assets/images/icons/dark/play.png")
+                              : require("@/assets/images/icons/play.png")
+                          }
+                          style={styles.roadmapStepButtonIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.roadmapStepButtonText,
+                            theme === "dark" && { color: "#00FF80" },
+                          ]}
+                        >
+                          Start
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <Text
+                    style={[
+                      styles.roadmapStepTimeText,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    {step.time}min
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );

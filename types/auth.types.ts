@@ -1,5 +1,5 @@
-import type { NumericString } from './common.types';
-import type { UserLevel, UserPublic, UserResponse } from './user.types';
+import type { NumericString } from "./common.types";
+import type { UserLevel, UserPublic, UserResponse } from "./user.types";
 
 export type SignUpDetails = {
   id: string;
@@ -8,7 +8,7 @@ export type SignUpDetails = {
   referralCode?: string;
   referredBy?: string;
   username: string;
-  oauthProvider?: 'google' | 'apple' | null;
+  oauthProvider?: "google" | "apple" | null;
   oauthProviderId?: string | null;
   hasCompletedProfile?: boolean;
 };
@@ -17,7 +17,7 @@ export type OAuthUserData = {
   id: string;
   email: string;
   name: string;
-  provider: 'google' | 'apple';
+  provider: "google" | "apple";
   providerId: string;
 };
 
@@ -87,7 +87,7 @@ export type OAuthCallbackRequest = {
   supabaseUserId: string;
   email: string;
   name: string;
-  provider: 'google' | 'apple';
+  provider: "google" | "apple";
   providerId: string;
 };
 

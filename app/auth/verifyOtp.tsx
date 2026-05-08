@@ -10,13 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = Record<string, never>;
 
@@ -31,24 +25,17 @@ function maskEmailHint(email: string) {
 }
 
 const VerifyOtp = (_props: Props) => {
-  const { 
-    email, 
-    isSignUp, 
-    name, 
-    referralCode, 
-    username,
-    isReviewer,
-    isLogin
-  } = useLocalSearchParams<{ 
-    email: string;
-    isSignUp?: string;
-    name?: string;
-    referralCode?: string;
-    username?: string;
-    isReviewer?: string;
-    isLogin?: string;
-  }>();
-  
+  const { email, isSignUp, name, referralCode, username, isReviewer, isLogin } =
+    useLocalSearchParams<{
+      email: string;
+      isSignUp?: string;
+      name?: string;
+      referralCode?: string;
+      username?: string;
+      isReviewer?: string;
+      isLogin?: string;
+    }>();
+
   const [otp, setOtp] = useState("");
   const [timeLeft, setTimeLeft] = useState(2 * 60);
   const [loading, setLoading] = useState(false);
@@ -68,7 +55,7 @@ const VerifyOtp = (_props: Props) => {
     if (isReviewer === "1" && email === "playreview@edulearn.com") {
       handleReviewerLogin();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReviewer, email]);
 
   useEffect(() => {
@@ -86,13 +73,13 @@ const VerifyOtp = (_props: Props) => {
   const handleReviewerLogin = async () => {
     setLoading(true);
     setLoadingText("Authenticating reviewer account...");
-    
+
     try {
       const userService = new UserService();
-      
+
       if (isSignUp === "1") {
         setLoadingText("Creating reviewer account...");
-        
+
         try {
           const userId = generateUUID();
           const newUser = await userService.createUser({
@@ -102,42 +89,42 @@ const VerifyOtp = (_props: Props) => {
             referralCode: referralCode || "",
             username: username || "playreview",
           });
-          await AsyncStorage.setItem('isReviewer', 'true');
-          
+          await AsyncStorage.setItem("isReviewer", "true");
+
           setUser(newUser);
           router.push("/auth/identity");
         } catch (createError) {
           try {
             const userData = await userService.getUser(email);
             setUser(userData);
-            
+
             router.push("/auth/welcome");
           } catch (getUserError) {
             Alert.alert(
-              "Account Access Failed", 
-              "Unable to access reviewer account. Please contact support."
+              "Account Access Failed",
+              "Unable to access reviewer account. Please contact support.",
             );
           }
         }
       } else {
         setLoadingText("Loading reviewer profile...");
-        
+
         try {
-          await AsyncStorage.setItem('isReviewer', 'true');
+          await AsyncStorage.setItem("isReviewer", "true");
           const userData = await userService.getUser(email);
           setUser(userData);
           router.push("/auth/welcome");
         } catch (getUserError) {
           Alert.alert(
             "Profile Load Failed",
-            "Unable to load reviewer profile. Please contact support."
+            "Unable to load reviewer profile. Please contact support.",
           );
         }
       }
     } catch (error) {
       Alert.alert(
-        "Authentication Failed", 
-        "Unable to authenticate reviewer account. Please contact support."
+        "Authentication Failed",
+        "Unable to authenticate reviewer account. Please contact support.",
       );
     } finally {
       setLoading(false);
@@ -161,29 +148,45 @@ const VerifyOtp = (_props: Props) => {
 
     try {
       setResendLoading(true);
-      
+
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
       });
 
       if (error) {
-        if (error.message.includes('rate limit')) {
-          Alert.alert("Too Many Attempts", "Please wait before requesting another code");
+        if (error.message.includes("rate limit")) {
+          Alert.alert(
+            "Too Many Attempts",
+            "Please wait before requesting another code",
+          );
         } else {
-          Alert.alert("Resend Failed", "Unable to resend code. Please try again later.");
+          Alert.alert(
+            "Resend Failed",
+            "Unable to resend code. Please try again later.",
+          );
         }
         return;
       }
 
       setTimeLeft(2 * 60);
       setCanResend(false);
-      Alert.alert("Code Sent", "A new verification code has been sent to your email");
-      NotificationService.scheduleNotification("New Verification Code", "A new verification code has been sent to your email", {
-        screen: "verifyOtp",
-        email: email,
-      });
+      Alert.alert(
+        "Code Sent",
+        "A new verification code has been sent to your email",
+      );
+      NotificationService.scheduleNotification(
+        "New Verification Code",
+        "A new verification code has been sent to your email",
+        {
+          screen: "verifyOtp",
+          email: email,
+        },
+      );
     } catch (error) {
-      Alert.alert("Network Error", "Unable to resend code. Please check your connection.");
+      Alert.alert(
+        "Network Error",
+        "Unable to resend code. Please check your connection.",
+      );
     } finally {
       setResendLoading(false);
     }
@@ -191,20 +194,26 @@ const VerifyOtp = (_props: Props) => {
 
   const handleSubmit = async () => {
     if (isReviewer === "1") {
-      Alert.alert("Not Required", "Authentication is automatic for reviewer account");
+      Alert.alert(
+        "Not Required",
+        "Authentication is automatic for reviewer account",
+      );
       return;
     }
 
     if (loading) return;
 
     if (otp.length !== 6) {
-      Alert.alert("Invalid Code", "Please enter the complete 6-digit verification code");
+      Alert.alert(
+        "Invalid Code",
+        "Please enter the complete 6-digit verification code",
+      );
       return;
     }
 
     setLoading(true);
     setLoadingText("Verifying your OTP...");
-    
+
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email: email,
@@ -213,67 +222,78 @@ const VerifyOtp = (_props: Props) => {
       });
 
       if (error) {
-        
-        if (error.message.includes('expired')) {
-          Alert.alert("Code Expired", "Your verification code has expired. Please request a new one.");
-        } else if (error.message.includes('invalid')) {
-          Alert.alert("Invalid Code", "The verification code you entered is incorrect. Please try again.");
+        if (error.message.includes("expired")) {
+          Alert.alert(
+            "Code Expired",
+            "Your verification code has expired. Please request a new one.",
+          );
+        } else if (error.message.includes("invalid")) {
+          Alert.alert(
+            "Invalid Code",
+            "The verification code you entered is incorrect. Please try again.",
+          );
         } else {
-          Alert.alert("Verification Failed", "Unable to verify your code. Please try again.");
+          Alert.alert(
+            "Verification Failed",
+            "Unable to verify your code. Please try again.",
+          );
         }
         return;
       }
 
       if (data && data.user) {
         setLoadingText("Loading your profile...");
-        
+
         try {
           const userService = new UserService();
           const userData = await userService.getUser(data.user.email || "");
-          
+
           if (!userData) {
             Alert.alert(
               "User Not Found",
-              "Unable to find your account. Please contact support."
+              "Unable to find your account. Please contact support.",
             );
             return;
           }
-          
+
           setUser(userData);
-          
+
           if (isLogin === "0") {
             NotificationService.scheduleNotification(
-              "Welcome to EduLearn!", 
-              "Account verified successfully! Let&apos;s set up your profile.", 
+              "Welcome to EduLearn!",
+              "Account verified successfully! Let&apos;s set up your profile.",
               {
                 screen: "identity",
                 email: email,
-              }
+              },
             );
             router.push("/auth/identity");
           } else {
             NotificationService.scheduleNotification(
-              "Welcome Back!", 
-              "You&apos;re all set up and ready to continue learning.", 
+              "Welcome Back!",
+              "You&apos;re all set up and ready to continue learning.",
               {
                 screen: "welcome",
                 email: email,
-              }
+              },
             );
             router.push("/auth/welcome");
           }
         } catch (getUserError: any) {
-          const errorMessage = getUserError?.response?.data?.message || getUserError?.message || "Unknown error";
+          const errorMessage =
+            getUserError?.response?.data?.message ||
+            getUserError?.message ||
+            "Unknown error";
           Alert.alert(
             "Login Failed",
-            `Error: ${errorMessage}\n\nPlease try again or contact support.`
+            `Error: ${errorMessage}\n\nPlease try again or contact support.`,
           );
         }
       }
     } catch (error) {
       Alert.alert(
-        "Connection Error", 
-        "Unable to connect to our servers. Please check your internet connection and try again."
+        "Connection Error",
+        "Unable to connect to our servers. Please check your internet connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -294,17 +314,26 @@ const VerifyOtp = (_props: Props) => {
   }, [otp, loading, isReviewer]);
 
   return (
-    <View style={[styles.container, theme === "dark" && { backgroundColor: "#0D0D0D" }]}>
+    <View
+      style={[
+        styles.container,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={styles.topNav}>
         <BackButton />
       </View>
 
       <View style={styles.contentContainer}>
-        <Text style={[styles.boldText, theme === "dark" && { color: "#E0E0E0" }]}>
+        <Text
+          style={[styles.boldText, theme === "dark" && { color: "#E0E0E0" }]}
+        >
           {isReviewer === "1" ? "Authenticating..." : "Verify account with OTP"}
         </Text>
-        <Text style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}>
+        <Text
+          style={[styles.subtitle, theme === "dark" && { color: "#B3B3B3" }]}
+        >
           {isReviewer === "1"
             ? "Logging in Google Play reviewer account automatically..."
             : `We've sent a 6-digit code to ${maskEmailHint(email || "")}`}
@@ -323,29 +352,52 @@ const VerifyOtp = (_props: Props) => {
             </View>
 
             {loading ? (
-              <Text style={[styles.verifyHint, theme === "dark" && styles.verifyHintDark]}>
+              <Text
+                style={[
+                  styles.verifyHint,
+                  theme === "dark" && styles.verifyHintDark,
+                ]}
+              >
                 Verifying your OTP…
               </Text>
             ) : null}
 
-            <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
-              Code expires in <Text style={[styles.timerText, theme === "dark" && { color: "#E0E0E0" }]}>{formatTime()}</Text>
+            <Text
+              style={[
+                styles.expiryText,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
+            >
+              Code expires in{" "}
+              <Text
+                style={[
+                  styles.timerText,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {formatTime()}
+              </Text>
             </Text>
 
             <View style={styles.resendContainer}>
-              <Text style={[styles.expiryText, theme === "dark" && { color: "#B3B3B3" }]}>
+              <Text
+                style={[
+                  styles.expiryText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
                 Didn&apos;t receive a code?{" "}
               </Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleResendOtp}
                 disabled={!canResend || resendLoading}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text 
+                <Text
                   style={[
-                    styles.resendText, 
+                    styles.resendText,
                     theme === "dark" && { color: "#00FF80" },
-                    (!canResend || resendLoading) && { opacity: 0.5 }
+                    (!canResend || resendLoading) && { opacity: 0.5 },
                   ]}
                 >
                   {resendLoading ? "Resending..." : "Resend Code"}
@@ -355,14 +407,19 @@ const VerifyOtp = (_props: Props) => {
 
             <TouchableOpacity
               style={[
-                styles.signInButton, 
+                styles.signInButton,
                 theme === "dark" && { backgroundColor: "#00FF80" },
-                loading && styles.disabledButton
+                loading && styles.disabledButton,
               ]}
               onPress={() => handleSubmit()}
               disabled={loading}
             >
-              <Text style={[styles.buttonText, theme === "dark" && styles.buttonTextDark]}>
+              <Text
+                style={[
+                  styles.buttonText,
+                  theme === "dark" && styles.buttonTextDark,
+                ]}
+              >
                 Submit
               </Text>
             </TouchableOpacity>

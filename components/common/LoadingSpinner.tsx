@@ -1,22 +1,22 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import React from "react";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface LoadingSpinnerProps {
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   color?: string;
   style?: ViewStyle;
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size = 'medium',
-  color = '#00FF80',
+  size = "medium",
+  color = "#00FF80",
   style,
 }) => {
   const rotation = useSharedValue(0);
@@ -28,7 +28,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         easing: Easing.linear,
       }),
       -1,
-      false
+      false,
     );
   }, [rotation]);
 
@@ -52,7 +52,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             width: containerSize,
             height: containerSize,
             borderRadius: containerSize / 2,
-            borderWidth: size === 'small' ? 2 : 3,
+            borderWidth: size === "small" ? 2 : 3,
             borderColor: `${color}40`,
             borderTopColor: color,
           },
@@ -65,8 +65,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

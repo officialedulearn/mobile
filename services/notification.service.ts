@@ -44,7 +44,7 @@ export class NotificationService {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId;
 
         if (!projectId) {
-          console.error("Project ID not found");
+          //console.error("Project ID not found");
           return null;
         }
 
@@ -80,7 +80,7 @@ export class NotificationService {
         trigger: trigger || null,
       });
     } catch (error) {
-      console.error("Error scheduling notification:", error);
+      //console.error("Error scheduling notification:", error);
     }
   }
 

@@ -1,7 +1,7 @@
-import type { IsoDateString } from './common.types';
-import type { CommunityUserPreview } from './user.types';
+import type { IsoDateString } from "./common.types";
+import type { CommunityUserPreview } from "./user.types";
 
-export type CommunityVisibility = 'public' | 'private';
+export type CommunityVisibility = "public" | "private";
 
 export type Community = {
   id: string;
@@ -14,7 +14,7 @@ export type Community = {
 
 export type CommunityMember = {
   id: string;
-  role: 'mod' | 'member';
+  role: "mod" | "member";
   user: CommunityUserPreview & { level: string };
 };
 
@@ -24,13 +24,13 @@ export type UserCommunity = {
   imageUrl?: string | null;
   visibility: CommunityVisibility;
   createdAt: IsoDateString | Date;
-  role: 'mod' | 'member';
+  role: "mod" | "member";
 };
 
 export type CommunityJoinRequest = {
   id: string;
   createdAt: IsoDateString | Date;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   user: CommunityUserPreview;
 };
 
@@ -50,7 +50,7 @@ export type UpdateCommunityRequest = {
 
 export type AddCommunityMemberRequest = {
   userId: string;
-  role?: 'mod' | 'member';
+  role?: "mod" | "member";
 };
 
 export type RoomMessage = {

@@ -1,11 +1,6 @@
-import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
-import useUserStore from '@/core/userState';
+import React from "react";
+import { SafeAreaView, ScrollView, StyleSheet, ViewStyle } from "react-native";
+import useUserStore from "@/core/userState";
 
 interface ScreenContainerProps {
   children: React.ReactNode;
@@ -22,12 +17,10 @@ const ScreenContainer: React.FC<ScreenContainerProps> = ({
 }) => {
   const theme = useUserStore((s) => s.theme);
 
-  const backgroundColor = theme === 'dark' ? '#0d0d0d' : '#F9FBFC';
+  const backgroundColor = theme === "dark" ? "#0d0d0d" : "#F9FBFC";
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor }]}
-    >
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <ScrollView
         scrollEnabled={scrollEnabled}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}

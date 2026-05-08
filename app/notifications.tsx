@@ -1,46 +1,63 @@
-import BackButton from '@/components/common/backButton';
-import useNotificationsStore from '@/core/notificationsState';
-import useUserStore from '@/core/userState';
-import type { Notification } from '@/services/notifications.service';
-import { getScreenTopPadding } from '@/utils/design';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
-import { StatusBar } from 'expo-status-bar';
-import React, { memo, useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GestureHandlerRootView, Swipeable } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from "@/components/common/backButton";
+import useNotificationsStore from "@/core/notificationsState";
+import useUserStore from "@/core/userState";
+import type { Notification } from "@/services/notifications.service";
+import { getScreenTopPadding } from "@/utils/design";
+import { getNotificationRoute } from "@/utils/notificationRouting";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { FlashList, type ListRenderItem } from "@shopify/flash-list";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { memo, useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+} from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatNotificationDate(date: Date | string): string {
-  const notificationDate = typeof date === 'string' ? new Date(date) : date;
+  const notificationDate = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
   const diffMs = now.getTime() - notificationDate.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return "Just now";
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
 
-  return notificationDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: notificationDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  return notificationDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year:
+      notificationDate.getFullYear() !== now.getFullYear()
+        ? "numeric"
+        : undefined,
   });
 }
 
 type NotificationItemProps = {
   notification: Notification;
   onDelete: (id: string) => void;
-  theme: 'light' | 'dark';
+  onPress: (notification: Notification) => void;
+  theme: "light" | "dark";
 };
 
 const NotificationItem = memo(function NotificationItem({
   notification,
   onDelete,
+  onPress,
   theme,
 }: NotificationItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -59,7 +76,10 @@ const NotificationItem = memo(function NotificationItem({
     <TouchableOpacity
       onPress={handleDelete}
       disabled={isDeleting}
-      style={[styles.deleteAction, theme === 'dark' && { backgroundColor: '#2E1515' }]}
+      style={[
+        styles.deleteAction,
+        theme === "dark" && { backgroundColor: "#2E1515" },
+      ]}
       activeOpacity={0.7}
     >
       {isDeleting ? (
@@ -80,33 +100,49 @@ const NotificationItem = memo(function NotificationItem({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
     >
-      <View
-        style={[
-          styles.notificationCard,
-          theme === 'dark' && {
-            backgroundColor: '#131313',
-            borderColor: '#2E3033',
-          },
-        ]}
+      <TouchableOpacity
+        onPress={() => onPress(notification)}
+        activeOpacity={0.8}
       >
-        <View style={styles.notificationContent}>
-          <View style={styles.notificationHeader}>
+        <View
+          style={[
+            styles.notificationCard,
+            theme === "dark" && {
+              backgroundColor: "#131313",
+              borderColor: "#2E3033",
+            },
+          ]}
+        >
+          <View style={styles.notificationContent}>
+            <View style={styles.notificationHeader}>
+              <Text
+                style={[
+                  styles.notificationTitle,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {notification.title}
+              </Text>
+            </View>
             <Text
-              style={[styles.notificationTitle, theme === 'dark' && { color: '#E0E0E0' }]}
+              style={[
+                styles.notificationContentText,
+                theme === "dark" && { color: "#B3B3B3" },
+              ]}
             >
-              {notification.title}
+              {notification.content}
+            </Text>
+            <Text
+              style={[
+                styles.notificationTime,
+                theme === "dark" && { color: "#61728C" },
+              ]}
+            >
+              {formatNotificationDate(notification.createdAt)}
             </Text>
           </View>
-          <Text
-            style={[styles.notificationContentText, theme === 'dark' && { color: '#B3B3B3' }]}
-          >
-            {notification.content}
-          </Text>
-          <Text style={[styles.notificationTime, theme === 'dark' && { color: '#61728C' }]}>
-            {formatNotificationDate(notification.createdAt)}
-          </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     </Swipeable>
   );
 });
@@ -131,21 +167,20 @@ const Notifications = () => {
   } = useNotificationsStore();
   const [refreshing, setRefreshing] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
-  
+
   const insets = useSafeAreaInsets();
   const topPadding = getScreenTopPadding(insets);
 
-
   useEffect(() => {
     if (user?.id) {
-      fetchNotifications('desc');
+      fetchNotifications("desc");
       startPolling(30000);
     }
 
     return () => {
       stopPolling();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const handleRefresh = async () => {
@@ -174,67 +209,85 @@ const Notifications = () => {
     }
   }, [clearAllNotifications, isClearingAll]);
 
+  const handleNotificationPress = useCallback((item: Notification) => {
+    const route = getNotificationRoute(item);
+    if (!route) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(route as never);
+  }, []);
+
   const renderItem: ListRenderItem<Notification> = useCallback(
     ({ item }) => (
-      <NotificationItem notification={item} onDelete={handleDelete} theme={theme} />
+      <NotificationItem
+        notification={item}
+        onDelete={handleDelete}
+        onPress={handleNotificationPress}
+        theme={theme}
+      />
     ),
-    [handleDelete, theme],
+    [handleDelete, handleNotificationPress, theme],
   );
 
   const renderEmptyState = useCallback(
     () => (
-    <View style={styles.emptyContainer}>
-      <FontAwesome5
-        name="bell-slash"
-        size={64}
-        color={theme === 'dark' ? '#2E3033' : '#EDF3FC'}
-      />
-      <Text
-        style={[
-          styles.emptyTitle,
-          theme === 'dark' && { color: '#E0E0E0' },
-        ]}
-      >
-        No notifications yet
-      </Text>
-      <Text
-        style={[
-          styles.emptySubtitle,
-          theme === 'dark' && { color: '#B3B3B3' },
-        ]}
-      >
-        You&apos;ll see your notifications here when they arrive
-      </Text>
-    </View>
+      <View style={styles.emptyContainer}>
+        <FontAwesome5
+          name="bell-slash"
+          size={64}
+          color={theme === "dark" ? "#2E3033" : "#EDF3FC"}
+        />
+        <Text
+          style={[styles.emptyTitle, theme === "dark" && { color: "#E0E0E0" }]}
+        >
+          No notifications yet
+        </Text>
+        <Text
+          style={[
+            styles.emptySubtitle,
+            theme === "dark" && { color: "#B3B3B3" },
+          ]}
+        >
+          You&apos;ll see your notifications here when they arrive
+        </Text>
+      </View>
     ),
     [theme],
   );
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, paddingTop: topPadding, backgroundColor: theme === 'dark' ? '#0D0D0D' : '#F9FBFC' }}>
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+        paddingTop: topPadding,
+        backgroundColor: theme === "dark" ? "#0D0D0D" : "#F9FBFC",
+      }}
+    >
       <View
         style={[
           styles.container,
-          theme === 'dark' && { backgroundColor: '#0D0D0D' },
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
         ]}
       >
-        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
         <View
           style={[
             styles.topNav,
-            theme === 'dark' && { backgroundColor: '#0D0D0D' },
+            theme === "dark" && { backgroundColor: "#0D0D0D" },
           ]}
         >
           <BackButton />
           <Text
             style={[
               styles.topNavText,
-              theme === 'dark' && { color: '#E0E0E0' },
+              theme === "dark" && { color: "#E0E0E0" },
             ]}
           >
             Notifications
           </Text>
-          <View style={{ width: 40, alignItems: 'flex-end' }}>
+          <View style={{ width: 40, alignItems: "flex-end" }}>
             {notifications.length > 0 ? (
               <TouchableOpacity
                 onPress={handleClearAll}
@@ -243,12 +296,15 @@ const Notifications = () => {
                 style={{ padding: 8 }}
               >
                 {isClearingAll ? (
-                  <ActivityIndicator size="small" color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'} />
+                  <ActivityIndicator
+                    size="small"
+                    color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
+                  />
                 ) : (
                   <FontAwesome5
                     name="trash"
                     size={18}
-                    color={theme === 'dark' ? '#E0E0E0' : '#2D3C52'}
+                    color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
                   />
                 )}
               </TouchableOpacity>
@@ -260,12 +316,12 @@ const Notifications = () => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator
               size="large"
-              color={theme === 'dark' ? '#00FF66' : '#00FF80'}
+              color={theme === "dark" ? "#00FF66" : "#00FF80"}
             />
             <Text
               style={[
                 styles.loadingText,
-                theme === 'dark' && { color: '#B3B3B3' },
+                theme === "dark" && { color: "#B3B3B3" },
               ]}
             >
               Loading notifications...
@@ -276,7 +332,7 @@ const Notifications = () => {
             <Text
               style={[
                 styles.errorText,
-                theme === 'dark' && { color: '#E0E0E0' },
+                theme === "dark" && { color: "#E0E0E0" },
               ]}
             >
               {error}
@@ -284,17 +340,17 @@ const Notifications = () => {
             <TouchableOpacity
               style={[
                 styles.retryButton,
-                theme === 'dark' && {
-                  backgroundColor: '#131313',
-                  borderColor: '#2E3033',
+                theme === "dark" && {
+                  backgroundColor: "#131313",
+                  borderColor: "#2E3033",
                 },
               ]}
-              onPress={() => fetchNotifications('desc')}
+              onPress={() => fetchNotifications("desc")}
             >
               <Text
                 style={[
                   styles.retryButtonText,
-                  theme === 'dark' && { color: '#E0E0E0' },
+                  theme === "dark" && { color: "#E0E0E0" },
                 ]}
               >
                 Retry
@@ -318,8 +374,8 @@ const Notifications = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={theme === 'dark' ? '#00FF66' : '#00FF80'}
-                colors={['#00FF80']}
+                tintColor={theme === "dark" ? "#00FF66" : "#00FF80"}
+                colors={["#00FF80"]}
               />
             }
             showsVerticalScrollIndicator={false}
@@ -335,20 +391,20 @@ export default Notifications;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
   },
   topNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
-    backgroundColor: '#F9FBFC',
+    backgroundColor: "#F9FBFC",
     gap: 16,
   },
   topNavText: {
-    fontWeight: '500',
-    fontFamily: 'Satoshi',
+    fontWeight: "500",
+    fontFamily: "Satoshi",
     fontSize: 20,
-    color: '#2D3C52',
+    color: "#2D3C52",
     lineHeight: 24,
     flex: 1,
   },
@@ -362,44 +418,44 @@ const styles = StyleSheet.create({
   notificationCard: {
     borderRadius: 16,
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 0.5,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
   },
   notificationContent: {
     gap: 8,
   },
   notificationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     gap: 12,
   },
   notificationTitle: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 16,
-    fontWeight: '600',
-    color: '#2D3C52',
+    fontWeight: "600",
+    color: "#2D3C52",
     lineHeight: 24,
     flex: 1,
   },
   notificationContentText: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 14,
-    color: '#61728C',
+    color: "#61728C",
     lineHeight: 20,
     marginTop: 4,
   },
   notificationTime: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 12,
-    color: '#61728C',
+    color: "#61728C",
     marginTop: 4,
   },
   deleteAction: {
-    backgroundColor: '#FFE5E5',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FFE5E5",
+    justifyContent: "center",
+    alignItems: "center",
     width: 80,
     borderRadius: 16,
     marginLeft: 12,
@@ -409,61 +465,61 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 16,
   },
   loadingText: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 14,
-    color: '#61728C',
+    color: "#61728C",
   },
   errorContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
     gap: 16,
   },
   errorText: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 14,
-    color: '#2D3C52',
-    textAlign: 'center',
+    color: "#2D3C52",
+    textAlign: "center",
   },
   retryButton: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#EDF3FC',
+    borderColor: "#EDF3FC",
   },
   retryButtonText: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 14,
-    fontWeight: '600',
-    color: '#2D3C52',
+    fontWeight: "600",
+    color: "#2D3C52",
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 40,
     gap: 16,
   },
   emptyTitle: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 18,
-    fontWeight: '600',
-    color: '#2D3C52',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#2D3C52",
+    textAlign: "center",
   },
   emptySubtitle: {
-    fontFamily: 'Satoshi',
+    fontFamily: "Satoshi",
     fontSize: 14,
-    color: '#61728C',
-    textAlign: 'center',
+    color: "#61728C",
+    textAlign: "center",
     lineHeight: 20,
   },
 });

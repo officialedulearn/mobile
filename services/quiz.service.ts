@@ -1,13 +1,14 @@
 import {
-    ListMyPublicQuizzesResponse,
-    ListPublicQuizzesResponse,
-    ListQuizzesQuery,
-    PublicQuizDetail,
-    PublishPublicQuizRequest,
-    PublishPublicQuizResponse,
-    StartPublicQuizParticipationResponse,
-    SubmitPublicQuizRequest,
-    SubmitPublicQuizResponse,
+  LeaderBoardResponse,
+  ListMyPublicQuizzesResponse,
+  ListPublicQuizzesResponse,
+  ListQuizzesQuery,
+  PublicQuizDetail,
+  PublishPublicQuizRequest,
+  PublishPublicQuizResponse,
+  StartPublicQuizParticipationResponse,
+  SubmitPublicQuizRequest,
+  SubmitPublicQuizResponse,
 } from "@/types/quizzes.types";
 import { BaseService } from "./base.service";
 
@@ -62,6 +63,14 @@ export class QuizService extends BaseService {
   async submitQuiz(quizId: string, payload: SubmitPublicQuizRequest) {
     const response = await this.executeRequest<SubmitPublicQuizResponse>(
       this.getClient().post(`/quizzes/public/${quizId}/attempt`, payload),
+    );
+    if (response.error) throw response.error;
+    return response.data;
+  }
+
+  async getQuizLeaderboard(quizId: string) {
+    const response = await this.executeRequest<LeaderBoardResponse>(
+      this.getClient().get(`/quizzes/public/${quizId}/leaderboard`),
     );
     if (response.error) throw response.error;
     return response.data;

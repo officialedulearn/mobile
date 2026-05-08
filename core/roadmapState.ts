@@ -1,5 +1,5 @@
-import { RoadmapService } from "@/services/roadmap.service";
 import type { Roadmap, RoadmapWithSteps } from "@/interface/Roadmap";
+import { RoadmapService } from "@/services/roadmap.service";
 import { create } from "zustand";
 
 interface RoadmapState {
@@ -10,7 +10,9 @@ interface RoadmapState {
   error: string | null;
 
   fetchRoadmaps: (userId: string) => Promise<void>;
-  fetchRoadmapById: (roadmapId: string) => Promise<RoadmapWithSteps | undefined>;
+  fetchRoadmapById: (
+    roadmapId: string,
+  ) => Promise<RoadmapWithSteps | undefined>;
   resetState: () => void;
 }
 
@@ -33,7 +35,6 @@ const useRoadmapStore = create<RoadmapState>((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
-      console.error("Failed to fetch roadmaps:", error);
       set({
         isLoading: false,
         error:
@@ -47,11 +48,13 @@ const useRoadmapStore = create<RoadmapState>((set, get) => ({
     try {
       const data = await roadmapService.getRoadmapById(roadmapId);
       set((state) => ({
-        roadmapWithStepsById: { ...state.roadmapWithStepsById, [roadmapId]: data },
+        roadmapWithStepsById: {
+          ...state.roadmapWithStepsById,
+          [roadmapId]: data,
+        },
       }));
       return data;
     } catch (error) {
-      console.error("Failed to fetch roadmap by ID:", error);
       return undefined;
     }
   },

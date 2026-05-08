@@ -3,7 +3,12 @@ import useFlashCardStore from "@/core/flashCardState";
 import useUserStore from "@/core/userState";
 import { useTheme } from "@/hooks/useTheme";
 import type { FlashcardDeck } from "@/types/flashcards.types";
-import { Design, iconCaretRight, iconClock, iconNotebook } from "@/utils/design";
+import {
+  Design,
+  iconCaretRight,
+  iconClock,
+  iconNotebook,
+} from "@/utils/design";
 import { LegendList } from "@legendapp/list";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,10 +17,10 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -29,7 +34,8 @@ const formatDate = (value: FlashcardDeck["createdAt"]) =>
 export default function FlashcardsScreen() {
   const userId = useUserStore((s) => s.user?.id);
   const { colors, isDark, statusBarStyle, theme } = useTheme();
-  const { flashcardDecks, isLoading, error, fetchFlashcardDecks } = useFlashCardStore();
+  const { flashcardDecks, isLoading, error, fetchFlashcardDecks } =
+    useFlashCardStore();
   const [refreshing, setRefreshing] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -48,7 +54,8 @@ export default function FlashcardsScreen() {
   const sortedDecks = useMemo(
     () =>
       [...flashcardDecks].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
     [flashcardDecks],
   );
@@ -65,19 +72,22 @@ export default function FlashcardsScreen() {
   }, [userId, fetchFlashcardDecks]);
 
   const openDeck = useCallback((deckId: string) => {
-    router.push({ pathname: "/flashcards/[id]", params: { id: deckId } } as never);
+    router.push({
+      pathname: "/flashcards/[id]",
+      params: { id: deckId },
+    } as never);
   }, []);
 
   const renderDeck = useCallback(
     ({ item, index }: { item: FlashcardDeck; index: number }) => (
-      <TouchableOpacity
-        activeOpacity={0.86}
+      <Pressable
         onPress={() => openDeck(item.id)}
-        style={[
+        style={({ pressed }) => [
           styles.deckRow,
           {
             backgroundColor: colors.surface,
             borderColor: colors.borderMuted,
+            transform: [{ scale: pressed ? 0.99 : 1 }],
           },
         ]}
       >
@@ -95,14 +105,20 @@ export default function FlashcardsScreen() {
 
         <View style={styles.deckContent}>
           <View style={styles.deckTitleRow}>
-            <Text style={[styles.deckTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+            <Text
+              style={[styles.deckTitle, { color: colors.textPrimary }]}
+              numberOfLines={1}
+            >
               {item.title || "Untitled deck"}
             </Text>
             <Text style={[styles.deckNumber, { color: colors.textTertiary }]}>
               {(index + 1).toString().padStart(2, "0")}
             </Text>
           </View>
-          <Text style={[styles.deckTopic, { color: colors.textSecondary }]} numberOfLines={2}>
+          <Text
+            style={[styles.deckTopic, { color: colors.textSecondary }]}
+            numberOfLines={2}
+          >
             {item.topic || "AI generated study cards"}
           </Text>
           <View style={styles.metaRow}>
@@ -114,7 +130,7 @@ export default function FlashcardsScreen() {
         </View>
 
         <Image source={iconCaretRight(theme)} style={styles.chevron} />
-      </TouchableOpacity>
+      </Pressable>
     ),
     [colors, isDark, openDeck, theme],
   );
@@ -134,24 +150,41 @@ export default function FlashcardsScreen() {
           ]}
         >
           <View style={styles.heroCopy}>
-            <Text style={[styles.eyebrow, { color: isDark ? "#B8D4C8" : "#61728C" }]}>
+            <Text
+              style={[
+                styles.eyebrow,
+                { color: isDark ? "#B8D4C8" : "#61728C" },
+              ]}
+            >
               Study Library
             </Text>
-            <Text style={[styles.header, { color: colors.textPrimary }]}>Flashcards</Text>
+            <Text style={[styles.header, { color: colors.textPrimary }]}>
+              Flashcards
+            </Text>
             <Text style={[styles.subtext, { color: colors.textSecondary }]}>
               Review every deck created from your AI learning sessions.
             </Text>
           </View>
           <View style={[styles.heroBadge, isDark && styles.heroBadgeDark]}>
-            <Text style={[styles.heroBadgeValue, { color: colors.textPrimary }]}>
+            <Text
+              style={[styles.heroBadgeValue, { color: colors.textPrimary }]}
+            >
               {sortedDecks.length}
             </Text>
-            <Text style={[styles.heroBadgeLabel, { color: colors.textSecondary }]}>decks</Text>
+            <Text
+              style={[styles.heroBadgeLabel, { color: colors.textSecondary }]}
+            >
+              decks
+            </Text>
           </View>
         </LinearGradient>
 
         {error ? (
-          <Text style={[styles.errorText, { color: Design.colors.semantic.error }]}>{error}</Text>
+          <Text
+            style={[styles.errorText, { color: Design.colors.semantic.error }]}
+          >
+            {error}
+          </Text>
         ) : null}
       </View>
     ),
@@ -162,7 +195,9 @@ export default function FlashcardsScreen() {
     if (!userId) {
       return (
         <View style={styles.centerBlock}>
-          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Sign in to study</Text>
+          <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+            Sign in to study
+          </Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
             Your flashcard decks will appear here once you are signed in.
           </Text>
@@ -183,7 +218,9 @@ export default function FlashcardsScreen() {
 
     return (
       <View style={styles.centerBlock}>
-        <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No decks yet</Text>
+        <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+          No decks yet
+        </Text>
         <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
           Generate flashcards from an AI chat and they will collect here.
         </Text>
@@ -287,6 +324,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Design.spacing.md,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 1,
   },
   deckIconWrap: {
     width: 52,

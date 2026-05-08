@@ -1,5 +1,5 @@
-import type { IsoDateString } from './common.types';
-import type { UserLevel } from './user.types';
+import type { IsoDateString } from "./common.types";
+import type { UserLevel } from "./user.types";
 
 export type FollowNotificationPreferences = {
   emailNotifications?: boolean;

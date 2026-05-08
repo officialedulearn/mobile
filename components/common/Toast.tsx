@@ -1,20 +1,20 @@
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import React, { useEffect } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
-    Easing,
-    interpolate,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withDelay,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+  Easing,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 type ToastProps = {
   visible: boolean;
@@ -24,7 +24,13 @@ type ToastProps = {
   onDismiss?: () => void;
 };
 
-const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProps) => {
+const Toast = ({
+  visible,
+  type,
+  message,
+  duration = 3000,
+  onDismiss,
+}: ToastProps) => {
   const insets = useSafeAreaInsets();
   const scale = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
@@ -33,7 +39,10 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
     if (visible) {
       triggerHaptic(type);
       scale.value = withSpring(1, { damping: 18, stiffness: 200, mass: 0.8 });
-      contentOpacity.value = withDelay(150, withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) }));
+      contentOpacity.value = withDelay(
+        150,
+        withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) }),
+      );
 
       if (duration > 0) {
         const timer = setTimeout(() => {
@@ -42,24 +51,26 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
         return () => clearTimeout(timer);
       }
     } else {
-      scale.value = withTiming(0, { duration: 250, easing: Easing.in(Easing.ease) });
+      scale.value = withTiming(0, {
+        duration: 250,
+        easing: Easing.in(Easing.ease),
+      });
       contentOpacity.value = withTiming(0, { duration: 150 });
     }
   }, [visible, contentOpacity, duration, type, scale]);
-  
 
   const triggerHaptic = (toastType: ToastType) => {
     switch (toastType) {
-      case 'success':
+      case "success":
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         break;
-      case 'error':
+      case "error":
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         break;
-      case 'warning':
+      case "warning":
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         break;
-      case 'info':
+      case "info":
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         break;
     }
@@ -68,11 +79,15 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
   const handleDismiss = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     contentOpacity.value = withTiming(0, { duration: 100 });
-    scale.value = withTiming(0, { duration: 250, easing: Easing.in(Easing.ease) }, () => {
-      if (onDismiss) {
-        runOnJS(onDismiss)();
-      }
-    });
+    scale.value = withTiming(
+      0,
+      { duration: 250, easing: Easing.in(Easing.ease) },
+      () => {
+        if (onDismiss) {
+          runOnJS(onDismiss)();
+        }
+      },
+    );
   };
 
   const pillAnimatedStyle = useAnimatedStyle(() => ({
@@ -89,25 +104,25 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
 
   const getToastConfig = () => {
     switch (type) {
-      case 'success':
+      case "success":
         return {
-          accentColor: '#00FF80',
-          icon: 'checkmark-circle' as const,
+          accentColor: "#00FF80",
+          icon: "checkmark-circle" as const,
         };
-      case 'error':
+      case "error":
         return {
-          accentColor: '#FF3B30',
-          icon: 'close-circle' as const,
+          accentColor: "#FF3B30",
+          icon: "close-circle" as const,
         };
-      case 'warning':
+      case "warning":
         return {
-          accentColor: '#F59E0B',
-          icon: 'warning' as const,
+          accentColor: "#F59E0B",
+          icon: "warning" as const,
         };
-      case 'info':
+      case "info":
         return {
-          accentColor: '#3B82F6',
-          icon: 'information-circle' as const,
+          accentColor: "#3B82F6",
+          icon: "information-circle" as const,
         };
     }
   };
@@ -122,15 +137,25 @@ const Toast = ({ visible, type, message, duration = 3000, onDismiss }: ToastProp
     <View style={[styles.container, { top: insets.top + 10 }]}>
       <Animated.View style={[styles.pillWrapper, pillAnimatedStyle]}>
         <Pressable onPress={handleDismiss}>
-          <View style={[styles.toast, { 
-            shadowColor: config.accentColor, 
-            borderColor: config.accentColor,
-            backgroundColor 
-          }]}>
+          <View
+            style={[
+              styles.toast,
+              {
+                shadowColor: config.accentColor,
+                borderColor: config.accentColor,
+                backgroundColor,
+              },
+            ]}
+          >
             <Animated.View style={[styles.content, contentAnimatedStyle]}>
-              <Ionicons name={config.icon} size={22} color={config.accentColor} />
-              <Text style={[styles.message, { color: textColor }]}>{message}</Text>
-    
+              <Ionicons
+                name={config.icon}
+                size={22}
+                color={config.accentColor}
+              />
+              <Text style={[styles.message, { color: textColor }]}>
+                {message}
+              </Text>
             </Animated.View>
           </View>
         </Pressable>
@@ -143,34 +168,33 @@ export default Toast;
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     left: 20,
     right: 20,
     zIndex: 9999,
-    alignItems: 'center',
+    alignItems: "center",
   },
   pillWrapper: {
     borderRadius: 50,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 12,
     minWidth: 280,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     flex: 1,
   },
   message: {
     flex: 1,
     fontSize: 15,
-    fontFamily: 'Satoshi-Regular',
+    fontFamily: "Satoshi-Regular",
   },
 });
-

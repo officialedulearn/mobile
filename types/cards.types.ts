@@ -1,4 +1,4 @@
-export type ShareCardTheme = 'light' | 'dark';
+export type ShareCardTheme = "light" | "dark";
 
 export type OgCardQuery = {
   title: string;

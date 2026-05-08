@@ -1,6 +1,6 @@
 import useUserStore from "@/core/userState";
 import { Message } from "@/interface/Chat";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import React, { useEffect } from "react";
 import {
@@ -24,7 +24,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
- 
+
 import { useToast } from "@/contexts/ToastContext";
 import useAgentStore from "@/core/agentStore";
 import AnimatedPressable from "../common/AnimatedPressable";
@@ -126,11 +126,7 @@ function messageContentKey(content: unknown): string {
       })
       .join("");
   }
-  if (
-    content &&
-    typeof content === "object" &&
-    "text" in (content as object)
-  ) {
+  if (content && typeof content === "object" && "text" in (content as object)) {
     return String((content as { text: string }).text);
   }
   return "";
@@ -166,7 +162,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
   if (!message) {
     return null;
   }
-  
+
   const isUser = message.role === "user";
   const isLoading = false;
   const attachments = getMessageAttachments(message.content);
@@ -198,10 +194,10 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       const messageText = getMessageContent();
       const subject = encodeURIComponent("Report AI Response");
       const body = encodeURIComponent(
-        `I would like to report the following AI response:\n\n"${messageText}"\n\nReason for report:\n\n`
+        `I would like to report the following AI response:\n\n"${messageText}"\n\nReason for report:\n\n`,
       );
       const mailtoUrl = `mailto:support@edulearn.com?subject=${subject}&body=${body}`;
-      
+
       const canOpenURL = await Linking.canOpenURL(mailtoUrl);
       if (canOpenURL) {
         await Linking.openURL(mailtoUrl);
@@ -217,7 +213,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
     if (!message || !message.content) {
       return "";
     }
-    
+
     if (typeof message.content === "string") {
       return message.content;
     } else if (Array.isArray(message.content)) {
@@ -225,7 +221,13 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
         .map((item: any) => {
           if (typeof item === "string") return item;
           if (item && typeof item === "object" && item.text) return item.text;
-          if (item && typeof item === "object" && item.type === "text" && item.text) return item.text;
+          if (
+            item &&
+            typeof item === "object" &&
+            item.type === "text" &&
+            item.text
+          )
+            return item.text;
           return "";
         })
         .join("");
@@ -326,6 +328,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
       onLinkPress={(event) => {
         void Linking.openURL(event.url);
       }}
+      streamingAnimation={isStreaming && !isUser ? true : false}
     />
   );
 
@@ -359,8 +362,9 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
     const lastTextIndex = parts
       .map((part, index) => ({ part, index }))
       .reverse()
-      .find(({ part }) => part.trim().length > 0 && parseEmbed(part) === null)
-      ?.index;
+      .find(
+        ({ part }) => part.trim().length > 0 && parseEmbed(part) === null,
+      )?.index;
 
     if (lastTextIndex == null) {
       return renderContentWithEmbeds(`${content}${marker}`);
@@ -382,8 +386,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
         <AgentAvatar profilePictureUrl={agentProfilePictureUrl} theme={theme} />
       )}
 
-
-    <View
+      <View
         style={[
           styles.messageBubble,
           isUser
@@ -394,9 +397,7 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
                   borderColor: "#2E3033",
                 },
               ]
-            : [
-                styles.botBubble,
-              ],
+            : [styles.botBubble],
         ]}
       >
         {isLoading ? (
@@ -455,23 +456,23 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
             {(() => {
               try {
                 const content = getMessageContent();
-                
+
                 if (!content || content.trim().length === 0) {
                   if (isStreaming && !isUser) {
                     return (
                       <StreamBlinkCursor
-                        color={
-                          theme === "dark" ? "#E0E0E0" : "#2D3C52"
-                        }
+                        color={theme === "dark" ? "#E0E0E0" : "#2D3C52"}
                       />
                     );
                   }
                   return (
-                    <Text style={[
-                      baseTextStyle,
-                      { opacity: 0.5 },
-                      theme === "dark" && { color: "#E0E0E0" }
-                    ]}>
+                    <Text
+                      style={[
+                        baseTextStyle,
+                        { opacity: 0.5 },
+                        theme === "dark" && { color: "#E0E0E0" },
+                      ]}
+                    >
                       ...
                     </Text>
                   );
@@ -484,30 +485,48 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
               } catch {
                 const content = getMessageContent() || "";
                 return (
-                  <Text style={[
-                    baseTextStyle,
-                    theme === "dark" && { color: "#E0E0E0" }
-                  ]}>
-                    {content}{isStreaming && !isUser ? " ▊" : ""}
+                  <Text
+                    style={[
+                      baseTextStyle,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    {content}
+                    {isStreaming && !isUser ? " ▊" : ""}
                   </Text>
                 );
               }
             })()}
             {!isUser && !isStreaming && (
               <View style={styles.messageActionContainer}>
-                <AnimatedPressable onPress={handleCopyMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
+                <AnimatedPressable
+                  onPress={handleCopyMessage}
+                  style={styles.actionButton}
+                  scale={0.85}
+                  hapticFeedback={true}
+                >
                   <Image
                     source={require("@/assets/images/icons/dark/copy.png")}
                     style={styles.editIcon}
                   />
                 </AnimatedPressable>
-                <AnimatedPressable onPress={handleShareMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
+                <AnimatedPressable
+                  onPress={handleShareMessage}
+                  style={styles.actionButton}
+                  scale={0.85}
+                  hapticFeedback={true}
+                >
                   <Image
                     source={require("@/assets/images/icons/dark/share.png")}
                     style={styles.editIcon}
                   />
                 </AnimatedPressable>
-                <AnimatedPressable onPress={handleReportMessage} style={styles.actionButton} scale={0.85} hapticFeedback={true}>
+                <AnimatedPressable
+                  onPress={handleReportMessage}
+                  style={styles.actionButton}
+                  scale={0.85}
+                  hapticFeedback={true}
+                >
                   <Image
                     source={require("@/assets/images/icons/dark/report.png")}
                     style={styles.editIcon}
@@ -518,7 +537,6 @@ function MessageItemImpl({ message, isStreaming = false, theme }: Props) {
           </View>
         )}
       </View>
-   
 
       {/* {isUser && (
         <TouchableOpacity style={styles.editButton}>

@@ -6,15 +6,27 @@ import useUserStore from "@/core/userState";
 import { ActivityService } from "@/services/activity.service";
 import { UserService } from "@/services/auth.service";
 import { NotificationPreferences } from "@/services/social.service";
-import { getScreenTopPadding } from '@/utils/design';
+import { getScreenTopPadding } from "@/utils/design";
 import { getUserMetrics } from "@/utils/utils";
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, Dimensions, ImageBackground, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  ActivityIndicator,
+  Dimensions,
+  ImageBackground,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = Record<string, never>;
 
@@ -33,15 +45,28 @@ const AchievementCard = ({
   imageKey: keyof typeof ACHIEVEMENT_IMAGES;
   metric: string;
 }) => {
-  const theme = useUserStore(s => s.theme)
+  const theme = useUserStore((s) => s.theme);
   return (
-    <View style={[styles.achievementCard, theme === "dark" && {backgroundColor: '#0D0D0D'}]}>
+    <View
+      style={[
+        styles.achievementCard,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+      ]}
+    >
       <Image
         source={ACHIEVEMENT_IMAGES[imageKey]}
         style={{ width: 30, height: 30 }}
       />
-      <Text style={[styles.cardSubText, theme === "dark" && {color: "#E0E0E0"}]}>{metric}</Text>
-      <Text style={[styles.metricTitle, theme === "dark" && {color: "#B3B3B3"}]}>{title}</Text>
+      <Text
+        style={[styles.cardSubText, theme === "dark" && { color: "#E0E0E0" }]}
+      >
+        {metric}
+      </Text>
+      <Text
+        style={[styles.metricTitle, theme === "dark" && { color: "#B3B3B3" }]}
+      >
+        {title}
+      </Text>
     </View>
   );
 };
@@ -61,15 +86,19 @@ const User = (props: Props) => {
   });
   const [isFollowLoading, setIsFollowLoading] = React.useState<boolean>(false);
   const [isCheckingFollow, setIsCheckingFollow] = React.useState<boolean>(true);
-  const [showNotificationSettings, setShowNotificationSettings] = React.useState<boolean>(false);
-  const [isLoadingPreferences, setIsLoadingPreferences] = React.useState<boolean>(false);
+  const [showNotificationSettings, setShowNotificationSettings] =
+    React.useState<boolean>(false);
+  const [isLoadingPreferences, setIsLoadingPreferences] =
+    React.useState<boolean>(false);
 
-  const getHighQualityImageUrl = (url: string | null | undefined): string | undefined => {
-    if (!url || typeof url !== 'string') return undefined;
+  const getHighQualityImageUrl = (
+    url: string | null | undefined,
+  ): string | undefined => {
+    if (!url || typeof url !== "string") return undefined;
     return url
-      .replace(/_normal(\.[a-z]+)$/i, '_400x400$1')
-      .replace(/_mini(\.[a-z]+)$/i, '_400x400$1')
-      .replace(/_bigger(\.[a-z]+)$/i, '_400x400$1');
+      .replace(/_normal(\.[a-z]+)$/i, "_400x400$1")
+      .replace(/_mini(\.[a-z]+)$/i, "_400x400$1")
+      .replace(/_bigger(\.[a-z]+)$/i, "_400x400$1");
   };
   const [quizStats, setQuizStats] = React.useState({
     totalQuestionsAnswered: 0,
@@ -112,17 +141,17 @@ const User = (props: Props) => {
       try {
         const userData = await userService.getUserById(id);
         setUser(userData);
-      
+
         const joinDate = new Date();
         joinDate.setDate(joinDate.getDate() - 30);
         setJoinedAt(joinDate.toISOString());
       } catch (error) {
-        console.error("Failed to fetch user:", error);
+        //console.error("Failed to fetch user:", error);
       }
     };
 
     fetchUser();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -134,27 +163,29 @@ const User = (props: Props) => {
 
       try {
         setIsCheckingFollow(true);
-        const following = await checkIsFollowing(currentUser.id as unknown as string, id);
+        const following = await checkIsFollowing(
+          currentUser.id as unknown as string,
+          id,
+        );
 
         if (following) {
           setIsLoadingPreferences(true);
           try {
             await fetchNotificationPreferences(id);
           } catch (error) {
-            console.error("Failed to load notification preferences:", error);
+            //console.error("Failed to load notification preferences:", error);
           } finally {
             setIsLoadingPreferences(false);
           }
         }
       } catch (error) {
-        console.error("Failed to check follow status:", error);
+        //console.error("Failed to check follow status:", error);
         setFollowingCache(currentUser.id as unknown as string, id, false);
       } finally {
         setIsCheckingFollow(false);
       }
     };
 
-     
     loadFollowStatus();
   }, [id, currentUser?.id]);
 
@@ -165,7 +196,7 @@ const User = (props: Props) => {
       try {
         await fetchUserRewards(id);
       } catch (error) {
-        console.error("Failed to fetch user rewards:", error);
+        //console.error("Failed to fetch user rewards:", error);
       } finally {
         setIsLoading(false);
       }
@@ -180,17 +211,16 @@ const User = (props: Props) => {
         setUserMetrics(metrics);
 
         try {
-          const quizActivities = await activityService.getQuizActivitiesByUser(
-            id
-          );
+          const quizActivities =
+            await activityService.getQuizActivitiesByUser(id);
 
           const totalQuestionsAnswered = quizActivities.length * 5;
 
           const totalEarnedPoints = quizActivities.reduce(
-            (sum: any, activity: { xpEarned: any; }) => sum + activity.xpEarned,
-            0
+            (sum: any, activity: { xpEarned: any }) => sum + activity.xpEarned,
+            0,
           );
-          const maxPossiblePoints = quizActivities.length * 5; 
+          const maxPossiblePoints = quizActivities.length * 5;
           const accuracyRate =
             maxPossiblePoints > 0
               ? (totalEarnedPoints / maxPossiblePoints) * 100
@@ -201,17 +231,16 @@ const User = (props: Props) => {
             accuracyRate: parseFloat(accuracyRate.toFixed(1)),
           });
         } catch (error) {
-          console.error("Failed to fetch quiz activities:", error);
+          //console.error("Failed to fetch quiz activities:", error);
         }
       }
-     
     }
     fetchMetrics();
   }, [id]);
 
   const handleNotificationPreferenceChange = async (
     key: keyof NotificationPreferences,
-    value: boolean
+    value: boolean,
   ) => {
     const updatedPreferences = { ...notificationPreferences, [key]: value };
     setNotificationPrefsCache(id, updatedPreferences);
@@ -221,16 +250,25 @@ const User = (props: Props) => {
       await updateNotificationPreferences(id, { [key]: value });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error("Failed to update notification preference:", error);
+      //console.error("Failed to update notification preference:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setNotificationPrefsCache(id, notificationPreferences);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, theme === "dark" && {backgroundColor: '#0D0D0D'}, { paddingTop: topPadding }]}>
-      <ScrollView 
-        style={[styles.container, theme === "dark" && {backgroundColor: '#0D0D0D'}]} 
+    <SafeAreaView
+      style={[
+        styles.safeArea,
+        theme === "dark" && { backgroundColor: "#0D0D0D" },
+        { paddingTop: topPadding },
+      ]}
+    >
+      <ScrollView
+        style={[
+          styles.container,
+          theme === "dark" && { backgroundColor: "#0D0D0D" },
+        ]}
         contentContainerStyle={{ paddingBottom: 30 }}
         showsVerticalScrollIndicator={false}
       >
@@ -238,237 +276,438 @@ const User = (props: Props) => {
           <BackButton />
         </View>
 
-      <View style={[styles.profileCard, theme === "dark" && {backgroundColor: '#00FF80'}]}>
-        <Image
-          source={getHighQualityImageUrl(user?.profilePictureURL) ? { uri: getHighQualityImageUrl(user?.profilePictureURL)! } : require("@/assets/images/memoji.png")}
-          style={styles.userImage}
-          resizeMode="cover"
-        />
-        <Text style={[styles.userName, theme === "dark" && {color: "#000"}]}>{user?.name}</Text>
-        
-        <Text style={styles.joinedText}>
-        📚 Learning {user?.learning || "Web3 & Blockchain"}
-        </Text>  
+        <View
+          style={[
+            styles.profileCard,
+            theme === "dark" && { backgroundColor: "#00FF80" },
+          ]}
+        >
+          <Image
+            source={
+              getHighQualityImageUrl(user?.profilePictureURL)
+                ? { uri: getHighQualityImageUrl(user?.profilePictureURL)! }
+                : require("@/assets/images/memoji.png")
+            }
+            style={styles.userImage}
+            resizeMode="cover"
+          />
+          <Text
+            style={[styles.userName, theme === "dark" && { color: "#000" }]}
+          >
+            {user?.name}
+          </Text>
 
-        {/* <View style={[styles.learningBadge, theme === "dark" && {backgroundColor: "rgba(0, 0, 0, 0.1)", borderColor: "rgba(0, 0, 0, 0.2)"}]}>
+          <Text style={styles.joinedText}>
+            📚 Learning {user?.learning || "Web3 & Blockchain"}
+          </Text>
+
+          {/* <View style={[styles.learningBadge, theme === "dark" && {backgroundColor: "rgba(0, 0, 0, 0.1)", borderColor: "rgba(0, 0, 0, 0.2)"}]}>
           <Text style={[styles.learningText, theme === "dark" && {color: "#000"}]}>
             📚 Learning {user?.learning || "Web3 & Blockchain"}
           </Text>
         </View> */}
-        
-        {currentUser?.id && currentUser.id !== id && (
-          <>
-            <Pressable 
-              style={[
-                styles.followButton, 
-                isFollowing && styles.followingButton,
-                isFollowLoading && styles.followButtonDisabled
-              ]} 
-              onPress={async () => {
-                if (isFollowLoading || isCheckingFollow) return;
-                
-                try {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setIsFollowLoading(true);
-                  
-                  if (isFollowing) {
-                    await unfollowUser(id);
-                    setFollowingCache(currentUser.id as unknown as string, id, false);
-                    setShowNotificationSettings(false);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  } else {
-                    await followUser(id);
-                    setFollowingCache(currentUser.id as unknown as string, id, true);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+          {currentUser?.id && currentUser.id !== id && (
+            <>
+              <Pressable
+                style={[
+                  styles.followButton,
+                  isFollowing && styles.followingButton,
+                  isFollowLoading && styles.followButtonDisabled,
+                ]}
+                onPress={async () => {
+                  if (isFollowLoading || isCheckingFollow) return;
+
+                  try {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIsFollowLoading(true);
+
+                    if (isFollowing) {
+                      await unfollowUser(id);
+                      setFollowingCache(
+                        currentUser.id as unknown as string,
+                        id,
+                        false,
+                      );
+                      setShowNotificationSettings(false);
+                      Haptics.notificationAsync(
+                        Haptics.NotificationFeedbackType.Success,
+                      );
+                    } else {
+                      await followUser(id);
+                      setFollowingCache(
+                        currentUser.id as unknown as string,
+                        id,
+                        true,
+                      );
+                      Haptics.notificationAsync(
+                        Haptics.NotificationFeedbackType.Success,
+                      );
+                    }
+                  } catch (error) {
+                    //console.error("Failed to toggle follow:", error);
+                    Haptics.notificationAsync(
+                      Haptics.NotificationFeedbackType.Error,
+                    );
+                  } finally {
+                    setIsFollowLoading(false);
                   }
-                } catch (error) {
-                  console.error("Failed to toggle follow:", error);
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                } finally {
-                  setIsFollowLoading(false);
-                }
-              }}
-              disabled={isFollowLoading || isCheckingFollow}
-            >
-              {isFollowLoading ? (
-                <ActivityIndicator 
-                  size="small" 
-                  color={theme === "dark" ? "#000" : "#00FF80"} 
-                />
-              ) : (
-                <View style={styles.followButtonContent}>
-                  <Text style={[
-                    styles.followText, 
-                    theme === "dark" && {color: "#000"},
-                    isFollowing && styles.followingText
-                  ]}>
-                    {isFollowing ? "Following" : "Follow User"}
-                  </Text>
-                  {isFollowing && (
-                    <TouchableOpacity 
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowNotificationSettings(!showNotificationSettings);
-                      }}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                }}
+                disabled={isFollowLoading || isCheckingFollow}
+              >
+                {isFollowLoading ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={theme === "dark" ? "#000" : "#00FF80"}
+                  />
+                ) : (
+                  <View style={styles.followButtonContent}>
+                    <Text
+                      style={[
+                        styles.followText,
+                        theme === "dark" && { color: "#000" },
+                        isFollowing && styles.followingText,
+                      ]}
                     >
-                      <Ionicons 
-                        name="settings-outline" 
-                        size={18} 
-                        color={theme === "dark" ? "#000" : "#00FF80"} 
-                      />
-                    </TouchableOpacity>
-                  )}
+                      {isFollowing ? "Following" : "Follow User"}
+                    </Text>
+                    {isFollowing && (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          Haptics.impactAsync(
+                            Haptics.ImpactFeedbackStyle.Light,
+                          );
+                          setShowNotificationSettings(
+                            !showNotificationSettings,
+                          );
+                        }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Ionicons
+                          name="settings-outline"
+                          size={18}
+                          color={theme === "dark" ? "#000" : "#00FF80"}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </Pressable>
+
+              {isFollowing && showNotificationSettings && (
+                <View
+                  style={[
+                    styles.notificationPreferences,
+                    theme === "dark" && {
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      borderColor: "rgba(255, 255, 255, 0.1)",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.notificationPreferencesTitle,
+                      theme === "dark" && { color: "#E0E0E0" },
+                    ]}
+                  >
+                    Notification Preferences
+                  </Text>
+
+                  <View style={styles.preferenceItem}>
+                    <View style={styles.preferenceTextContainer}>
+                      <Text
+                        style={[
+                          styles.preferenceLabel,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                      >
+                        Email Notifications
+                      </Text>
+                      <Text
+                        style={[
+                          styles.preferenceDescription,
+                          theme === "dark" && { color: "#B3B3B3" },
+                        ]}
+                      >
+                        Receive emails when this user levels up or earns NFTs
+                      </Text>
+                    </View>
+                    <Switch
+                      value={notificationPreferences.emailNotifications}
+                      onValueChange={(value) =>
+                        handleNotificationPreferenceChange(
+                          "emailNotifications",
+                          value,
+                        )
+                      }
+                      trackColor={{ false: "#767577", true: "#00FF80" }}
+                      thumbColor={
+                        notificationPreferences.emailNotifications
+                          ? "#000"
+                          : "#f4f3f4"
+                      }
+                      disabled={isLoadingPreferences}
+                    />
+                  </View>
+
+                  <View style={styles.preferenceItem}>
+                    <View style={styles.preferenceTextContainer}>
+                      <Text
+                        style={[
+                          styles.preferenceLabel,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                      >
+                        Push Notifications
+                      </Text>
+                      <Text
+                        style={[
+                          styles.preferenceDescription,
+                          theme === "dark" && { color: "#B3B3B3" },
+                        ]}
+                      >
+                        Get push notifications on your device
+                      </Text>
+                    </View>
+                    <Switch
+                      value={notificationPreferences.pushNotifications}
+                      onValueChange={(value) =>
+                        handleNotificationPreferenceChange(
+                          "pushNotifications",
+                          value,
+                        )
+                      }
+                      trackColor={{ false: "#767577", true: "#00FF80" }}
+                      thumbColor={
+                        notificationPreferences.pushNotifications
+                          ? "#000"
+                          : "#f4f3f4"
+                      }
+                      disabled={isLoadingPreferences}
+                    />
+                  </View>
+
+                  <View style={styles.preferenceItem}>
+                    <View style={styles.preferenceTextContainer}>
+                      <Text
+                        style={[
+                          styles.preferenceLabel,
+                          theme === "dark" && { color: "#E0E0E0" },
+                        ]}
+                      >
+                        In-App Notifications
+                      </Text>
+                      <Text
+                        style={[
+                          styles.preferenceDescription,
+                          theme === "dark" && { color: "#B3B3B3" },
+                        ]}
+                      >
+                        Show notifications in your activity feed
+                      </Text>
+                    </View>
+                    <Switch
+                      value={notificationPreferences.inAppNotifications}
+                      onValueChange={(value) =>
+                        handleNotificationPreferenceChange(
+                          "inAppNotifications",
+                          value,
+                        )
+                      }
+                      trackColor={{ false: "#767577", true: "#00FF80" }}
+                      thumbColor={
+                        notificationPreferences.inAppNotifications
+                          ? "#000"
+                          : "#f4f3f4"
+                      }
+                      disabled={isLoadingPreferences}
+                    />
+                  </View>
                 </View>
               )}
-            </Pressable>
-
-            {isFollowing && showNotificationSettings && (
-              <View style={[styles.notificationPreferences, theme === "dark" && {backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.1)"}]}>
-                <Text style={[styles.notificationPreferencesTitle, theme === "dark" && {color: "#E0E0E0"}]}>
-                  Notification Preferences
-                </Text>
-                
-                <View style={styles.preferenceItem}>
-                  <View style={styles.preferenceTextContainer}>
-                    <Text style={[styles.preferenceLabel, theme === "dark" && {color: "#E0E0E0"}]}>Email Notifications</Text>
-                    <Text style={[styles.preferenceDescription, theme === "dark" && {color: "#B3B3B3"}]}>
-                      Receive emails when this user levels up or earns NFTs
-                    </Text>
-                  </View>
-                  <Switch
-                    value={notificationPreferences.emailNotifications}
-                    onValueChange={(value) => handleNotificationPreferenceChange('emailNotifications', value)}
-                    trackColor={{ false: "#767577", true: "#00FF80" }}
-                    thumbColor={notificationPreferences.emailNotifications ? "#000" : "#f4f3f4"}
-                    disabled={isLoadingPreferences}
-                  />
-                </View>
-
-                <View style={styles.preferenceItem}>
-                  <View style={styles.preferenceTextContainer}>
-                    <Text style={[styles.preferenceLabel, theme === "dark" && {color: "#E0E0E0"}]}>Push Notifications</Text>
-                    <Text style={[styles.preferenceDescription, theme === "dark" && {color: "#B3B3B3"}]}>
-                      Get push notifications on your device
-                    </Text>
-                  </View>
-                  <Switch
-                    value={notificationPreferences.pushNotifications}
-                    onValueChange={(value) => handleNotificationPreferenceChange('pushNotifications', value)}
-                    trackColor={{ false: "#767577", true: "#00FF80" }}
-                    thumbColor={notificationPreferences.pushNotifications ? "#000" : "#f4f3f4"}
-                    disabled={isLoadingPreferences}
-                  />
-                </View>
-
-                <View style={styles.preferenceItem}>
-                  <View style={styles.preferenceTextContainer}>
-                    <Text style={[styles.preferenceLabel, theme === "dark" && {color: "#E0E0E0"}]}>In-App Notifications</Text>
-                    <Text style={[styles.preferenceDescription, theme === "dark" && {color: "#B3B3B3"}]}>
-                      Show notifications in your activity feed
-                    </Text>
-                  </View>
-                  <Switch
-                    value={notificationPreferences.inAppNotifications}
-                    onValueChange={(value) => handleNotificationPreferenceChange('inAppNotifications', value)}
-                    trackColor={{ false: "#767577", true: "#00FF80" }}
-                    thumbColor={notificationPreferences.inAppNotifications ? "#000" : "#f4f3f4"}
-                    disabled={isLoadingPreferences}
-                  />
-                </View>
-              </View>
-            )}
-          </>
-        )}
-      </View>
-
-      <View style={[styles.achievements, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
-        <AchievementCard
-          title="XP Earned"
-          imageKey="xp"
-          metric={userMetrics.xp + " XP"}
-        />
-
-        <AchievementCard
-          title="Badges collected"
-          imageKey="nft"
-          metric={userMetrics.nfts.toString()}
-        />
-
-        <AchievementCard
-          title="Quiz Completed"
-          imageKey="quiz"
-          metric={userMetrics.quizCompleted.toString()}
-        />
-      </View>
-      
-      <View style={styles.streakContainer}>
-        <DailyCheckInStreak streak={user?.streak} />
-      </View>
-
-      <View style={[styles.learningStats, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
-        <Text style={[styles.learningStatsText, theme === "dark" && {color: "#E0E0E0"}]}>Learning Stats</Text>
-
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Quizzes Completed</Text>
-            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{userMetrics.quizCompleted}</Text>
-          </View>
-          
-          <View style={styles.stat}>
-            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Questions Answered</Text>
-            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{quizStats.totalQuestionsAnswered}</Text>
-          </View>
-          
-          <View style={styles.stat}>
-            <Text style={[styles.statText, theme === "dark" && {color: "#B3B3B3"}]}>Accuracy Rate</Text>
-            <Text style={[styles.statNumber, theme === "dark" && {color: "#E0E0E0"}]}>{quizStats.accuracyRate}%</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={[styles.rewardsSection, theme === "dark" && {backgroundColor: '#131313', borderColor: "#2E3033"}]}>
-        <View style={styles.rewardsHeader}>
-          <Text style={[styles.rewardsSectionText, theme === "dark" && {color: "#E0E0E0"}]}>Earned Rewards</Text>
+            </>
+          )}
         </View>
 
-        {userRewards.length > 0 ? (
-          <View style={styles.rewardsGrid}>
-            {userRewards.slice(0, 4).map((reward, index) => (
-              <TouchableOpacity
-                key={reward.id || index}
-                style={[styles.gridItem, { width: itemWidth }]}
-                onPress={() => router.push({
-                  pathname: "/nft/[id]",
-                  params: { id: reward.id }
-                })}
+        <View
+          style={[
+            styles.achievements,
+            theme === "dark" && {
+              backgroundColor: "#131313",
+              borderColor: "#2E3033",
+            },
+          ]}
+        >
+          <AchievementCard
+            title="XP Earned"
+            imageKey="xp"
+            metric={userMetrics.xp + " XP"}
+          />
+
+          <AchievementCard
+            title="Badges collected"
+            imageKey="nft"
+            metric={userMetrics.nfts.toString()}
+          />
+
+          <AchievementCard
+            title="Quiz Completed"
+            imageKey="quiz"
+            metric={userMetrics.quizCompleted.toString()}
+          />
+        </View>
+
+        <View style={styles.streakContainer}>
+          <DailyCheckInStreak streak={user?.streak} />
+        </View>
+
+        <View
+          style={[
+            styles.learningStats,
+            theme === "dark" && {
+              backgroundColor: "#131313",
+              borderColor: "#2E3033",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.learningStatsText,
+              theme === "dark" && { color: "#E0E0E0" },
+            ]}
+          >
+            Learning Stats
+          </Text>
+
+          <View style={styles.stats}>
+            <View style={styles.stat}>
+              <Text
+                style={[
+                  styles.statText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
               >
-                <ImageBackground
-                  source={{ uri: reward.imageUrl }}
-                  style={styles.rewardImageBg}
-                  imageStyle={{ borderRadius: 8 }}
+                Quizzes Completed
+              </Text>
+              <Text
+                style={[
+                  styles.statNumber,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {userMetrics.quizCompleted}
+              </Text>
+            </View>
+
+            <View style={styles.stat}>
+              <Text
+                style={[
+                  styles.statText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Questions Answered
+              </Text>
+              <Text
+                style={[
+                  styles.statNumber,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {quizStats.totalQuestionsAnswered}
+              </Text>
+            </View>
+
+            <View style={styles.stat}>
+              <Text
+                style={[
+                  styles.statText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Accuracy Rate
+              </Text>
+              <Text
+                style={[
+                  styles.statNumber,
+                  theme === "dark" && { color: "#E0E0E0" },
+                ]}
+              >
+                {quizStats.accuracyRate}%
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.rewardsSection,
+            theme === "dark" && {
+              backgroundColor: "#131313",
+              borderColor: "#2E3033",
+            },
+          ]}
+        >
+          <View style={styles.rewardsHeader}>
+            <Text
+              style={[
+                styles.rewardsSectionText,
+                theme === "dark" && { color: "#E0E0E0" },
+              ]}
+            >
+              Earned Rewards
+            </Text>
+          </View>
+
+          {userRewards.length > 0 ? (
+            <View style={styles.rewardsGrid}>
+              {userRewards.slice(0, 4).map((reward, index) => (
+                <TouchableOpacity
+                  key={reward.id || index}
+                  style={[styles.gridItem, { width: itemWidth }]}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/nft/[id]",
+                      params: { id: reward.id },
+                    })
+                  }
                 >
-                  {reward.signature && (
-                    <View style={styles.claimedBadge}>
-                      <Text style={styles.claimedText}>Claimed</Text>
-                    </View>
-                  )}
-                </ImageBackground>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyStateContainer}>
-            <Text style={[styles.emptyStateText, theme === "dark" && {color: "#B3B3B3"}]}>
-              No badge earned yet.
-            </Text>
-            <Text style={[styles.emptyStateSubtext, theme === "dark" && {color: "#B3B3B3"}]}>
-              Complete quizzes and lessons to collect badges!
-            </Text>
-          </View>
-        )}
-      </View>
+                  <ImageBackground
+                    source={{ uri: reward.imageUrl }}
+                    style={styles.rewardImageBg}
+                    imageStyle={{ borderRadius: 8 }}
+                  >
+                    {reward.signature && (
+                      <View style={styles.claimedBadge}>
+                        <Text style={styles.claimedText}>Claimed</Text>
+                      </View>
+                    )}
+                  </ImageBackground>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text
+                style={[
+                  styles.emptyStateText,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                No badge earned yet.
+              </Text>
+              <Text
+                style={[
+                  styles.emptyStateSubtext,
+                  theme === "dark" && { color: "#B3B3B3" },
+                ]}
+              >
+                Complete quizzes and lessons to collect badges!
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,14 +1,14 @@
-import Chat from '@/components/chat/Chat';
+import Chat from "@/components/chat/Chat";
 
-import useChatStore from '@/core/chatState';
-import { useTheme } from '@/hooks/useTheme';
-import { Chat as chatInterface, Message } from '@/interface/Chat';
-import { generateUUID } from '@/utils/constants';
-import { useLocalSearchParams } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import useChatStore from "@/core/chatState";
+import { useTheme } from "@/hooks/useTheme";
+import { Chat as chatInterface, Message } from "@/interface/Chat";
+import { generateUUID } from "@/utils/constants";
+import { useLocalSearchParams } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, { useEffect, useState } from "react";
+import { View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ChatScreen = () => {
   const { chatIdFromNav } = useLocalSearchParams<{
@@ -20,8 +20,8 @@ const ChatScreen = () => {
   const fetchMessages = useChatStore((s) => s.fetchMessages);
   const fetchChatById = useChatStore((s) => s.fetchChatById);
 
-  const [currentChatId, setCurrentChatId] = useState<string>(() =>
-    chatIdFromNav || generateUUID()
+  const [currentChatId, setCurrentChatId] = useState<string>(
+    () => chatIdFromNav || generateUUID(),
   );
 
   useEffect(() => {
@@ -49,7 +49,10 @@ const ChatScreen = () => {
       }
 
       try {
-        const messages = await fetchMessages(currentChatId);
+        const messages = await fetchMessages(currentChatId, {
+          offset: 0,
+          limit: 5,
+        });
         setInitialMessages(messages || []);
 
         if (messages && messages.length > 0) {
@@ -75,7 +78,7 @@ const ChatScreen = () => {
       <StatusBar style={statusBarStyle} />
       <View style={{ flex: 1, backgroundColor: colors.canvas }}>
         <Chat
-          title={chat?.title || 'AI Tutor Chat'}
+          title={chat?.title || "AI Tutor Chat"}
           initialMessages={initialMessages}
           chatId={currentChatId}
           key={currentChatId}

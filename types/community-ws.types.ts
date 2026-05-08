@@ -1,4 +1,4 @@
-import type { ReactionCount, RoomMessage } from './community.types';
+import type { ReactionCount, RoomMessage } from "./community.types";
 
 export type RoomMessageWithUI = RoomMessage & {
   date: string;
@@ -14,7 +14,7 @@ export type RoomMessageWithUI = RoomMessage & {
 export type UserStatusEvent = {
   userId: string;
   username: string;
-  status: 'online' | 'offline';
+  status: "online" | "offline";
   timestamp: string;
 };
 

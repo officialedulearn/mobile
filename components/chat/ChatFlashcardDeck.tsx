@@ -86,9 +86,7 @@ export default function ChatFlashcardDeck({ deckId }: Props) {
 
   if (loading && !payload) {
     return (
-      <View
-        style={[styles.loader, theme === "dark" && styles.loaderDark]}
-      >
+      <View style={[styles.loader, theme === "dark" && styles.loaderDark]}>
         <ActivityIndicator
           size="small"
           color={theme === "dark" ? "#00FF80" : "#2D3C52"}
@@ -102,9 +100,7 @@ export default function ChatFlashcardDeck({ deckId }: Props) {
     return null;
   }
 
-  const sorted = [...cards].sort(
-    (a, b) => a.sortOrder - b.sortOrder,
-  );
+  const sorted = [...cards].sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <View style={styles.block}>

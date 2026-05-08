@@ -4,7 +4,13 @@ import { CardSharingService } from "@/services/cardSharing.service";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type Props = Record<string, never>;
 
@@ -14,8 +20,8 @@ const NftClaimed = (_props: Props) => {
   const [error, setError] = React.useState<string | null>(null);
   const { rewardId } = useLocalSearchParams();
   const { fetchRewardById } = useRewardsStore();
-  const theme = useUserStore(state => state.theme);
-  const user = useUserStore(state => state.user);
+  const theme = useUserStore((state) => state.theme);
+  const user = useUserStore((state) => state.user);
 
   const cardSharingService = new CardSharingService();
 
@@ -51,7 +57,7 @@ const NftClaimed = (_props: Props) => {
     };
 
     loadReward();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rewardId]);
 
   const handleViewNFTs = () => {
@@ -62,14 +68,17 @@ const NftClaimed = (_props: Props) => {
     if (!reward || !reward.imageUrl) {
       return;
     }
-  
+
     try {
-      await cardSharingService.shareNFTMintCard(user?.id as string, reward.title || "your badge", reward.imageUrl);
+      await cardSharingService.shareNFTMintCard(
+        user?.id as string,
+        reward.title || "your badge",
+        reward.imageUrl,
+      );
     } catch (error) {
-      alert('Failed to share NFT');
+      alert("Failed to share NFT");
     }
   };
-  
 
   if (isLoading) {
     return (
@@ -83,7 +92,9 @@ const NftClaimed = (_props: Props) => {
   if (error || !reward) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>{error || "Failed to load NFT details"}</Text>
+        <Text style={styles.errorText}>
+          {error || "Failed to load NFT details"}
+        </Text>
         <TouchableOpacity style={styles.viewButton} onPress={handleViewNFTs}>
           <Text style={styles.viewButtonText}>Return to Collection</Text>
         </TouchableOpacity>
@@ -99,31 +110,64 @@ const NftClaimed = (_props: Props) => {
           style={styles.checkImage}
         />
         <View style={styles.welcomeContainer}>
-          <Text style={[styles.welcomeText, theme === "dark" && styles.welcomeTextDark]}>NFT Claimed 🎉</Text>
+          <Text
+            style={[
+              styles.welcomeText,
+              theme === "dark" && styles.welcomeTextDark,
+            ]}
+          >
+            NFT Claimed 🎉
+          </Text>
           {reward.imageUrl && (
-            <Image 
-              source={{ uri: reward.imageUrl }} 
+            <Image
+              source={{ uri: reward.imageUrl }}
               style={styles.nftImage}
               resizeMode="contain"
             />
           )}
-          <Text style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}>
-            You&apos;ve successfully claimed {reward.title || "your badge"}, a collectible badge for
-            your achievement. You can now view this in your Claimed Collection.
+          <Text
+            style={[styles.subtitle, theme === "dark" && styles.subtitleDark]}
+          >
+            You&apos;ve successfully claimed {reward.title || "your badge"}, a
+            collectible badge for your achievement. You can now view this in
+            your Claimed Collection.
           </Text>
         </View>
       </View>
       <View style={styles.bottomSection}>
-        <TouchableOpacity style={[styles.shareButtton, theme === "dark" && styles.shareButtonDark]} onPress={handleShareNFT}>
-          <Text style={[styles.shareButtonText, theme === "dark" && styles.shareButtonTextDark]}>Share</Text>
+        <TouchableOpacity
+          style={[
+            styles.shareButtton,
+            theme === "dark" && styles.shareButtonDark,
+          ]}
+          onPress={handleShareNFT}
+        >
+          <Text
+            style={[
+              styles.shareButtonText,
+              theme === "dark" && styles.shareButtonTextDark,
+            ]}
+          >
+            Share
+          </Text>
           <Image
             source={require("@/assets/images/icons/share.png")}
             style={{ width: 20, height: 20, marginLeft: 10 }}
           />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.viewButton, theme === "dark" && styles.viewButtonDark]} onPress={handleViewNFTs}>
-          <Text style={[styles.viewButtonText, theme === "dark" && styles.viewButtonTextDark]}>View in collection</Text>
+        <TouchableOpacity
+          style={[styles.viewButton, theme === "dark" && styles.viewButtonDark]}
+          onPress={handleViewNFTs}
+        >
+          <Text
+            style={[
+              styles.viewButtonText,
+              theme === "dark" && styles.viewButtonTextDark,
+            ]}
+          >
+            View in collection
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -300,5 +344,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     fontFamily: "Satoshi-Regular",
-  }
+  },
 });

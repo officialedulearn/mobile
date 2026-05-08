@@ -168,7 +168,6 @@ export class AIService extends BaseService {
                   : undefined,
               );
             }
-
           }
         } catch {}
       });

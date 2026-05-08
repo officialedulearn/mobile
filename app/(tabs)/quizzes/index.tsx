@@ -1,445 +1,750 @@
-import { ScreenContainer } from '@/components/common/ScreenContainer';
-import usePublicQuizStore from '@/core/quizStore';
-import useUserStore from '@/core/userState';
-import { useScreenStyles } from '@/hooks/useScreenStyles';
-import { useTheme } from '@/hooks/useTheme';
-import type { PublicQuizListItem } from '@/types/quizzes.types';
-import { Design } from '@/utils/design';
-import { LegendList } from '@legendapp/list';
-import { Image } from "expo-image";
-import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useEffect, useState } from 'react';
+import { ScreenContainer } from "@/components/common/ScreenContainer";
+import usePublicQuizStore from "@/core/quizStore";
+import useUserStore from "@/core/userState";
+import { useScreenStyles } from "@/hooks/useScreenStyles";
+import { useTheme } from "@/hooks/useTheme";
+import type { PublicQuizListItem } from "@/types/quizzes.types";
+import { Design } from "@/utils/design";
+import { createPublicQuizDeepLink } from "@/utils/quizLinks";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetView,
+  type BottomSheetBackdropProps,
+} from "@gorhom/bottom-sheet";
+import { LegendList } from "@legendapp/list";
+import { router } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+type QuizTab = "mine" | "public";
 
 const Quizzes = () => {
-    const userId = useUserStore((s) => s.user?.id);
-    const { isDark } = useTheme();
-    const screenStyles = useScreenStyles();
-    const [listsReady, setListsReady] = useState(false);
-    const {
-        publicQuizzes,
-        myQuizzes,
-        quizError,
-        fetchPublicQuizzes,
-        fetchMyQuizzes,
-    } = usePublicQuizStore();
+  const userId = useUserStore((s) => s.user?.id);
+  const { isDark } = useTheme();
+  const screenStyles = useScreenStyles();
+  const [activeTab, setActiveTab] = useState<QuizTab>("mine");
+  const [listsReady, setListsReady] = useState(false);
+  const [selectedQuiz, setSelectedQuiz] = useState<PublicQuizListItem | null>(
+    null,
+  );
+  const quizActionSheetRef = useRef<BottomSheetModal>(null);
+  const {
+    publicQuizzes,
+    myQuizzes,
+    quizError,
+    fetchPublicQuizzes,
+    fetchMyQuizzes,
+  } = usePublicQuizStore();
 
-    const screenWidth = Dimensions.get('window').width;
-    const cardWidth = Math.min(screenWidth * 0.72, 300);
+  const visiblePublicQuizzes = publicQuizzes.filter(
+    (quiz) => quiz.createdBy !== userId,
+  );
+  const displayedQuizzes =
+    activeTab === "mine" ? myQuizzes : visiblePublicQuizzes;
+  const actionSheetSnapPoints = useMemo(() => ["56%"], []);
 
-    useEffect(() => {
-        if (!userId) return;
-        let cancelled = false;
-        setListsReady(false);
-        (async () => {
-            try {
-                await Promise.all([
-                    fetchPublicQuizzes({ limit: 50, sort: 'recent' }),
-                    fetchMyQuizzes({ limit: 30 }),
-                ]);
-            } finally {
-                if (!cancelled) setListsReady(true);
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [userId, fetchPublicQuizzes, fetchMyQuizzes]);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    setListsReady(false);
+    (async () => {
+      try {
+        await Promise.all([
+          fetchPublicQuizzes({ limit: 50, sort: "recent" }),
+          fetchMyQuizzes({ limit: 30 }),
+        ]);
+      } finally {
+        if (!cancelled) setListsReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, fetchPublicQuizzes, fetchMyQuizzes]);
 
-    const openQuiz = useCallback((quizId: string) => {
-        router.push({ pathname: '/(tabs)/quizzes/[id]', params: { id: quizId } });
-    }, []);
+  const openQuiz = useCallback((quizId: string) => {
+    router.push({ pathname: "/(tabs)/quizzes/[id]", params: { id: quizId } });
+  }, []);
 
-    const listHeader = useCallback(
-        () => (
-            <View style={{ paddingHorizontal: Design.spacing.mdLg }}>
-                <Text style={[styles.header, { color: screenStyles.text.primary }]}>Quizzes</Text>
-                <Text style={[styles.subtext, { color: screenStyles.text.secondary }]}>
-                    Practice what you&apos;ve learned. Earn XP. Get smarter.
+  const openQuizLeaderboard = useCallback((quizId: string) => {
+    router.push({
+      pathname: "/(tabs)/quizzes/leaderboard/[id]",
+      params: { id: quizId },
+    });
+  }, []);
+
+  const closeQuizActions = useCallback(() => {
+    quizActionSheetRef.current?.dismiss();
+  }, []);
+
+  const handleOpenQuizActions = useCallback((quiz: PublicQuizListItem) => {
+    setSelectedQuiz(quiz);
+    quizActionSheetRef.current?.present();
+  }, []);
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    [],
+  );
+
+  const shareQuiz = useCallback(async (quiz: PublicQuizListItem) => {
+    const url = createPublicQuizDeepLink(quiz.id);
+    await Share.share({
+      title: quiz.title,
+      message: `Try this EduLearn quiz: ${url}`,
+      url,
+    });
+  }, []);
+
+  const handleStartQuiz = useCallback(() => {
+    if (!selectedQuiz) return;
+    const quizId = selectedQuiz.id;
+    closeQuizActions();
+    requestAnimationFrame(() => openQuiz(quizId));
+  }, [closeQuizActions, openQuiz, selectedQuiz]);
+
+  const handleViewLeaderboard = useCallback(() => {
+    if (!selectedQuiz) return;
+    const quizId = selectedQuiz.id;
+    closeQuizActions();
+    requestAnimationFrame(() => openQuizLeaderboard(quizId));
+  }, [closeQuizActions, openQuizLeaderboard, selectedQuiz]);
+
+  const handleShareQuiz = useCallback(async () => {
+    if (!selectedQuiz) return;
+    const quiz = selectedQuiz;
+    closeQuizActions();
+    await shareQuiz(quiz);
+  }, [closeQuizActions, selectedQuiz, shareQuiz]);
+
+  const listHeader = useCallback(
+    () => (
+      <View style={styles.headerWrap}>
+        <Text style={[styles.header, { color: screenStyles.text.primary }]}>
+          Quizzes
+        </Text>
+        <Text style={[styles.subtext, { color: screenStyles.text.secondary }]}>
+          Practice what you&apos;ve learned. Earn XP. Get smarter.
+        </Text>
+
+        <View
+          style={[
+            styles.tabBar,
+            {
+              backgroundColor: isDark
+                ? Design.colors.dark.surface
+                : Design.colors.background.white,
+              borderColor: isDark
+                ? Design.colors.dark.border
+                : Design.colors.border.hub,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "mine" && {
+                backgroundColor: isDark
+                  ? Design.colors.mint.DEFAULT
+                  : Design.colors.primary.accentDarkest,
+              },
+            ]}
+            onPress={() => setActiveTab("mine")}
+            activeOpacity={0.9}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                {
+                  color:
+                    activeTab === "mine"
+                      ? isDark
+                        ? Design.colors.text.primary
+                        : Design.colors.mint.DEFAULT
+                      : screenStyles.text.secondary,
+                },
+              ]}
+            >
+              My quizzes
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              activeTab === "public" && {
+                backgroundColor: isDark
+                  ? Design.colors.mint.DEFAULT
+                  : Design.colors.primary.accentDarkest,
+              },
+            ]}
+            onPress={() => setActiveTab("public")}
+            activeOpacity={0.9}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                {
+                  color:
+                    activeTab === "public"
+                      ? isDark
+                        ? Design.colors.text.primary
+                        : Design.colors.mint.DEFAULT
+                      : screenStyles.text.secondary,
+                },
+              ]}
+            >
+              Public quizzes
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text
+          style={[styles.sectionHeader, { color: screenStyles.text.primary }]}
+        >
+          {activeTab === "mine" ? "Your published quizzes" : "Public quizzes"}
+        </Text>
+        <Text style={[styles.tabHint, { color: screenStyles.text.secondary }]}>
+          {activeTab === "mine"
+            ? "Everything you have published shows up here."
+            : "Browse quizzes from other learners. Your own quizzes are hidden from this list."}
+        </Text>
+
+        {quizError ? (
+          <Text
+            style={[styles.errorText, { color: Design.colors.semantic.error }]}
+          >
+            {quizError}
+          </Text>
+        ) : null}
+      </View>
+    ),
+    [
+      activeTab,
+      isDark,
+      quizError,
+      screenStyles.text.primary,
+      screenStyles.text.secondary,
+    ],
+  );
+
+  const renderQuizRow = useCallback(
+    ({ item }: { item: PublicQuizListItem }) => {
+      const border = isDark
+        ? Design.colors.dark.border
+        : Design.colors.border.hub;
+      const surface = isDark
+        ? Design.colors.dark.surface
+        : Design.colors.background.white;
+      const primary = isDark
+        ? Design.colors.text.darkPrimary
+        : Design.colors.text.primary;
+      const secondary = isDark
+        ? Design.colors.text.darkSecondary
+        : Design.colors.text.slateSecondary;
+      const creatorLabel =
+        activeTab === "mine"
+          ? "Published by you"
+          : item.creatorUsername
+            ? `by ${item.creatorUsername}`
+            : "Public quiz";
+
+      return (
+        <TouchableOpacity
+          style={[
+            styles.publicRow,
+            { backgroundColor: surface, borderColor: border },
+          ]}
+          onPress={() => handleOpenQuizActions(item)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.rowContent}>
+            <Text
+              style={[styles.publicTitle, { color: primary }]}
+              numberOfLines={2}
+            >
+              {item.title}
+            </Text>
+            <Text
+              style={[styles.publicSub, { color: secondary }]}
+              numberOfLines={1}
+            >
+              {creatorLabel}
+            </Text>
+            <View style={styles.publicStats}>
+              <Text style={[styles.publicStatText, { color: secondary }]}>
+                {item.attemptCount} attempts
+              </Text>
+              {activeTab === "mine" ? (
+                <Text style={[styles.publicStatText, { color: secondary }]}>
+                  {item.viewCount} views
                 </Text>
-
-                <Text style={[styles.sectionHeader, { color: screenStyles.text.primary }]}>
-                    From your AI sessions
-                </Text>
-
-                {myQuizzes.length > 0 ? (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.hScrollContent}
-                        snapToInterval={cardWidth + 16}
-                        decelerationRate="fast"
-                        style={styles.hScroll}
-                    >
-                        {myQuizzes.map((chat) => (
-                            <View
-                                key={chat.id}
-                                style={[
-                                    styles.aiSessionCard,
-                                    {
-                                        width: cardWidth,
-                                        backgroundColor: isDark
-                                            ? Design.colors.dark.surface
-                                            : Design.colors.background.white,
-                                        borderColor: isDark ? Design.colors.dark.border : Design.colors.border.hub,
-                                    },
-                                ]}
-                            >
-                                <View style={styles.cardHeaderRow}>
-                                    <Image
-                                        source={require('@/assets/images/icons/brain1.png')}
-                                        style={styles.cardHeaderIcon}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.cardTitle,
-                                            {
-                                                color: isDark
-                                                    ? Design.colors.text.darkPrimary
-                                                    : Design.colors.text.primary,
-                                            },
-                                        ]}
-                                        numberOfLines={1}
-                                    >
-                                        {chat.title || 'Untitled'}
-                                    </Text>
-                                </View>
-
-                                <Text
-                                    style={[
-                                        styles.cardMeta,
-                                        {
-                                            color: isDark
-                                                ? Design.colors.text.darkSecondary
-                                                : Design.colors.text.slateSecondary,
-                                        },
-                                    ]}
-                                >
-                                    {new Date(chat.createdAt).toLocaleDateString()}
-                                </Text>
-
-                                <View style={styles.cardMetaRow}>
-                                    <View style={styles.metaInline}>
-                                        <Image
-                                            source={require('@/assets/images/icons/medal-05.png')}
-                                            style={styles.metaIconSm}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.metaTextSm,
-                                                {
-                                                    color: isDark
-                                                        ? Design.colors.text.darkPrimary
-                                                        : Design.colors.text.primary,
-                                                },
-                                            ]}
-                                        >
-                                            Up to 10 XP
-                                        </Text>
-                                    </View>
-                                    <View style={styles.metaInline}>
-                                        <Image
-                                            source={
-                                                isDark
-                                                    ? require('@/assets/images/icons/dark/clock.png')
-                                                    : require('@/assets/images/icons/clock.png')
-                                            }
-                                            style={styles.metaIconSm}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.metaTextSm,
-                                                {
-                                                    color: isDark
-                                                        ? Design.colors.text.darkPrimary
-                                                        : Design.colors.text.primary,
-                                                },
-                                            ]}
-                                        >
-                                            ~1 min
-                                        </Text>
-                                    </View>
-                                </View>
-
-                                <TouchableOpacity
-                                    style={[
-                                        styles.startBtnSm,
-                                        {
-                                            backgroundColor: isDark
-                                                ? Design.colors.mint.DEFAULT
-                                                : Design.colors.primary.accentDarkest,
-                                        },
-                                    ]}
-                                    onPress={() => openQuiz(chat.id)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.startBtnSmText,
-                                            {
-                                                color: isDark
-                                                    ? Design.colors.text.primary
-                                                    : Design.colors.mint.DEFAULT,
-                                            },
-                                        ]}
-                                    >
-                                        Start
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                    </ScrollView>
-                ) : (
-                    <Text style={[styles.emptyText, { color: screenStyles.text.secondary }]}>
-                        No AI session quizzes yet. Publish a quiz from chat to see it here.
-                    </Text>
-                )}
-
-                <Text
-                    style={[
-                        styles.sectionHeader,
-                        { color: screenStyles.text.primary, marginTop: Design.spacing.md },
-                    ]}
-                >
-                    Public quizzes
-                </Text>
-                {quizError ? (
-                    <Text style={[styles.errorText, { color: Design.colors.semantic.error }]}>{quizError}</Text>
-                ) : null}
+              ) : null}
+              <Text style={[styles.publicStatText, { color: secondary }]}>
+                {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
             </View>
-        ),
-        [cardWidth, isDark, myQuizzes, openQuiz, quizError, screenStyles.text.primary, screenStyles.text.secondary]
-    );
+          </View>
+          <View style={styles.publicChevronWrap}>
+            <Text style={[styles.publicChevron, { color: primary }]}>
+              {">"}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [activeTab, handleOpenQuizActions, isDark],
+  );
 
-    const renderPublicRow = useCallback(
-        ({ item }: { item: PublicQuizListItem }) => {
-            const border = isDark ? Design.colors.dark.border : Design.colors.border.hub;
-            const surface = isDark ? Design.colors.dark.surface : Design.colors.background.white;
-            const primary = isDark ? Design.colors.text.darkPrimary : Design.colors.text.primary;
-            const secondary = isDark ? Design.colors.text.darkSecondary : Design.colors.text.slateSecondary;
+  return (
+    <>
+      {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
+      <ScreenContainer scrollable={false}>
+        <View style={styles.flex}>
+          <LegendList
+            data={displayedQuizzes}
+            estimatedItemSize={92}
+            keyExtractor={(item) => item.id}
+            renderItem={renderQuizRow}
+            ListHeaderComponent={listHeader}
+            nestedScrollEnabled={Platform.OS === "android"}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyWrap}>
+                {!listsReady ? (
+                  <ActivityIndicator
+                    color={
+                      isDark
+                        ? Design.colors.mint.DEFAULT
+                        : Design.colors.primary.accentDarkest
+                    }
+                  />
+                ) : (
+                  <Text
+                    style={[
+                      styles.emptyCenter,
+                      { color: screenStyles.text.secondary },
+                    ]}
+                  >
+                    {activeTab === "mine"
+                      ? "You have not published any quizzes yet."
+                      : "No public quizzes yet."}
+                  </Text>
+                )}
+              </View>
+            }
+          />
+        </View>
+      </ScreenContainer>
+      <BottomSheetModal
+        ref={quizActionSheetRef}
+        index={0}
+        snapPoints={actionSheetSnapPoints}
+        backdropComponent={renderBackdrop}
+        enablePanDownToClose={true}
+        backgroundStyle={[
+          styles.sheetBackground,
+          {
+            backgroundColor: isDark
+              ? Design.colors.dark.surface
+              : Design.colors.background.white,
+          },
+        ]}
+        handleIndicatorStyle={[
+          styles.sheetIndicator,
+          {
+            backgroundColor: isDark
+              ? Design.colors.text.darkSecondary
+              : Design.colors.text.slateSecondary,
+          },
+        ]}
+        onDismiss={() => setSelectedQuiz(null)}
+      >
+        <BottomSheetView style={styles.sheetContent}>
+          <Text
+            style={[
+              styles.sheetEyebrow,
+              { color: screenStyles.text.secondary },
+            ]}
+          >
+            Quiz actions
+          </Text>
+          <Text
+            style={[styles.sheetTitle, { color: screenStyles.text.primary }]}
+          >
+            {selectedQuiz?.title ?? "Selected quiz"}
+          </Text>
+          <Text
+            style={[
+              styles.sheetDescription,
+              { color: screenStyles.text.secondary },
+            ]}
+          >
+            {selectedQuiz?.description?.trim() ||
+              "Choose what you want to do with this quiz."}
+          </Text>
+          <View style={styles.sheetStats}>
+            <View
+              style={[
+                styles.sheetStatChip,
+                {
+                  backgroundColor: isDark
+                    ? Design.colors.dark.canvas
+                    : Design.colors.background.canvas,
+                  borderColor: isDark
+                    ? Design.colors.dark.border
+                    : Design.colors.border.hub,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sheetStatText,
+                  { color: screenStyles.text.primary },
+                ]}
+              >
+                {selectedQuiz?.attemptCount ?? 0} attempts
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.sheetStatChip,
+                {
+                  backgroundColor: isDark
+                    ? Design.colors.dark.canvas
+                    : Design.colors.background.canvas,
+                  borderColor: isDark
+                    ? Design.colors.dark.border
+                    : Design.colors.border.hub,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sheetStatText,
+                  { color: screenStyles.text.primary },
+                ]}
+              >
+                {selectedQuiz?.viewCount ?? 0} views
+              </Text>
+            </View>
+          </View>
 
-            return (
-                <TouchableOpacity
-                    style={[styles.publicRow, { backgroundColor: surface, borderColor: border }]}
-                    onPress={() => openQuiz(item.id)}
-                    activeOpacity={0.85}
-                >
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.publicTitle, { color: primary }]} numberOfLines={2}>
-                            {item.title}
-                        </Text>
-                        {item.creatorUsername ? (
-                            <Text style={[styles.publicSub, { color: secondary }]} numberOfLines={1}>
-                                by {item.creatorUsername}
-                            </Text>
-                        ) : null}
-                        <View style={styles.publicStats}>
-                            <Text style={[styles.publicStatText, { color: secondary }]}>
-                                {item.attemptCount} attempts
-                            </Text>
-                            <Text style={[styles.publicStatText, { color: secondary }]}>
-                                {new Date(item.createdAt).toLocaleDateString()}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.publicChevronWrap}>
-                        <Text style={[styles.publicChevron, { color: primary }]}>›</Text>
-                    </View>
-                </TouchableOpacity>
-            );
-        },
-        [isDark, openQuiz]
-    );
+          <View style={styles.sheetActions}>
+            <TouchableOpacity
+              style={[
+                styles.sheetActionButton,
+                {
+                  backgroundColor: isDark
+                    ? Design.colors.dark.canvas
+                    : Design.colors.background.canvas,
+                  borderColor: isDark
+                    ? Design.colors.dark.border
+                    : Design.colors.border.hub,
+                },
+              ]}
+              onPress={handleViewLeaderboard}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.sheetActionTitle,
+                  { color: screenStyles.text.primary },
+                ]}
+              >
+                View leaderboard
+              </Text>
+              <Text
+                style={[
+                  styles.sheetActionSubtitle,
+                  { color: screenStyles.text.secondary },
+                ]}
+              >
+                See the top performers and your ranking for this quiz.
+              </Text>
+            </TouchableOpacity>
 
-    return (
-        <>
-            {isDark ? <StatusBar style="light" /> : <StatusBar style="dark" />}
-            <ScreenContainer scrollable={false}>
-                <View style={styles.flex}>
-                    <LegendList
-                        data={publicQuizzes}
-                        estimatedItemSize={92}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderPublicRow}
-                        ListHeaderComponent={listHeader}
-                        nestedScrollEnabled={Platform.OS === 'android'}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.listContent}
-                        ListEmptyComponent={
-                            <View style={styles.emptyWrap}>
-                                {!listsReady ? (
-                                    <ActivityIndicator
-                                        color={
-                                            isDark ? Design.colors.mint.DEFAULT : Design.colors.primary.accentDarkest
-                                        }
-                                    />
-                                ) : (
-                                    <Text style={[styles.emptyCenter, { color: screenStyles.text.secondary }]}>
-                                        No public quizzes yet.
-                                    </Text>
-                                )}
-                            </View>
-                        }
-                    />
-                </View>
-            </ScreenContainer>
-        </>
-    );
+            <TouchableOpacity
+              style={[
+                styles.sheetActionButton,
+                {
+                  backgroundColor: isDark
+                    ? Design.colors.dark.canvas
+                    : Design.colors.background.canvas,
+                  borderColor: isDark
+                    ? Design.colors.dark.border
+                    : Design.colors.border.hub,
+                },
+              ]}
+              onPress={handleShareQuiz}
+              activeOpacity={0.85}
+            >
+              <Text
+                style={[
+                  styles.sheetActionTitle,
+                  { color: screenStyles.text.primary },
+                ]}
+              >
+                Share
+              </Text>
+              <Text
+                style={[
+                  styles.sheetActionSubtitle,
+                  { color: screenStyles.text.secondary },
+                ]}
+              >
+                Send a deep link so someone else can open this quiz.
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sheetActionButton,
+                styles.sheetActionButtonPrimary,
+                {
+                  backgroundColor: isDark
+                    ? Design.colors.mint.DEFAULT
+                    : Design.colors.primary.accentDarkest,
+                },
+              ]}
+              onPress={handleStartQuiz}
+              activeOpacity={0.9}
+            >
+              <Text
+                style={[
+                  styles.sheetActionTitle,
+                  {
+                    color: isDark
+                      ? Design.colors.text.primary
+                      : Design.colors.mint.DEFAULT,
+                  },
+                ]}
+              >
+                Start quiz
+              </Text>
+              <Text
+                style={[
+                  styles.sheetActionSubtitle,
+                  {
+                    color: isDark
+                      ? Design.colors.text.primary
+                      : "rgba(0, 255, 128, 0.8)",
+                  },
+                ]}
+              >
+                Open the timed quiz screen and begin immediately.
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
+    </>
+  );
 };
 
 export default Quizzes;
 
 const styles = StyleSheet.create({
-    flex: { flex: 1 },
-    listContent: {
-        paddingBottom: Design.spacing.xl,
-    },
-    emptyWrap: {
-        paddingVertical: Design.spacing.lg,
-        alignItems: 'center',
-    },
-    header: {
-        fontSize: Design.typography.fontSize.xl,
-        fontWeight: Design.typography.fontWeight.semibold,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-        lineHeight: Design.typography.lineHeight.xl,
-    },
-    subtext: {
-        fontSize: Design.typography.fontSize.sm,
-        marginTop: Design.spacing.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-        lineHeight: Design.typography.lineHeight.md,
-        fontWeight: Design.typography.fontWeight.regular,
-        marginBottom: Design.spacing.lg,
-    },
-    sectionHeader: {
-        fontSize: Design.typography.fontSize.lg,
-        fontWeight: Design.typography.fontWeight.semibold,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-        lineHeight: Design.typography.lineHeight.lg,
-        marginTop: Design.spacing.sm,
-        marginBottom: Design.spacing.sm,
-    },
-    hScroll: { marginBottom: Design.spacing.xs },
-    hScrollContent: {
-        gap: 16,
-        paddingVertical: Design.spacing.sm,
-        paddingHorizontal: 0,
-    },
-    aiSessionCard: {
-        paddingVertical: Design.spacing.md,
-        paddingHorizontal: Design.spacing.md,
-        borderRadius: 12,
-        marginTop: Design.spacing.xs,
-        borderWidth: 1,
-        gap: Design.spacing.sm,
-    },
-    cardHeaderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    cardHeaderIcon: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-    },
-    cardTitle: {
-        fontSize: Design.typography.fontSize.base,
-        marginLeft: Design.spacing.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.medium,
-        lineHeight: Design.typography.lineHeight.base,
-        fontWeight: Design.typography.fontWeight.medium,
-        flex: 1,
-    },
-    cardMeta: {
-        fontSize: Design.typography.fontSize.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-    },
-    cardMetaRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    metaInline: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    metaIconSm: {
-        width: 18,
-        height: 18,
-        marginRight: Design.spacing.xs,
-    },
-    metaTextSm: {
-        fontSize: Design.typography.fontSize.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.medium,
-    },
-    startBtnSm: {
-        borderRadius: 12,
-        marginTop: Design.spacing.sm,
-    },
-    startBtnSmText: {
-        fontSize: Design.typography.fontSize.base,
-        fontFamily: Design.typography.fontFamily.satoshi.medium,
-        fontWeight: Design.typography.fontWeight.medium,
-        paddingVertical: Design.spacing.md,
-        textAlign: 'center',
-    },
-    publicRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: Design.spacing.mdLg,
-        marginBottom: Design.spacing.sm,
-        paddingVertical: Design.spacing.md,
-        paddingHorizontal: Design.spacing.md,
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    publicTitle: {
-        fontSize: Design.typography.fontSize.base,
-        fontFamily: Design.typography.fontFamily.satoshi.medium,
-        fontWeight: Design.typography.fontWeight.medium,
-    },
-    publicSub: {
-        fontSize: Design.typography.fontSize.xs,
-        marginTop: 2,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-    },
-    publicStats: {
-        flexDirection: 'row',
-        gap: Design.spacing.md,
-        marginTop: Design.spacing.xs,
-    },
-    publicStatText: {
-        fontSize: Design.typography.fontSize.xs,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-    },
-    publicChevronWrap: { paddingLeft: Design.spacing.sm },
-    publicChevron: {
-        fontSize: 22,
-        fontWeight: Design.typography.fontWeight.medium,
-    },
-    emptyText: {
-        marginTop: Design.spacing.sm,
-        marginBottom: Design.spacing.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-    },
-    errorText: {
-        fontSize: Design.typography.fontSize.sm,
-        marginBottom: Design.spacing.sm,
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-    },
-    emptyCenter: {
-        textAlign: 'center',
-        fontFamily: Design.typography.fontFamily.satoshi.regular,
-        paddingHorizontal: Design.spacing.md,
-    },
+  flex: { flex: 1 },
+  headerWrap: {
+    paddingHorizontal: Design.spacing.mdLg,
+  },
+  listContent: {
+    paddingBottom: Design.spacing.xl,
+  },
+  emptyWrap: {
+    paddingVertical: Design.spacing.lg,
+    alignItems: "center",
+  },
+  header: {
+    fontSize: Design.typography.fontSize.xl,
+    fontWeight: Design.typography.fontWeight.semibold,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.xl,
+  },
+  subtext: {
+    fontSize: Design.typography.fontSize.sm,
+    marginTop: Design.spacing.sm,
+    marginBottom: Design.spacing.lg,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.md,
+    fontWeight: Design.typography.fontWeight.regular,
+  },
+  tabBar: {
+    flexDirection: "row",
+    gap: Design.spacing.xs,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 4,
+    marginBottom: Design.spacing.md,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    paddingVertical: Design.spacing.sm,
+    paddingHorizontal: Design.spacing.sm,
+  },
+  tabButtonText: {
+    fontSize: Design.typography.fontSize.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+  sectionHeader: {
+    fontSize: Design.typography.fontSize.lg,
+    fontWeight: Design.typography.fontWeight.semibold,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.lg,
+    marginBottom: Design.spacing.xs,
+  },
+  tabHint: {
+    fontSize: Design.typography.fontSize.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    lineHeight: Design.typography.lineHeight.md,
+    marginBottom: Design.spacing.md,
+  },
+  publicRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Design.spacing.mdLg,
+    marginBottom: Design.spacing.sm,
+    paddingVertical: Design.spacing.md,
+    paddingHorizontal: Design.spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  rowContent: {
+    flex: 1,
+  },
+  publicTitle: {
+    fontSize: Design.typography.fontSize.base,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+  publicSub: {
+    fontSize: Design.typography.fontSize.xs,
+    marginTop: 2,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+  },
+  publicStats: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Design.spacing.sm,
+    marginTop: Design.spacing.xs,
+  },
+  publicStatText: {
+    fontSize: Design.typography.fontSize.xs,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+  },
+  publicChevronWrap: {
+    paddingLeft: Design.spacing.sm,
+  },
+  publicChevron: {
+    fontSize: 22,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+  errorText: {
+    fontSize: Design.typography.fontSize.sm,
+    marginBottom: Design.spacing.sm,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+  },
+  emptyCenter: {
+    textAlign: "center",
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    paddingHorizontal: Design.spacing.md,
+  },
+  sheetBackground: {
+    borderRadius: 28,
+  },
+  sheetIndicator: {
+    width: 44,
+  },
+  sheetContent: {
+    paddingHorizontal: Design.spacing.mdLg,
+    paddingTop: Design.spacing.sm,
+    paddingBottom: Design.spacing.xl,
+  },
+  sheetEyebrow: {
+    fontSize: Design.typography.fontSize.xs,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: Design.spacing.xs,
+  },
+  sheetTitle: {
+    fontSize: Design.typography.fontSize.xl,
+    lineHeight: Design.typography.lineHeight.xl,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+  sheetDescription: {
+    fontSize: Design.typography.fontSize.sm,
+    lineHeight: Design.typography.lineHeight.md,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    marginTop: Design.spacing.xs,
+  },
+  sheetStats: {
+    flexDirection: "row",
+    gap: Design.spacing.sm,
+    marginTop: Design.spacing.md,
+    marginBottom: Design.spacing.lg,
+  },
+  sheetStatChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: Design.spacing.md,
+    paddingVertical: Design.spacing.sm,
+  },
+  sheetStatText: {
+    fontSize: Design.typography.fontSize.xs,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+  },
+  sheetActions: {
+    gap: Design.spacing.sm,
+  },
+  sheetActionButton: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: Design.spacing.md,
+    paddingVertical: Design.spacing.md,
+  },
+  sheetActionButtonPrimary: {
+    borderWidth: 0,
+  },
+  sheetActionTitle: {
+    fontSize: Design.typography.fontSize.base,
+    fontFamily: Design.typography.fontFamily.satoshi.medium,
+    fontWeight: Design.typography.fontWeight.medium,
+  },
+  sheetActionSubtitle: {
+    fontSize: Design.typography.fontSize.sm,
+    lineHeight: Design.typography.lineHeight.md,
+    fontFamily: Design.typography.fontFamily.satoshi.regular,
+    marginTop: 4,
+  },
 });
