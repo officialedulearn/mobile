@@ -534,24 +534,6 @@ export default function RootLayout() {
                     gestureDirection: "horizontal",
                   }}
                 />
-                <Stack.Screen
-                  name="room/[id]"
-                  options={{
-                    headerShown: false,
-                    animation: "slide_from_right",
-                    gestureEnabled: true,
-                    gestureDirection: "horizontal",
-                  }}
-                />
-                <Stack.Screen
-                  name="roomInfo/[id]"
-                  options={{
-                    headerShown: false,
-                    animation: "slide_from_right",
-                    gestureEnabled: true,
-                    gestureDirection: "horizontal",
-                  }}
-                />
               </Stack>
             </BottomSheetModalProvider>
           </ToastProvider>

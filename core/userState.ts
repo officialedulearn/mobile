@@ -18,6 +18,7 @@ import useActivityStore from "./activityState";
 import useChatStore from "./chatState";
 import useCommunityStore from "./communityState";
 import useLeaderboardStore from "./leaderboardState";
+import useMobileStore from "./mobileStore";
 import useNotificationsStore from "./notificationsState";
 import useReferralStore from "./referralState";
 import useRewardsStore from "./rewardsState";
@@ -314,6 +315,7 @@ const useUserStore = create<UserState>((set, get) => ({
       useChatStore.getState().resetState();
       useRewardsStore.getState().resetState();
       useSocialStore.getState().resetState();
+      useMobileStore.getState().resetRealtime();
       useCommunityStore.getState().resetState();
       useRoadmapStore.getState().resetState();
       useActivityStore.getState().resetState();
@@ -348,6 +350,7 @@ const useUserStore = create<UserState>((set, get) => ({
       useChatStore.getState().resetState();
       useRewardsStore.getState().resetState();
       useSocialStore.getState().resetState();
+      useMobileStore.getState().resetRealtime();
       useCommunityStore.getState().resetState();
       useRoadmapStore.getState().resetState();
       useActivityStore.getState().resetState();

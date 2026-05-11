@@ -1,8 +1,8 @@
 import BackButton from "@/components/common/backButton";
 import useReferralStore from "@/core/referralState";
 import useUserStore from "@/core/userState";
-import type { ReferralLeaderboardEntry } from "@/interface/referral";
 import { useTheme } from "@/hooks/useTheme";
+import type { ReferralLeaderboardEntry } from "@/interface/referral";
 import { createReferralDeepLink } from "@/utils/deepLinks";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
@@ -51,6 +51,11 @@ const getLevelColor = (level: string) => {
     default:
       return "#61728C";
   }
+};
+
+const formatReferralEarnings = (value: number): string => {
+  if (!Number.isFinite(value)) return "0";
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 };
 
 function SkeletonBar({
@@ -116,8 +121,9 @@ function ReferralLoadingSkeleton({ dark }: { dark: boolean }) {
       </View>
 
       <View style={styles.skeletonStatsRow}>
-        <SkeletonBar width="48%" height={82} radius={16} />
-        <SkeletonBar width="48%" height={82} radius={16} />
+        <SkeletonBar width="31.5%" height={82} radius={16} />
+        <SkeletonBar width="31.5%" height={82} radius={16} />
+        <SkeletonBar width="31.5%" height={82} radius={16} />
       </View>
 
       <View style={styles.skeletonLeaderboard}>
@@ -417,6 +423,22 @@ const ReferralScreen = () => {
               </Text>
               <Text style={[styles.statValue, { color: colors.textPrimary }]}>
                 {overview.me.total_referrals}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderMuted,
+                },
+              ]}
+            >
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                Total Earnings
+              </Text>
+              <Text style={[styles.statValue, { color: colors.textPrimary }]}>
+                {formatReferralEarnings(overview.me.total_earnings)}
               </Text>
             </View>
           </View>

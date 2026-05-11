@@ -38,7 +38,7 @@ describe("getNotificationRoute", () => {
       metadata: { communityId: "room1" },
     };
     expect(getNotificationRoute(notification)).toEqual({
-      pathname: "/room/[id]",
+      pathname: "/hub/[id]",
       params: { id: "room1" },
     });
   });
