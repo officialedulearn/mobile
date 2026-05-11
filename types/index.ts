@@ -12,6 +12,7 @@ export * from "./flashcards.types";
 export * from "./leaderboard.types";
 export * from "./notifications.types";
 export * from "./quizzes.types";
+export * from "./realtime.types";
 export * from "./rewards.types";
 export * from "./roadmap.types";
 export * from "./social.types";

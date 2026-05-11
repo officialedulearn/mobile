@@ -55,7 +55,7 @@ export function RoomHeader({
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push({
-            pathname: "/roomInfo/[id]",
+            pathname: "/hub/[id]/info",
             params: { id: communityId },
           });
         }}

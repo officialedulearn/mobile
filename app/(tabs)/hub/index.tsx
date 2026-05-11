@@ -58,7 +58,7 @@ const Hub = () => {
     ({ item: community }: { item: UserCommunity }) => (
       <TouchableOpacity
         onPress={() =>
-          router.push({ pathname: "/room/[id]", params: { id: community.id } })
+          router.push({ pathname: "/hub/[id]", params: { id: community.id } })
         }
         style={styles.communityCardWrapper}
       >

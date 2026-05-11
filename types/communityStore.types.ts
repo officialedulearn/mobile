@@ -11,6 +11,7 @@ import type {
   UserCommunity,
   UserMention,
 } from "@/interface/Community";
+import type { RealtimeEventName } from "./realtime.types";
 
 export type CommunityDetails = {
   memberCount: number;
@@ -107,7 +108,7 @@ export type CommunityStoreActions = {
   subscribeCommunityRoomRealtime: (
     communityId: string,
     viewerUserId: string,
-  ) => Promise<void>;
+  ) => void;
   unsubscribeCommunityRoomRealtime: (communityId: string) => void;
   disconnectCommunitySocket: () => void;
   isCommunitySocketConnected: () => boolean;
@@ -124,8 +125,8 @@ export type CommunityStoreActions = {
     communityId: string,
     callback?: (response: unknown) => void,
   ) => void;
-  communityRoomStartTyping: (communityId: string) => void;
-  communityRoomStopTyping: (communityId: string) => void;
+  communityRoomStartTyping: (communityId: string) => Promise<void>;
+  communityRoomStopTyping: (communityId: string) => Promise<void>;
   communityRoomAddReactionWs: (
     messageId: string,
     communityId: string,
@@ -228,6 +229,11 @@ export type CommunityStoreActions = {
   deleteCommunityJoinRequestRecord: (
     requestId: string,
   ) => Promise<{ message: string }>;
+
+  handleCommunityRealtimeEvent: (
+    eventName: RealtimeEventName,
+    payload: unknown,
+  ) => void;
 
   resetState: () => void;
 };

@@ -1,5 +1,3 @@
-import { io, Socket } from "socket.io-client";
-import { supabase } from "@/utils/supabase";
 import { BaseService } from "./base.service";
 import type {
   Community,
@@ -12,19 +10,9 @@ import type {
   MessageMention,
   UserMention,
   CommunityMod,
-  UserStatusEvent,
-  RoomPresence,
-  TypingEvent,
-  NewMessageEvent,
-  MessageDeletedEvent,
-  ReactionEvent,
 } from "@/interface/Community";
 
 export class CommunityService extends BaseService {
-  private socket: Socket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-
   async getPublicCommunities(): Promise<Community[]> {
     const response = await this.executeRequest<Community[]>(
       this.getClient().get("/community"),
@@ -334,6 +322,20 @@ export class CommunityService extends BaseService {
     return response.data!;
   }
 
+  async sendTyping(
+    communityId: string,
+    isTyping: boolean,
+    userId?: string,
+  ): Promise<{ success: boolean }> {
+    const body: { isTyping: boolean; userId?: string } = { isTyping };
+    if (userId) body.userId = userId;
+    const response = await this.executeRequest<{ success: boolean }>(
+      this.getClient().post(`/community/${communityId}/typing`, body),
+    );
+    if (response.error) throw response.error;
+    return response.data!;
+  }
+
   async getMessageMentions(messageId: string): Promise<MessageMention[]> {
     const response = await this.executeRequest<MessageMention[]>(
       this.getClient().get(`/community/messages/${messageId}/mentions`),
@@ -353,260 +355,5 @@ export class CommunityService extends BaseService {
     );
     if (response.error) throw response.error;
     return response.data!;
-  }
-
-  async connectWebSocket(): Promise<Socket> {
-    if (this.socket?.connected) return this.socket;
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session?.access_token)
-      throw new Error("No authentication token available");
-
-    const baseURL =
-      process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
-    let wsURL: string;
-    if (baseURL.startsWith("https://")) {
-      wsURL = baseURL.replace("https://", "wss://");
-    } else if (baseURL.startsWith("http://")) {
-      wsURL = baseURL.replace("http://", "ws://");
-    } else {
-      wsURL =
-        baseURL.startsWith("ws://") || baseURL.startsWith("wss://")
-          ? baseURL
-          : `ws://${baseURL}`;
-    }
-    wsURL = wsURL.replace(/\/$/, "");
-
-    this.socket = io(`${wsURL}/community`, {
-      auth: { token: session.access_token },
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      timeout: 20000,
-    });
-
-    if (!this.socket) throw new Error("Failed to create socket instance");
-
-    this.socket.on("connect", () => {
-      this.reconnectAttempts = 0;
-    });
-
-    this.socket.on("disconnect", () => {});
-
-    this.socket.on("connect_error", (error: any) => {
-      this.reconnectAttempts++;
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        this.socket?.close();
-      }
-    });
-
-    this.socket.on("connected", () => {});
-
-    const socketInstance = this.socket;
-    if (!socketInstance) throw new Error("Socket instance is null");
-
-    return new Promise<Socket>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        if (!socketInstance.connected)
-          reject(new Error("WebSocket connection timeout"));
-      }, 10000);
-
-      socketInstance.once("connect", () => {
-        clearTimeout(timeout);
-        resolve(socketInstance);
-      });
-
-      socketInstance.once("connect_error", (error) => {
-        clearTimeout(timeout);
-        reject(error);
-      });
-    });
-  }
-
-  disconnectWebSocket(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
-    }
-  }
-
-  isConnected(): boolean {
-    return this.socket?.connected || false;
-  }
-
-  getSocket(): Socket | null {
-    return this.socket;
-  }
-
-  joinRoom(
-    communityId: string,
-    userId?: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket?.connected) {
-      callback?.({ error: "WebSocket not connected" });
-      return;
-    }
-    const data: any = { communityId };
-    if (userId) data.userId = userId;
-    this.socket.emit("join_room", data, callback);
-  }
-
-  leaveRoom(communityId: string, callback?: (response: any) => void): void {
-    if (!this.socket?.connected) return;
-    this.socket.emit("leave_room", { communityId }, callback);
-  }
-
-  sendMessage(
-    communityId: string,
-    content: string,
-    mentionedUserIds?: string[],
-    userId?: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket?.connected) {
-      callback?.({ error: "WebSocket not connected" });
-      return;
-    }
-    const data: any = { communityId, content, mentionedUserIds };
-    if (userId) data.userId = userId;
-    this.socket.emit("send_message", data, callback);
-  }
-
-  deleteMessageWS(
-    messageId: string,
-    communityId: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket) throw new Error("WebSocket not connected");
-    this.socket.emit("delete_message", { messageId, communityId }, callback);
-  }
-
-  startTyping(communityId: string): void {
-    if (!this.socket) return;
-    this.socket.emit("typing_start", { communityId });
-  }
-
-  stopTyping(communityId: string): void {
-    if (!this.socket) return;
-    this.socket.emit("typing_stop", { communityId });
-  }
-
-  addReactionWS(
-    messageId: string,
-    communityId: string,
-    reaction: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket) throw new Error("WebSocket not connected");
-    this.socket.emit(
-      "add_reaction",
-      { messageId, communityId, reaction },
-      callback,
-    );
-  }
-
-  removeReactionWS(
-    messageId: string,
-    communityId: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket) throw new Error("WebSocket not connected");
-    this.socket.emit("remove_reaction", { messageId, communityId }, callback);
-  }
-
-  getOnlineUsers(callback?: (response: any) => void): void {
-    if (!this.socket) throw new Error("WebSocket not connected");
-    this.socket.emit("get_online_users", {}, callback);
-  }
-
-  getRoomPresence(
-    communityId: string,
-    callback?: (response: any) => void,
-  ): void {
-    if (!this.socket) throw new Error("WebSocket not connected");
-    this.socket.emit("get_room_presence", { communityId }, callback);
-  }
-
-  onConnected(callback: (data: any) => void): void {
-    this.socket?.on("connected", callback);
-  }
-
-  onUserStatus(callback: (data: UserStatusEvent) => void): void {
-    this.socket?.on("user_status", callback);
-  }
-
-  onRoomJoined(
-    callback: (data: RoomPresence & { communityId: string }) => void,
-  ): void {
-    this.socket?.on("room_joined", callback);
-  }
-
-  onRoomUserJoined(
-    callback: (data: {
-      userId: string;
-      username: string;
-      timestamp: string;
-      onlineCount?: number;
-    }) => void,
-  ): void {
-    this.socket?.on("room_user_joined", callback);
-  }
-
-  onRoomUserLeft(
-    callback: (data: {
-      userId: string;
-      username: string;
-      timestamp: string;
-      onlineCount?: number;
-    }) => void,
-  ): void {
-    this.socket?.on("room_user_left", callback);
-  }
-
-  onNewMessage(callback: (message: NewMessageEvent) => void): void {
-    this.socket?.on("new_message", callback);
-  }
-
-  onMessageDeleted(callback: (data: MessageDeletedEvent) => void): void {
-    this.socket?.on("message_deleted", callback);
-  }
-
-  onUserTyping(callback: (data: TypingEvent) => void): void {
-    this.socket?.on("user_typing", callback);
-  }
-
-  onUserStoppedTyping(callback: (data: TypingEvent) => void): void {
-    this.socket?.on("user_stopped_typing", callback);
-  }
-
-  onReactionAdded(callback: (data: ReactionEvent) => void): void {
-    this.socket?.on("reaction_added", callback);
-  }
-
-  onReactionRemoved(
-    callback: (data: Omit<ReactionEvent, "reaction" | "username">) => void,
-  ): void {
-    this.socket?.on("reaction_removed", callback);
-  }
-
-  off(event: string, callback?: any): void {
-    this.socket?.off(event, callback);
-  }
-
-  removeAllListeners(event?: string): void {
-    if (event) {
-      this.socket?.removeAllListeners(event);
-    } else {
-      this.socket?.removeAllListeners();
-    }
   }
 }

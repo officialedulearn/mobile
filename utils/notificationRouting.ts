@@ -3,7 +3,7 @@ import type { InAppNotification } from "@/types/notifications.types";
 type NotificationRoute =
   | { pathname: "/(tabs)/quizzes/[id]"; params: { id: string } }
   | { pathname: "/roadmaps/[id]"; params: { id: string } }
-  | { pathname: "/room/[id]"; params: { id: string } }
+  | { pathname: "/hub/[id]"; params: { id: string } }
   | { pathname: "/leaderboard"; params?: undefined }
   | { pathname: "/(tabs)/profile"; params?: undefined }
   | { pathname: "/nft/[id]"; params: { id: string } };
@@ -27,7 +27,7 @@ export const getNotificationRoute = (
         : null;
     case "mention":
       return hasId(metadata.communityId)
-        ? { pathname: "/room/[id]", params: { id: metadata.communityId } }
+        ? { pathname: "/hub/[id]", params: { id: metadata.communityId } }
         : null;
     case "leaderboard_update":
       return { pathname: "/leaderboard" };

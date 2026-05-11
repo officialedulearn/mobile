@@ -1,7 +1,5 @@
 import type {
   CommunityJoinRequest,
-  NewMessageEvent,
-  ReactionEvent,
   RoomMessage,
   RoomMessageWithUI,
 } from "@/interface/Community";
@@ -17,7 +15,15 @@ import {
   formatMessageDate,
   formatMessageTime,
 } from "@/utils/hub/roomFormatting";
-import type { Socket } from "socket.io-client";
+import type {
+  CommunityMessageCreatedPayload,
+  CommunityMessageDeletedPayload,
+  CommunityReactionUpdatedPayload,
+  CommunityRoomPresencePayload,
+  CommunityTypingPayload,
+  RealtimeEventName,
+  RealtimeEventPayloadMap,
+} from "@/types/realtime.types";
 import type { StoreApi } from "zustand";
 import { create } from "zustand";
 
@@ -33,11 +39,6 @@ export type {
 } from "@/types/communityStore.types";
 
 const communityService = new CommunityService();
-
-let realtimeHandlersBoundToSocket: Socket | null = null;
-
-/** Presence events omit community id; assume single foreground room (last subscribed wins). */
-let realtimePresenceCommunityId: string | null = null;
 
 function reactionsRecordFromReactions(
   reactions: { reaction: string }[],
@@ -106,132 +107,104 @@ async function enrichMessagesWithReactions(
   );
 }
 
-function bindCommunityRealtimeHandlers(
+function handleCommunityRealtimeEvent(
   get: () => CommunityStore,
   setState: StoreApi<CommunityStore>["setState"],
+  eventName: RealtimeEventName,
+  payload: unknown,
 ): void {
-  const socket = communityService.getSocket();
-  if (!socket || realtimeHandlersBoundToSocket === socket) {
-    return;
-  }
-  realtimeHandlersBoundToSocket = socket;
-
-  communityService.onRoomJoined((data) => {
-    const cid = data.communityId;
-    if (data.onlineCount === undefined) {
-      return;
-    }
+  if (eventName === "subscription.ready") {
+    const event = payload as RealtimeEventPayloadMap["subscription.ready"];
+    if (event.subscription.channel !== "community.room") return;
+    const cid = event.subscription.id;
+    if (event.onlineCount === undefined) return;
     setState((state) => ({
       roomRealtimeByCommunityId: {
         ...state.roomRealtimeByCommunityId,
         [cid]: {
           typingUsernames:
             state.roomRealtimeByCommunityId[cid]?.typingUsernames ?? [],
-          onlineCount: data.onlineCount,
+          onlineCount: event.onlineCount ?? 1,
         },
       },
     }));
-  });
+    return;
+  }
 
-  communityService.onRoomUserJoined((data) => {
-    const cid = realtimePresenceCommunityId;
-    if (!cid) {
-      return;
-    }
+  if (
+    eventName === "community.room.user_joined" ||
+    eventName === "community.room.user_left"
+  ) {
+    const event = payload as CommunityRoomPresencePayload;
+    const cid = event.communityId;
     setState((state) => {
       const prev = state.roomRealtimeByCommunityId[cid];
-      const nextOnline =
-        data.onlineCount !== undefined
-          ? data.onlineCount
-          : (prev?.onlineCount ?? 1) + 1;
       return {
         roomRealtimeByCommunityId: {
           ...state.roomRealtimeByCommunityId,
           [cid]: {
             typingUsernames: prev?.typingUsernames ?? [],
-            onlineCount: nextOnline,
+            onlineCount: event.onlineCount,
           },
         },
       };
     });
-  });
+    return;
+  }
 
-  communityService.onRoomUserLeft((data) => {
-    const cid = realtimePresenceCommunityId;
-    if (!cid) {
-      return;
-    }
-    setState((state) => {
-      const prev = state.roomRealtimeByCommunityId[cid];
-      const nextOnline =
-        data.onlineCount !== undefined
-          ? data.onlineCount
-          : Math.max(1, (prev?.onlineCount ?? 1) - 1);
-      return {
-        roomRealtimeByCommunityId: {
-          ...state.roomRealtimeByCommunityId,
-          [cid]: {
-            typingUsernames: prev?.typingUsernames ?? [],
-            onlineCount: nextOnline,
-          },
-        },
-      };
-    });
-  });
-
-  communityService.onNewMessage(async (event: NewMessageEvent) => {
-    const cid = event.roomId;
-    const sub = get().socketSubscriberByCommunityId[cid];
-    if (!sub || event.user.id === sub.viewerUserId) {
-      return;
-    }
-
-    let reactionCounts: Record<string, number> = {};
-    try {
-      const reactions = await communityService.getMessageReactions(event.id);
-      reactionCounts = reactionsRecordFromReactions(reactions);
-    } catch {
-      reactionCounts = {};
-    }
-
-    const moderatorId =
-      get().roomMessagesByCommunityId[cid]?.moderatorId ?? null;
-    const processed = toRoomMessageWithUI(
-      {
-        ...event,
-        reactionCounts,
-        isMod: moderatorId === event.user.id,
-      },
-      sub.viewerUserId,
-    );
-
-    setState((state) => {
-      const entry = state.roomMessagesByCommunityId[cid];
-      if (!entry) {
-        return {};
+  if (eventName === "community.message.created") {
+    void (async () => {
+      const event = payload as CommunityMessageCreatedPayload;
+      const cid = event.roomId;
+      const sub = get().socketSubscriberByCommunityId[cid];
+      if (!sub || event.user.id === sub.viewerUserId) {
+        return;
       }
-      if (entry.messages.some((m) => m.id === processed.id)) {
-        return {};
-      }
-      return {
-        roomMessagesByCommunityId: {
-          ...state.roomMessagesByCommunityId,
-          [cid]: {
-            ...entry,
-            messages: [processed, ...entry.messages],
-          },
-        },
-      };
-    });
-  });
 
-  communityService.onMessageDeleted((event) => {
+      let reactionCounts: Record<string, number> = {};
+      try {
+        const reactions = await communityService.getMessageReactions(event.id);
+        reactionCounts = reactionsRecordFromReactions(reactions);
+      } catch {
+        reactionCounts = {};
+      }
+
+      const moderatorId =
+        get().roomMessagesByCommunityId[cid]?.moderatorId ?? null;
+      const processed = toRoomMessageWithUI(
+        {
+          ...event,
+          reactionCounts,
+          isMod: moderatorId === event.user.id,
+        },
+        sub.viewerUserId,
+      );
+
+      setState((state) => {
+        const entry = state.roomMessagesByCommunityId[cid];
+        if (!entry || entry.messages.some((m) => m.id === processed.id)) {
+          return {};
+        }
+        return {
+          roomMessagesByCommunityId: {
+            ...state.roomMessagesByCommunityId,
+            [cid]: {
+              ...entry,
+              messages: [processed, ...entry.messages],
+            },
+          },
+        };
+      });
+    })();
+    return;
+  }
+
+  if (eventName === "community.message.deleted") {
+    const event = payload as CommunityMessageDeletedPayload;
     const cid = event.communityId;
     setState((state) => {
       const entry = state.roomMessagesByCommunityId[cid];
-      if (!entry) {
-        return {};
-      }
+      if (!entry) return {};
       return {
         roomMessagesByCommunityId: {
           ...state.roomMessagesByCommunityId,
@@ -242,44 +215,32 @@ function bindCommunityRealtimeHandlers(
         },
       };
     });
-  });
+    return;
+  }
 
-  communityService.onUserTyping((event) => {
+  if (
+    eventName === "community.typing.started" ||
+    eventName === "community.typing.stopped"
+  ) {
+    const event = payload as CommunityTypingPayload;
     const cid = event.communityId;
     const sub = get().socketSubscriberByCommunityId[cid];
-    if (!sub || event.userId === sub.viewerUserId) {
+    if (!sub || event.userId === sub.viewerUserId || !event.username) {
       return;
     }
-    setState((state) => {
-      const prevRt = state.roomRealtimeByCommunityId[cid] ?? {
-        onlineCount: 1,
-        typingUsernames: [],
-      };
-      if (prevRt.typingUsernames.includes(event.username)) {
-        return {};
-      }
-      return {
-        roomRealtimeByCommunityId: {
-          ...state.roomRealtimeByCommunityId,
-          [cid]: {
-            onlineCount: prevRt.onlineCount,
-            typingUsernames: [...prevRt.typingUsernames, event.username],
-          },
-        },
-      };
-    });
-  });
+    const username = event.username;
 
-  communityService.onUserStoppedTyping((event) => {
-    const cid = event.communityId;
     setState((state) => {
-      const prevRt = state.roomRealtimeByCommunityId[cid];
-      if (!prevRt) {
-        return {};
-      }
-      const nextTyping = prevRt.typingUsernames.filter(
-        (u) => u !== event.username,
-      );
+      const prevRt = state.roomRealtimeByCommunityId[cid] ?? defaultRealtime();
+      const nextTyping =
+        eventName === "community.typing.started"
+          ? prevRt.typingUsernames.includes(username)
+            ? prevRt.typingUsernames
+            : [...prevRt.typingUsernames, username]
+          : prevRt.typingUsernames.filter((u) => u !== username);
+
+      if (nextTyping === prevRt.typingUsernames) return {};
+
       return {
         roomRealtimeByCommunityId: {
           ...state.roomRealtimeByCommunityId,
@@ -290,9 +251,11 @@ function bindCommunityRealtimeHandlers(
         },
       };
     });
-  });
+    return;
+  }
 
-  communityService.onReactionAdded((event: ReactionEvent) => {
+  if (eventName === "community.reaction.updated") {
+    const event = payload as CommunityReactionUpdatedPayload;
     const reactions = reactionRecordFromCounts(event.reactionCounts);
     setState((state) => {
       let changed = false;
@@ -312,29 +275,7 @@ function bindCommunityRealtimeHandlers(
       }
       return changed ? { roomMessagesByCommunityId: nextRooms } : {};
     });
-  });
-
-  communityService.onReactionRemoved((event) => {
-    const reactions = reactionRecordFromCounts(event.reactionCounts);
-    setState((state) => {
-      let changed = false;
-      const nextRooms = { ...state.roomMessagesByCommunityId };
-      for (const cid of Object.keys(nextRooms)) {
-        const entry = nextRooms[cid];
-        if (!entry.messages.some((m) => m.id === event.messageId)) {
-          continue;
-        }
-        changed = true;
-        nextRooms[cid] = {
-          ...entry,
-          messages: entry.messages.map((msg) =>
-            msg.id === event.messageId ? { ...msg, reactions } : msg,
-          ),
-        };
-      }
-      return changed ? { roomMessagesByCommunityId: nextRooms } : {};
-    });
-  });
+  }
 }
 
 function removeCommunityKey<T extends Record<string, unknown>>(
@@ -659,13 +600,9 @@ const useCommunityStore = create<CommunityStore>((set, get) => ({
     return rows;
   },
 
-  ensureCommunitySocketConnected: async () => {
-    await communityService.connectWebSocket();
-    bindCommunityRealtimeHandlers(get, set);
-  },
+  ensureCommunitySocketConnected: async () => {},
 
-  subscribeCommunityRoomRealtime: async (communityId, viewerUserId) => {
-    await get().ensureCommunitySocketConnected();
+  subscribeCommunityRoomRealtime: (communityId, viewerUserId) => {
     const ctx: CommunityRoomSocketContext = { viewerUserId };
     set((state) => ({
       socketSubscriberByCommunityId: {
@@ -678,15 +615,9 @@ const useCommunityStore = create<CommunityStore>((set, get) => ({
           state.roomRealtimeByCommunityId[communityId] ?? defaultRealtime(),
       },
     }));
-    realtimePresenceCommunityId = communityId;
-    communityService.joinRoom(communityId, viewerUserId);
   },
 
   unsubscribeCommunityRoomRealtime: (communityId) => {
-    communityService.leaveRoom(communityId);
-    if (realtimePresenceCommunityId === communityId) {
-      realtimePresenceCommunityId = null;
-    }
     set((state) => ({
       socketSubscriberByCommunityId: removeCommunityKey(
         state.socketSubscriberByCommunityId,
@@ -696,80 +627,86 @@ const useCommunityStore = create<CommunityStore>((set, get) => ({
   },
 
   disconnectCommunitySocket: () => {
-    realtimeHandlersBoundToSocket = null;
-    realtimePresenceCommunityId = null;
-    communityService.disconnectWebSocket();
+    set({ socketSubscriberByCommunityId: {} });
   },
 
-  isCommunitySocketConnected: () => communityService.isConnected(),
+  isCommunitySocketConnected: () => false,
 
-  sendCommunityRoomMessage: (
+  sendCommunityRoomMessage: async (
     communityId,
     content,
     viewerUserId,
     mentionedUserIds,
     callback,
   ) => {
-    communityService.sendMessage(
-      communityId,
-      content,
-      mentionedUserIds,
-      viewerUserId,
-      callback,
-    );
-  },
-
-  deleteCommunityRoomMessageWs: (messageId, communityId, callback) => {
-    communityService.deleteMessageWS(messageId, communityId, callback);
-  },
-
-  communityRoomStartTyping: (communityId) => {
-    communityService.startTyping(communityId);
-  },
-
-  communityRoomStopTyping: (communityId) => {
-    communityService.stopTyping(communityId);
-  },
-
-  communityRoomAddReactionWs: (messageId, communityId, reaction, callback) => {
-    communityService.addReactionWS(messageId, communityId, reaction, callback);
-  },
-
-  communityRoomRemoveReactionWs: (messageId, communityId, callback) => {
-    communityService.removeReactionWS(messageId, communityId, callback);
-  },
-
-  fetchCommunityOnlineUsers: () =>
-    new Promise<unknown>((resolve, reject) => {
-      if (!communityService.isConnected()) {
-        reject(new Error("WebSocket not connected"));
-        return;
-      }
-      communityService.getOnlineUsers((response: unknown) => {
-        const r = response as { error?: string } | undefined;
-        if (r && typeof r === "object" && "error" in r && r.error) {
-          reject(new Error(String(r.error)));
-          return;
-        }
-        resolve(response);
+    try {
+      const message = await communityService.createMessage(
+        communityId,
+        content,
+        mentionedUserIds,
+        viewerUserId,
+      );
+      callback?.({ success: true, message });
+    } catch (error) {
+      callback?.({
+        error: error instanceof Error ? error.message : "Failed to send message",
       });
-    }),
+    }
+  },
 
-  fetchCommunityRoomPresence: (communityId) =>
-    new Promise<unknown>((resolve, reject) => {
-      if (!communityService.isConnected()) {
-        reject(new Error("WebSocket not connected"));
-        return;
-      }
-      communityService.getRoomPresence(communityId, (response: unknown) => {
-        const r = response as { error?: string } | undefined;
-        if (r && typeof r === "object" && "error" in r && r.error) {
-          reject(new Error(String(r.error)));
-          return;
-        }
-        resolve(response);
+  deleteCommunityRoomMessageWs: async (messageId, _communityId, callback) => {
+    try {
+      await communityService.deleteMessage(messageId);
+      callback?.({ success: true });
+    } catch (error) {
+      callback?.({
+        error:
+          error instanceof Error ? error.message : "Failed to delete message",
       });
-    }),
+    }
+  },
+
+  communityRoomStartTyping: async (communityId) => {
+    await communityService.sendTyping(communityId, true);
+  },
+
+  communityRoomStopTyping: async (communityId) => {
+    await communityService.sendTyping(communityId, false);
+  },
+
+  communityRoomAddReactionWs: async (messageId, communityId, reaction, callback) => {
+    try {
+      const result = await communityService.addReaction(
+        messageId,
+        reaction,
+        undefined,
+        communityId,
+      );
+      callback?.({ success: true, reaction: result });
+    } catch (error) {
+      callback?.({
+        error:
+          error instanceof Error ? error.message : "Failed to add reaction",
+      });
+    }
+  },
+
+  communityRoomRemoveReactionWs: async (messageId, _communityId, callback) => {
+    try {
+      await communityService.removeReaction(messageId);
+      callback?.({ success: true });
+    } catch (error) {
+      callback?.({
+        error:
+          error instanceof Error ? error.message : "Failed to remove reaction",
+      });
+    }
+  },
+
+  fetchCommunityOnlineUsers: async () => [],
+
+  fetchCommunityRoomPresence: async (communityId) =>
+    get().roomRealtimeByCommunityId[communityId] ?? defaultRealtime(),
 
   resolveCommunityMentions: (usernames) =>
     communityService.resolveMentions(usernames),
@@ -857,10 +794,11 @@ const useCommunityStore = create<CommunityStore>((set, get) => ({
   deleteCommunityJoinRequestRecord: (requestId) =>
     communityService.deleteJoinRequest(requestId),
 
+  handleCommunityRealtimeEvent: (eventName, payload) => {
+    handleCommunityRealtimeEvent(get, set, eventName, payload);
+  },
+
   resetState: () => {
-    realtimeHandlersBoundToSocket = null;
-    realtimePresenceCommunityId = null;
-    communityService.disconnectWebSocket();
     set({
       userCommunities: [],
       userCommunitiesUserId: null,
